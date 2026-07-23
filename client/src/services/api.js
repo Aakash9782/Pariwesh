@@ -3,7 +3,7 @@ import { store } from "../redux/store.js";
 import { logoutSuccess, authSuccess } from "../redux/slices/authSlice.js";
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5001/api/v1",
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
@@ -38,7 +38,7 @@ API.interceptors.response.use(
       try {
         // Request token refresh
         const res = await axios.post(
-          `${import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1"}/auth/refresh-token`,
+          `${import.meta.env.VITE_API_URL || "http://localhost:5001/api/v1"}/auth/refresh-token`,
           {},
           { withCredentials: true },
         );
