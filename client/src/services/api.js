@@ -9,10 +9,7 @@ const getBaseURL = () => {
   if (import.meta.env.DEV) {
     return "http://localhost:5001/api/v1";
   }
-  return (
-    import.meta.env.VITE_API_URL ||
-    "https://pariwesh-backend.onrender.com/api/v1"
-  );
+  return import.meta.env.VITE_API_URL || "https://pariwesh.onrender.com/api/v1";
 };
 
 const BASE_URL = getBaseURL();
