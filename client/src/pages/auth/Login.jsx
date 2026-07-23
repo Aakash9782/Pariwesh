@@ -51,7 +51,9 @@ const Login = () => {
       setLoading(false);
 
       const isAdmin =
-        phoneNumber === "9876543210" || phoneNumber === "9999999999";
+        phoneNumber === "9782681155" ||
+        phoneNumber === "9876543210" ||
+        phoneNumber === "9999999999";
       const mockUser = {
         _id: isAdmin ? "usr_admin999" : "usr_abc123",
         name: isAdmin ? "Pariwesh Admin Desk" : "Priyanjali Sen",
@@ -90,7 +92,7 @@ const Login = () => {
           </h2>
           <p className="text-xs text-textSecondary">
             Sign in with phone verification to track orders. (For Admin use:
-            9876543210)
+            9782681155)
           </p>
         </div>
 
