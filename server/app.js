@@ -20,7 +20,19 @@ app.use(helmet());
 
 // CORS config
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  origin: (origin, callback) => {
+    if (
+      !origin ||
+      origin.includes("netlify.app") ||
+      origin.includes("localhost") ||
+      origin.includes("127.0.0.1") ||
+      origin === process.env.FRONTEND_URL
+    ) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
