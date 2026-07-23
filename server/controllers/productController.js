@@ -1,5 +1,9 @@
 import Product from "../models/Product.js";
 import { sendSuccess, sendError } from "../utils/responseFormatter.js";
+import {
+  uploadBase64Image,
+  uploadBase64Video,
+} from "../utils/cloudinaryUploader.js";
 
 // Safe seed catalog matching original website contents
 const SEED_PRODUCTS = [
@@ -173,13 +177,38 @@ export const createProduct = async (req, res, next) => {
     }
 
     // Prepare images array
-    const productImages =
-      images && images.length > 0
-        ? images
-        : [
-            image ||
-              "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop",
-          ];
+    let productImages = [];
+    if (images && images.length > 0) {
+      for (const img of images) {
+        if (img.startsWith("data:image")) {
+          const uploadedUrl = await uploadBase64Image(img, "pariwesh/products");
+          productImages.push(uploadedUrl);
+        } else {
+          productImages.push(img);
+        }
+      }
+    } else if (image) {
+      if (image.startsWith("data:image")) {
+        const uploadedUrl = await uploadBase64Image(image, "pariwesh/products");
+        productImages.push(uploadedUrl);
+      } else {
+        productImages.push(image);
+      }
+    } else {
+      productImages.push(
+        "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop",
+      );
+    }
+
+    // Prepare video upload
+    let productVideo = "";
+    if (video) {
+      if (video.startsWith("data:video")) {
+        productVideo = await uploadBase64Video(video, "pariwesh/videos");
+      } else {
+        productVideo = video;
+      }
+    }
 
     const newProduct = await Product.create({
       name,
@@ -193,7 +222,7 @@ export const createProduct = async (req, res, next) => {
       mrp,
       price,
       images: productImages,
-      video: video || "",
+      video: productVideo,
       tag: tag || "Regular",
       description:
         description || "Premium selection fashion apparel custom crafted.",

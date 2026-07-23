@@ -1,5 +1,6 @@
 import Setting from "../models/Setting.js";
 import { sendSuccess, sendError } from "../utils/responseFormatter.js";
+import { uploadBase64Image } from "../utils/cloudinaryUploader.js";
 
 // @desc    Get all settings
 // @route   GET /api/v1/settings
@@ -27,17 +28,22 @@ export const updateSetting = async (req, res, next) => {
       return sendError(res, "Key/Value parameters are required", 400);
     }
 
+    let finalValue = value;
+    if (key === "brandLogoUrl" && value && value.startsWith("data:image")) {
+      finalValue = await uploadBase64Image(value, "pariwesh/branding");
+    }
+
     let setting = await Setting.findOne({ key });
     if (setting) {
-      setting.value = value || "";
+      setting.value = finalValue || "";
       await setting.save();
     } else {
-      setting = await Setting.create({ key, value: value || "" });
+      setting = await Setting.create({ key, value: finalValue || "" });
     }
 
     return sendSuccess(res, `Setting ${key} updated successfully`, {
       key,
-      value,
+      value: finalValue,
     });
   } catch (error) {
     return sendError(res, error.message, 500);
