@@ -1,7 +1,7 @@
 {
-  "name": "priwesh-server",
+  "name": "pariwesh-server",
   "version": "1.0.0",
-  "description": "Backend API Server for PRIWESH",
+  "description": "Backend API Server for PARIWESH",
   "main": "server.js",
   "type": "module",
   "scripts": {

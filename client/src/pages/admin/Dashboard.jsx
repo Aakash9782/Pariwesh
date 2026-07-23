@@ -45,15 +45,44 @@ const Dashboard = () => {
     localStorage.getItem("festiveAdTheme") || "royal-gold",
   );
 
-  const handleSaveBanner = (e) => {
+  const handleSaveBanner = async (e) => {
     e.preventDefault();
-    localStorage.setItem("festiveAdActive", bannerActive ? "true" : "false");
-    localStorage.setItem("festiveAdTitle", bannerTitle);
-    localStorage.setItem("festiveAdSubtitle", bannerSubtitle);
-    localStorage.setItem("festiveAdCode", bannerCode);
-    localStorage.setItem("festiveAdLink", bannerLink);
-    localStorage.setItem("festiveAdTheme", bannerTheme);
-    alert("Festive Campaign Banner updated successfully!");
+    try {
+      // 1. Save all banner settings keys to backend database
+      await API.post("/settings", {
+        key: "festiveAdActive",
+        value: bannerActive ? "true" : "false",
+      });
+      await API.post("/settings", {
+        key: "festiveAdTitle",
+        value: bannerTitle,
+      });
+      await API.post("/settings", {
+        key: "festiveAdSubtitle",
+        value: bannerSubtitle,
+      });
+      await API.post("/settings", { key: "festiveAdCode", value: bannerCode });
+      await API.post("/settings", { key: "festiveAdLink", value: bannerLink });
+      await API.post("/settings", {
+        key: "festiveAdTheme",
+        value: bannerTheme,
+      });
+
+      // 2. Fallback local updates
+      localStorage.setItem("festiveAdActive", bannerActive ? "true" : "false");
+      localStorage.setItem("festiveAdTitle", bannerTitle);
+      localStorage.setItem("festiveAdSubtitle", bannerSubtitle);
+      localStorage.setItem("festiveAdCode", bannerCode);
+      localStorage.setItem("festiveAdLink", bannerLink);
+      localStorage.setItem("festiveAdTheme", bannerTheme);
+
+      alert("Festive Campaign Banner updated successfully in database!");
+    } catch (err) {
+      console.error("Failed saving banner settings:", err);
+      alert(
+        "Failed to save banner settings. Please verify database connection.",
+      );
+    }
   };
 
   // Logo brand state
@@ -62,11 +91,14 @@ const Dashboard = () => {
   );
 
   useEffect(() => {
-    const fetchLogoFromDB = async () => {
+    const fetchSettingsFromDB = async () => {
       try {
         const res = await API.get("/settings");
         if (res.data && res.data.success && res.data.data) {
-          const dbLogo = res.data.data.brandLogoUrl;
+          const settings = res.data.data;
+
+          // Load brandLogoUrl
+          const dbLogo = settings.brandLogoUrl;
           if (dbLogo !== undefined) {
             setLogoUrl(dbLogo);
             if (dbLogo) {
@@ -75,12 +107,26 @@ const Dashboard = () => {
               localStorage.removeItem("brandLogoUrl");
             }
           }
+
+          // Load banner settings keys
+          if (settings.festiveAdActive !== undefined) {
+            setBannerActive(
+              settings.festiveAdActive === "true" ||
+                settings.festiveAdActive === true,
+            );
+          }
+          if (settings.festiveAdTitle) setBannerTitle(settings.festiveAdTitle);
+          if (settings.festiveAdSubtitle)
+            setBannerSubtitle(settings.festiveAdSubtitle);
+          if (settings.festiveAdCode) setBannerCode(settings.festiveAdCode);
+          if (settings.festiveAdLink) setBannerLink(settings.festiveAdLink);
+          if (settings.festiveAdTheme) setBannerTheme(settings.festiveAdTheme);
         }
       } catch (err) {
-        console.error("Failed to load logo from DB:", err);
+        console.error("Failed to load settings from DB:", err);
       }
     };
-    fetchLogoFromDB();
+    fetchSettingsFromDB();
   }, []);
 
   const handleLogoChange = (e) => {
@@ -359,7 +405,7 @@ const Dashboard = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 border-b border-borderLight mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-display font-medium text-textPrimary uppercase tracking-wider">
-            Priwesh Admin Portal
+            Pariwesh Admin Portal
           </h1>
           <p className="text-xs text-textSecondary mt-1">
             Management desk for sales tracking, catalog lists, and coupon
@@ -1241,7 +1287,7 @@ const Dashboard = () => {
                   </p>
                   <p className="text-gray-600">Jaipur, Rajasthan, 302039</p>
                   <p className="font-semibold text-gray-800 mt-1">
-                    Contact: warehouse@priwesh.com
+                    Contact: warehouse@pariwesh.com
                   </p>
                 </div>
                 <div>

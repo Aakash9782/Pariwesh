@@ -57,7 +57,7 @@ const Login = () => {
       const mockUser = {
         _id: isAdmin ? "usr_admin999" : "usr_abc123",
         name: isAdmin ? "Pariwesh Admin Desk" : "Priyanjali Sen",
-        email: isAdmin ? "admin@pariwesh.com" : "priyanjali.sen@priwesh.com",
+        email: isAdmin ? "admin@pariwesh.com" : "priyanjali.sen@pariwesh.com",
         phone: phoneNumber,
         role: isAdmin ? "admin" : "customer",
       };

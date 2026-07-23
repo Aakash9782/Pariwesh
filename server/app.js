@@ -67,7 +67,7 @@ app.use("/api/", apiLimiter);
 
 // 5. TEST/HEALTH ROUTE
 app.get("/api/v1/health", (req, res) => {
-  return sendSuccess(res, "PRIWESH API Server is healthy and running.", {
+  return sendSuccess(res, "PARIWESH API Server is healthy and running.", {
     status: "UP",
     uptime: process.uptime(),
     nodeEnv: process.env.NODE_ENV,

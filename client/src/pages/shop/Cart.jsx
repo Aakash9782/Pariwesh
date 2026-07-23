@@ -79,10 +79,10 @@ const Cart = () => {
       }
     } catch (err) {
       console.error("Coupon validation error:", err);
-      // Fallback for PRIWESHGOLD / LHRGOLD offline verification
+      // Fallback for PARIWESHGOLD / LHRGOLD offline verification
       const codeUpper = coupon.trim().toUpperCase();
       if (
-        codeUpper === "PRIWESHGOLD" ||
+        codeUpper === "PARIWESHGOLD" ||
         codeUpper === "LHRGOLD" ||
         codeUpper === "FESTIVE35"
       ) {
@@ -190,7 +190,7 @@ const Cart = () => {
           </p>
         )}
         <p className="text-sm text-textSecondary leading-relaxed">
-          Thank you for choosing PRIWESH. Your premium wardrobe ensemble has
+          Thank you for choosing PARIWESH. Your premium wardrobe ensemble has
           been been booked! We have sent a confirmation details invoice to your
           email interface.
         </p>
@@ -494,7 +494,7 @@ const Cart = () => {
               <div className="flex space-x-2">
                 <input
                   type="text"
-                  placeholder="Enter e.g. PRIWESHGOLD"
+                  placeholder="Enter e.g. PARIWESHGOLD"
                   value={coupon}
                   onChange={(e) => setCoupon(e.target.value)}
                   disabled={couponApplied}
@@ -511,7 +511,7 @@ const Cart = () => {
               {couponApplied && (
                 <p className="text-[10px] text-green-600 font-medium flex items-center space-x-1">
                   <span>
-                    ✔ Coupon PRIWESHGOLD applied! 15% discount registered.
+                    ✔ Coupon PARIWESHGOLD applied! 15% discount registered.
                   </span>
                 </p>
               )}

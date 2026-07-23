@@ -9,6 +9,7 @@ import {
 } from "react-icons/ri";
 import { motion } from "framer-motion";
 import { addToCart } from "../redux/slices/cartSlice.js";
+import API from "../services/api.js";
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -28,44 +29,87 @@ const Home = () => {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    // Load config from localStorage
-    const savedActive = localStorage.getItem("festiveAdActive") === "true";
-    const savedTitle =
-      localStorage.getItem("festiveAdTitle") || "Diwali Festive Dhamaka!";
-    const savedSubtitle =
-      localStorage.getItem("festiveAdSubtitle") ||
-      "Up to 50% Off on all hand-knit Zari premium anarkalis. Free delivery apply!";
-    const savedCode = localStorage.getItem("festiveAdCode") || "FESTIVE50";
-    const savedLink = localStorage.getItem("festiveAdLink") || "/shop";
-    const savedTheme = localStorage.getItem("festiveAdTheme") || "royal-gold";
+    const fetchPageData = async () => {
+      // 1. Fetch Banner Settings from Database
+      try {
+        const res = await API.get("/settings");
+        if (res.data && res.data.success && res.data.data) {
+          const settings = res.data.data;
+          setAdConfig({
+            active:
+              settings.festiveAdActive === "true" ||
+              settings.festiveAdActive === true,
+            title: settings.festiveAdTitle || "Diwali Festive Dhamaka!",
+            subtitle:
+              settings.festiveAdSubtitle ||
+              "Up to 50% Off on all hand-knit Zari premium anarkalis. Free delivery apply!",
+            code: settings.festiveAdCode || "FESTIVE50",
+            link: settings.festiveAdLink || "/shop",
+            theme: settings.festiveAdTheme || "royal-gold",
+          });
+        } else {
+          // Fallback to localStorage if any
+          const savedActive =
+            localStorage.getItem("festiveAdActive") === "true";
+          const savedTitle =
+            localStorage.getItem("festiveAdTitle") || "Diwali Festive Dhamaka!";
+          const savedSubtitle =
+            localStorage.getItem("festiveAdSubtitle") ||
+            "Up to 50% Off on all hand-knit Zari premium anarkalis. Free delivery apply!";
+          const savedCode =
+            localStorage.getItem("festiveAdCode") || "FESTIVE50";
+          const savedLink = localStorage.getItem("festiveAdLink") || "/shop";
+          const savedTheme =
+            localStorage.getItem("festiveAdTheme") || "royal-gold";
+          setAdConfig({
+            active: savedActive,
+            title: savedTitle,
+            subtitle: savedSubtitle,
+            code: savedCode,
+            link: savedLink,
+            theme: savedTheme,
+          });
+        }
+      } catch (err) {
+        console.error("Error loaded settings:", err);
+      }
 
-    setAdConfig({
-      active: savedActive,
-      title: savedTitle,
-      subtitle: savedSubtitle,
-      code: savedCode,
-      link: savedLink,
-      theme: savedTheme,
-    });
+      // 2. Fetch Catalog Products from Database
+      try {
+        const res = await API.get("/products");
+        if (
+          res.data &&
+          res.data.success &&
+          res.data.data &&
+          res.data.data.length > 0
+        ) {
+          // Format custom products from database
+          const dbProducts = res.data.data.map((p) => ({
+            _id: p._id,
+            name: p.name,
+            slug: p.slug || p.name.toLowerCase().replace(/\s+/g, "-"),
+            sku: p.sku,
+            category: p.category || "suits",
+            mrp: p.mrp || Math.round(p.price * 1.5),
+            sellingPrice: p.price,
+            images: p.images || [p.image] || [
+                "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop",
+              ],
+            video: p.video || "",
+            tag: p.tag || p.tags || "",
+          }));
+          setProducts(dbProducts);
+        } else {
+          // Fallback if database is empty but connected
+          setProducts(mockProducts);
+        }
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setProducts(mockProducts);
+      }
+    };
 
-    const custom = JSON.parse(localStorage.getItem("customProducts") || "[]");
-    if (custom.length > 0) {
-      const formattedCustom = custom.map((p) => ({
-        _id: p._id,
-        name: p.name,
-        slug: p.name.toLowerCase().replace(/\s+/g, "-"),
-        sku: p.sku,
-        category: "suits",
-        mrp: Math.round(p.price * 1.5),
-        sellingPrice: p.price,
-        images: [p.image],
-        video: p.video || "",
-        tag: p.tags,
-      }));
-      setProducts(formattedCustom);
-    } else {
-      setProducts(mockProducts);
-    }
+    fetchPageData();
   }, []);
 
   // 1. Flash Sale Countdown State
@@ -618,7 +662,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* SECTION 4: WHY CHOOSE PRIWESH */}
+      {/* SECTION 4: WHY CHOOSE PARIWESH */}
       <section className="bg-primary py-16 border-y border-borderLight">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">

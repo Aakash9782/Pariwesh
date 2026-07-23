@@ -73,6 +73,14 @@ const MainLayout = () => {
     }
   }, [darkMode]);
 
+  // Dynamically update the website favicon to match the custom brand logo
+  React.useEffect(() => {
+    const favicon = document.querySelector('link[rel="icon"]');
+    if (favicon) {
+      favicon.href = logoUrl || "/favicon.svg";
+    }
+  }, [logoUrl]);
+
   React.useEffect(() => {
     document.documentElement.setAttribute("data-accent", accentTheme);
     localStorage.setItem("accent", accentTheme);
@@ -116,7 +124,7 @@ const MainLayout = () => {
       {/* 1. STICKY ANNOUNCEMENT BAR */}
       <div className="w-full bg-secondary text-primary py-2 px-4 text-center text-xs font-display tracking-widest text-shadow uppercase transition-all duration-300">
         ✨ USE CODE{" "}
-        <span className="text-accent-gold font-bold">PRIWESHGOLD</span> TO GET
+        <span className="text-accent-gold font-bold">PARIWESHGOLD</span> TO GET
         15% OFF + FREE SHIPPING ON APPAREL ABOVE ₹1500 ✨
       </div>
 
@@ -151,13 +159,13 @@ const MainLayout = () => {
               {logoUrl ? (
                 <img
                   src={logoUrl}
-                  alt="PRIWESH Logo"
+                  alt="PARIWESH Logo"
                   className="h-10 md:h-12 w-auto object-contain max-w-[200px]"
                 />
               ) : (
                 <>
                   <span className="text-xl md:text-2xl font-display font-medium tracking-[0.2em] text-textPrimary uppercase">
-                    PRIWESH
+                    PARIWESH
                   </span>
                   <span className="text-accent-gold text-2xl font-extrabold -ml-1">
                     .
@@ -366,7 +374,7 @@ const MainLayout = () => {
           {/* Brand Column */}
           <div className="space-y-4">
             <h3 className="text-xl font-display font-medium tracking-[0.2em] text-primary uppercase">
-              PRIWESH<span className="text-accent-gold">.</span>
+              PARIWESH<span className="text-accent-gold">.</span>
             </h3>
             <p className="text-xs text-textSecondary leading-relaxed">
               Experience the pinnacle of luxurious women fashion. Elegant Ethnic
@@ -481,14 +489,14 @@ const MainLayout = () => {
 
         {/* Border line */}
         <div className="border-t border-gray-900 py-6 text-center text-[10px] text-textSecondary font-sans tracking-wide">
-          © {new Date().getFullYear()} PRIWESH Premium E-Commerce. All Rights
+          © {new Date().getFullYear()} PARIWESH Premium E-Commerce. All Rights
           Reserved. Designed with Love.
         </div>
       </footer>
 
       {/* FLOATING WHATSAPP BUTTON (Suitswala.in style) */}
       <a
-        href="https://wa.me/916367329132?text=Hello%20Priwesh%20Ensembles%20support!%20I'm%20interested%20in%20your%20products."
+        href="https://wa.me/916367329132?text=Hello%20Pariwesh%20Ensembles%20support!%20I'm%20interested%20in%20your%20products."
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20BA56] text-white p-3.5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer"

@@ -3,7 +3,7 @@ import { sendSuccess, sendError } from "../utils/responseFormatter.js";
 
 const SEED_COUPONS = [
   {
-    code: "PRIWESHGOLD",
+    code: "PARIWESHGOLD",
     discountType: "Percentage",
     value: 15,
     status: "Active",

@@ -69,7 +69,7 @@ const Profile = () => {
               {user?.name || "Priyanjali Sen"}
             </h2>
             <span className="text-[10px] text-textSecondary uppercase tracking-widest font-semibold">
-              Priwesh Premium Member
+              Pariwesh Premium Member
             </span>
           </div>
 
@@ -291,7 +291,7 @@ const Profile = () => {
                     Email Address
                   </span>
                   <span className="bg-bgLight text-textPrimary text-xs px-4 py-3 border border-borderLight rounded-sm">
-                    priyanjali.sen@priwesh.com
+                    priyanjali.sen@pariwesh.com
                   </span>
                 </div>
                 <div className="pt-4">

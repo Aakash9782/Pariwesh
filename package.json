@@ -1,7 +1,7 @@
 {
-  "name": "priwesh-monorepo",
+  "name": "pariwesh-monorepo",
   "version": "1.0.0",
-  "description": "PRIWESH - Premium E-Commerce Platform",
+  "description": "PARIWESH - Premium E-Commerce Platform",
   "private": true,
   "scripts": {
     "install-all": "npm install && cd client && npm install && cd ../server && npm install",
