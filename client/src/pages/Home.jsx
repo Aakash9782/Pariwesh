@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import {
   RiArrowRightLine,
   RiShoppingBagLine,
@@ -7,8 +8,11 @@ import {
   RiCheckboxCircleLine,
 } from "react-icons/ri";
 import { motion } from "framer-motion";
+import { addToCart } from "../redux/slices/cartSlice.js";
 
 const Home = () => {
+  const dispatch = useDispatch();
+
   // Festive Ad Campaign configuration state
   const [adConfig, setAdConfig] = useState({
     active: false,
@@ -97,6 +101,26 @@ const Home = () => {
 
     return () => clearInterval(timer);
   }, []);
+
+  const handleQuickAddToCart = (product, size) => {
+    dispatch(
+      addToCart({
+        product: {
+          _id: product._id,
+          name: product.name,
+          price: product.sellingPrice,
+          images: product.images,
+          sku: product.sku || "",
+        },
+        quantity: 1,
+        variant: {
+          size: size,
+          color: "Default",
+        },
+      }),
+    );
+    alert(`"${product.name}" (Size: ${size}) has been added to your cart!`);
+  };
 
   // 2. Demo Premium Products - Curated 8 items preview
   const mockProducts = [
@@ -336,6 +360,85 @@ const Home = () => {
         </div>
       </section>
 
+      {/* EXQUISITE CATEGORY SELECTION CIRCLES (Boutique Horizontal Navigation) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
+        <div className="flex flex-col space-y-4">
+          <div className="text-left space-y-1">
+            <span className="text-[10px] text-accent-gold tracking-[0.2em] uppercase font-bold">
+              Shop by Category
+            </span>
+            <h2 className="text-xl font-display font-medium uppercase tracking-wider text-textPrimary">
+              Boutique Curations
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-6 overflow-x-auto pb-4 scrollbar-none snap-x select-none">
+            {[
+              {
+                title: "Designer Suits",
+                desc: "Anarkalis & Shararas",
+                image:
+                  "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=250&auto=format&fit=crop",
+                path: "/shop?category=ethnic",
+              },
+              {
+                title: "Premium Kurtis",
+                desc: "Everyday Tunics",
+                image:
+                  "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=250&auto=format&fit=crop",
+                path: "/shop?category=kurtis",
+              },
+              {
+                title: "Co-Ord Sets",
+                desc: "Modern Ethnic",
+                image:
+                  "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=250&auto=format&fit=crop",
+                path: "/shop?category=suits",
+              },
+              {
+                title: "Best Sellers",
+                desc: "Top Trending",
+                image:
+                  "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=250&auto=format&fit=crop",
+                path: "/shop?tag=Best Seller",
+              },
+              {
+                title: "New Arrivals",
+                desc: "Fresh Designs",
+                image:
+                  "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=250&auto=format&fit=crop",
+                path: "/shop?tag=New Arrival",
+              },
+            ].map((cat, idx) => (
+              <Link
+                key={idx}
+                to={cat.path}
+                className="snap-start flex flex-col items-center space-y-3 group min-w-[100px] sm:min-w-[130px] text-center"
+              >
+                <div className="relative w-18 h-18 sm:w-24 sm:h-24 rounded-full p-[2px] transition-transform duration-300 group-hover:scale-105 border border-accent-gold/40 group-hover:border-accent-gold shadow-md">
+                  <div className="w-full h-full rounded-full overflow-hidden relative">
+                    <img
+                      src={cat.image}
+                      alt={cat.title}
+                      className="w-full h-full object-cover group-hover:scale-[1.12] transition-transform duration-500 ease-out"
+                    />
+                    <div className="absolute inset-0 bg-secondary/10 group-hover:bg-transparent transition-colors duration-300"></div>
+                  </div>
+                </div>
+                <div className="space-y-0.5">
+                  <h4 className="text-[11px] sm:text-xs font-semibold text-textPrimary uppercase tracking-wider group-hover:text-accent-gold transition-colors">
+                    {cat.title}
+                  </h4>
+                  <span className="text-[9px] text-textSecondary hidden sm:block">
+                    {cat.desc}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* SECTION 2: FLASH SALE FEATURE WITH COUNTDOWN TIMER */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-primary/50 backdrop-blur-md border border-borderLight rounded-sm shadow-xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 text-left">
@@ -458,11 +561,25 @@ const Home = () => {
                 </svg>
 
                 {/* Add to cart hover overlay */}
-                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
-                  <span className="bg-primary hover:bg-secondary text-secondary hover:text-white px-4 py-2.5 rounded-full flex items-center space-x-2 text-[10px] uppercase font-bold tracking-wide shadow-md transition-all duration-300 hover:-translate-y-1">
-                    <RiShoppingBagLine size={14} />
-                    <span>Quick Add</span>
+                <div className="absolute inset-0 bg-secondary/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4 space-y-2 z-20 backdrop-blur-[2px]">
+                  <span className="text-white text-[9px] uppercase tracking-widest font-bold text-center block">
+                    Quick Buy Size
                   </span>
+                  <div className="flex justify-center gap-1">
+                    {["S", "M", "L", "XL"].map((size) => (
+                      <button
+                        key={size}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleQuickAddToCart(product, size);
+                        }}
+                        className="w-8 h-8 rounded-full bg-primary/90 text-textPrimary hover:bg-accent-gold hover:text-secondary text-[10px] font-bold shadow-sm transition-all duration-200"
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </Link>
 

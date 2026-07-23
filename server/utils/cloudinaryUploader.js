@@ -18,6 +18,23 @@ export const uploadBase64Image = async (
       return base64Str;
     }
 
+    // Check for missing or dummy credentials
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+    if (
+      !cloudName ||
+      !apiKey ||
+      !apiSecret ||
+      apiKey.includes("dummy") ||
+      apiSecret.includes("dummy")
+    ) {
+      console.warn(
+        "⚠️ Cloudinary credentials not configured or dummy. Storing image as base64 in database.",
+      );
+      return base64Str;
+    }
+
     const uploadResponse = await cloudinary.uploader.upload(base64Str, {
       folder: folder,
       resource_type: "image",
@@ -26,7 +43,8 @@ export const uploadBase64Image = async (
     return uploadResponse.secure_url;
   } catch (error) {
     console.error("Cloudinary Image upload error:", error);
-    throw new Error("Failed to upload image asset to Cloudinary");
+    console.warn("⚠️ Falling back to database storage of base64 image data.");
+    return base64Str;
   }
 };
 
@@ -48,6 +66,23 @@ export const uploadBase64Video = async (
       return base64Str;
     }
 
+    // Check for missing or dummy credentials
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+    if (
+      !cloudName ||
+      !apiKey ||
+      !apiSecret ||
+      apiKey.includes("dummy") ||
+      apiSecret.includes("dummy")
+    ) {
+      console.warn(
+        "⚠️ Cloudinary credentials not configured or dummy. Storing video as base64 in database.",
+      );
+      return base64Str;
+    }
+
     const uploadResponse = await cloudinary.uploader.upload(base64Str, {
       folder: folder,
       resource_type: "video",
@@ -56,6 +91,7 @@ export const uploadBase64Video = async (
     return uploadResponse.secure_url;
   } catch (error) {
     console.error("Cloudinary Video upload error:", error);
-    throw new Error("Failed to upload video asset to Cloudinary");
+    console.warn("⚠️ Falling back to database storage of base64 video data.");
+    return base64Str;
   }
 };
