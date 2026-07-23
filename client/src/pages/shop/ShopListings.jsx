@@ -769,7 +769,7 @@ const ShopListings = () => {
                     </div>
 
                     <div className="pt-0.5">
-                      <span className="bg-danger text-white text-[9px] uppercase tracking-wider px-2.5 py-0.5 rounded-sm font-bold inline-block shadow-sm">
+                      <span className="bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-900/30 text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-sm font-bold inline-block">
                         {Math.round(
                           ((product.mrp - product.price) / product.mrp) * 100,
                         )}

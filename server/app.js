@@ -8,6 +8,8 @@ import errorHandlerMiddleware from "./middleware/error.js";
 import { sendSuccess } from "./utils/responseFormatter.js";
 import ErrorResponse from "./utils/errorHandler.js";
 
+import settingRouter from "./routes/settingRoutes.js";
+
 const app = express();
 
 // 1. SECURITY MIDDLEWARES
@@ -57,7 +59,8 @@ app.get("/api/v1/health", (req, res) => {
   });
 });
 
-// 6. ROUTE REGISTRATIONS (PLACEHOLDERS)
+// 6. ROUTE REGISTRATIONS
+app.use("/api/v1/settings", settingRouter);
 // app.use('/api/v1/auth', authRouter);
 // app.use('/api/v1/products', productRouter);
 // app.use('/api/v1/orders', orderRouter);

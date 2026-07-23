@@ -68,8 +68,15 @@ const Login = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 py-20 animate-fade-in">
-      <div className="bg-primary border border-borderLight p-8 rounded-sm shadow-xl space-y-8">
+    <div className="relative min-h-[75vh] flex items-center justify-center px-4 py-16 overflow-hidden">
+      {/* Background radial spotlight blurs */}
+      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-accent-gold/10 dark:bg-accent-gold/5 rounded-full blur-3xl pointer-events-none transform -translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent-gold/5 dark:bg-primary/5 rounded-full blur-3xl pointer-events-none transform translate-x-1/2 translate-y-1/2"></div>
+
+      <div className="relative w-full max-w-md bg-primary border border-borderLight p-8 md:p-10 rounded-sm shadow-xl premium-card-shadow space-y-8 z-10 transition-all duration-300 hover:border-accent-gold/40">
+        {/* Decorative top stripe */}
+        <div className="absolute top-0 left-0 w-full h-[4px] bg-accent-gold"></div>
+
         {/* Title area */}
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-display font-bold uppercase tracking-widest text-textPrimary">

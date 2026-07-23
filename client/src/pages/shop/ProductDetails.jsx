@@ -209,16 +209,16 @@ const ProductDetails = () => {
           </div>
 
           {/* PRICING GRID */}
-          <div className="flex items-baseline space-x-4 border-y border-borderLight py-4">
+          <div className="flex items-center space-x-4 border-y border-borderLight py-4">
             <span className="text-2xl font-bold text-textPrimary">
               ₹{product.price}
             </span>
             <span className="text-sm text-textSecondary line-through font-medium">
-              mrp ₹{product.mrp}
+              MRP ₹{product.mrp}
             </span>
-            <span className="text-danger font-bold text-xs">
-              ({Math.round(((product.mrp - product.price) / product.mrp) * 100)}
-              % OFF)
+            <span className="bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-900/30 text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded-sm font-bold inline-block">
+              {Math.round(((product.mrp - product.price) / product.mrp) * 100)}%
+              OFF
             </span>
           </div>
 

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   RiShoppingBagLine,
   RiHeartLine,
@@ -14,6 +15,7 @@ import {
   RiWhatsappLine,
 } from "react-icons/ri";
 import { logoutSuccess } from "../redux/slices/authSlice.js";
+import API from "../services/api.js";
 
 const MainLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -34,6 +36,26 @@ const MainLayout = () => {
   );
 
   React.useEffect(() => {
+    const fetchLogoFromDB = async () => {
+      try {
+        const res = await API.get("/settings");
+        if (res.data && res.data.success && res.data.data) {
+          const dbLogo = res.data.data.brandLogoUrl;
+          if (dbLogo !== undefined) {
+            setLogoUrl(dbLogo);
+            if (dbLogo) {
+              localStorage.setItem("brandLogoUrl", dbLogo);
+            } else {
+              localStorage.removeItem("brandLogoUrl");
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load brand logo from DB:", err);
+      }
+    };
+    fetchLogoFromDB();
+
     const handleUpdate = () => {
       setLogoUrl(localStorage.getItem("brandLogoUrl") || "");
     };
@@ -134,10 +156,10 @@ const MainLayout = () => {
                 />
               ) : (
                 <>
-                  <span className="text-2xl md:text-3xl font-display font-bold tracking-widest text-[#B91C1C] italic">
+                  <span className="text-xl md:text-2xl font-display font-medium tracking-[0.2em] text-textPrimary uppercase">
                     PRIWESH
                   </span>
-                  <span className="text-accent-gold text-2xl md:text-3xl font-bold">
+                  <span className="text-accent-gold text-2xl font-extrabold -ml-1">
                     .
                   </span>
                 </>
@@ -218,6 +240,16 @@ const MainLayout = () => {
                       color: "bg-[#1E3A8A]",
                     },
                     { key: "rose", name: "Velvet Rose", color: "bg-[#DB2777]" },
+                    {
+                      key: "amethyst",
+                      name: "Midnight Amethyst",
+                      color: "bg-[#8A2BE2]",
+                    },
+                    {
+                      key: "teal",
+                      name: "Ocean Teal",
+                      color: "bg-[#008080]",
+                    },
                   ].map((x) => (
                     <button
                       key={x.key}
@@ -284,13 +316,13 @@ const MainLayout = () => {
         </div>
 
         {/* Tier 2: Horizontal Navigation bar (Desktop only) */}
-        <div className="hidden md:block border-t border-borderLight py-3 bg-primary">
+        <div className="hidden md:block border-t border-borderLight py-3.5 bg-primary/95 backdrop-blur-md">
           <nav className="max-w-7xl mx-auto px-4 flex items-center justify-center space-x-8">
             {navLinks.map((link, idx) => (
               <Link
                 key={idx}
                 to={link.path}
-                className="text-[10px] sm:text-[11px] font-bold text-textPrimary hover:text-[#B91C1C] tracking-widest uppercase transition-colors relative after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1.5px] after:bg-[#B91C1C] hover:after:w-full after:transition-all after:duration-300"
+                className="text-[10px] sm:text-[11px] font-semibold text-textPrimary hover:text-accent-gold tracking-[0.18em] uppercase transition-colors duration-300 relative after:content-[''] after:absolute after:-bottom-1.5 after:left-0 after:w-0 after:h-[1.5px] after:bg-accent-gold hover:after:w-full after:transition-all after:duration-300"
               >
                 {link.title}
               </Link>
@@ -300,20 +332,28 @@ const MainLayout = () => {
       </header>
 
       {/* 3. MOBILE MENU BAR */}
-      {mobileMenuOpen && (
-        <div className="md:hidden luxury-glass border-b border-gray-100 py-4 px-6 space-y-4">
-          {navLinks.map((link, idx) => (
-            <Link
-              key={idx}
-              to={link.path}
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-base font-medium text-textPrimary hover:text-accent-gold transition-colors"
-            >
-              {link.title}
-            </Link>
-          ))}
-        </div>
-      )}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="md:hidden luxury-glass border-b border-borderLight py-4 px-6 space-y-3 overflow-hidden text-left"
+          >
+            {navLinks.map((link, idx) => (
+              <Link
+                key={idx}
+                to={link.path}
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-[12px] font-semibold text-textPrimary hover:text-accent-gold transition-colors tracking-widest uppercase"
+              >
+                {link.title}
+              </Link>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 4. MAIN PAGE DISPLAY OUTLET */}
       <main className="flex-grow">
@@ -325,7 +365,7 @@ const MainLayout = () => {
         <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Column */}
           <div className="space-y-4">
-            <h3 className="text-2xl font-display font-bold tracking-widest text-[#B91C1C]">
+            <h3 className="text-xl font-display font-medium tracking-[0.2em] text-primary uppercase">
               PRIWESH<span className="text-accent-gold">.</span>
             </h3>
             <p className="text-xs text-textSecondary leading-relaxed">

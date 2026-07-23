@@ -10,6 +10,7 @@ import {
 } from "react-icons/ri";
 import Button from "../../components/common/Button.jsx";
 import Input from "../../components/form/Input.jsx";
+import API from "../../services/api.js";
 
 const Dashboard = () => {
   const [activeSegment, setActiveSegment] = useState("overview"); // overview, products, coupons
@@ -51,6 +52,28 @@ const Dashboard = () => {
     localStorage.getItem("brandLogoUrl") || "",
   );
 
+  useEffect(() => {
+    const fetchLogoFromDB = async () => {
+      try {
+        const res = await API.get("/settings");
+        if (res.data && res.data.success && res.data.data) {
+          const dbLogo = res.data.data.brandLogoUrl;
+          if (dbLogo !== undefined) {
+            setLogoUrl(dbLogo);
+            if (dbLogo) {
+              localStorage.setItem("brandLogoUrl", dbLogo);
+            } else {
+              localStorage.removeItem("brandLogoUrl");
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load logo from DB:", err);
+      }
+    };
+    fetchLogoFromDB();
+  }, []);
+
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -59,9 +82,20 @@ const Dashboard = () => {
         return;
       }
       const reader = new FileReader();
-      reader.onload = () => {
-        setLogoUrl(reader.result);
-        localStorage.setItem("brandLogoUrl", reader.result);
+      reader.onload = async () => {
+        const base64Logo = reader.result;
+        setLogoUrl(base64Logo);
+        localStorage.setItem("brandLogoUrl", base64Logo);
+
+        try {
+          await API.post("/settings", {
+            key: "brandLogoUrl",
+            value: base64Logo,
+          });
+        } catch (err) {
+          console.error("Error saving brand logo to database:", err);
+        }
+
         alert("Brand Logo updated successfully!");
         window.dispatchEvent(new Event("logo-updated"));
       };
@@ -69,9 +103,14 @@ const Dashboard = () => {
     }
   };
 
-  const handleResetLogo = () => {
+  const handleResetLogo = async () => {
     setLogoUrl("");
     localStorage.removeItem("brandLogoUrl");
+    try {
+      await API.post("/settings", { key: "brandLogoUrl", value: "" });
+    } catch (err) {
+      console.error("Error resetting brand logo in database:", err);
+    }
     alert("Logo reset to default Text Brand Name.");
     window.dispatchEvent(new Event("logo-updated"));
   };

@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;450;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -16,62 +18,92 @@
 
   --glass-bg: rgba(255, 255, 255, 0.75);
   --glass-border: rgba(24, 24, 27, 0.08);
+  --shadow-premium:
+    0 10px 30px -10px rgba(197, 168, 128, 0.15), 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 /* Dark mode basic style overrides - Premium Zinc-Carbon palette */
 .dark {
-  --primary: #18181b; /* Zinc 900 for containers */
+  --primary: #1c1c1e; /* Zinc 900 for containers */
   --secondary: #ffffff;
-  --bg-light: #09090b; /* Zinc 950 for base layouts */
-  --text-primary: #fafafa;
+  --bg-light: #0d0d0f; /* Zinc 950 for base layouts */
+  --text-primary: #f4f4f5;
   --text-secondary: #a1a1aa;
-  --border-light: #27272a; /* Zinc 800 for dividers */
+  --border-light: #2c2c2f; /* Zinc 800 for dividers */
 
   --accent-gold: #e2c092; /* Lighter Champagne Gold for Dark Mode contrast */
   --accent-gold-hover: #f2d2a5;
-  --accent-contrast: #18181b;
+  --accent-contrast: #1c1c1e;
 
-  --glass-bg: rgba(24, 24, 27, 0.75);
+  --glass-bg: rgba(20, 20, 22, 0.85);
   --glass-border: rgba(255, 255, 255, 0.08);
+  --shadow-premium:
+    0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(255, 255, 255, 0.02);
 }
 
 /* Emerald Accents overrides */
 [data-accent="emerald"] {
-  --accent-gold: #14532d; /* Deep Forest Emerald */
-  --accent-gold-hover: #166534;
+  --accent-gold: #0f5132; /* Deep Forest Emerald */
+  --accent-gold-hover: #146c43;
   --accent-contrast: #ffffff;
 }
 [data-accent="emerald"].dark,
 .dark [data-accent="emerald"] {
   --accent-gold: #34d399; /* Vibrant Emerald Mint */
   --accent-gold-hover: #6ee7b7;
-  --accent-contrast: #064e3b; /* Deep Pine text for readable contrast */
+  --accent-contrast: #032b18; /* Deep Pine text for readable contrast */
 }
 
 /* Sapphire Accents overrides */
 [data-accent="sapphire"] {
-  --accent-gold: #1e3a8a; /* Royal Blue */
-  --accent-gold-hover: #1e40af;
+  --accent-gold: #1d3557; /* Rich dark navy sapphire */
+  --accent-gold-hover: #457b9d;
   --accent-contrast: #ffffff;
 }
 [data-accent="sapphire"].dark,
 .dark [data-accent="sapphire"] {
   --accent-gold: #60a5fa; /* Soft Light Blue */
   --accent-gold-hover: #93c5fd;
-  --accent-contrast: #1e3a8a; /* Royal Blue text for contrast */
+  --accent-contrast: #0b2240; /* Royal Blue text for contrast */
 }
 
 /* Rose Accents overrides */
 [data-accent="rose"] {
-  --accent-gold: #9d174d; /* Deep Crimson Rose */
-  --accent-gold-hover: #ad1f58;
+  --accent-gold: #880e4f; /* Deep Crimson Rose */
+  --accent-gold-hover: #ad1457;
   --accent-contrast: #ffffff;
 }
 [data-accent="rose"].dark,
 .dark [data-accent="rose"] {
   --accent-gold: #f472b6; /* Vibrant Rose Pink */
   --accent-gold-hover: #f9a8d4;
-  --accent-contrast: #701a75; /* Wine Purple text for contrast */
+  --accent-contrast: #4a0e2e; /* Wine Purple text for contrast */
+}
+
+/* Amethyst Accents overrides */
+[data-accent="amethyst"] {
+  --accent-gold: #581845; /* Deep Tyrian Purple */
+  --accent-gold-hover: #7b241c;
+  --accent-contrast: #ffffff;
+}
+[data-accent="amethyst"].dark,
+.dark [data-accent="amethyst"] {
+  --accent-gold: #c39bd3; /* Soft Amethyst Lavender */
+  --accent-gold-hover: #d2b4de;
+  --accent-contrast: #20042d;
+}
+
+/* Teal Accents overrides */
+[data-accent="teal"] {
+  --accent-gold: #005f73; /* Rich Deep Teal */
+  --accent-gold-hover: #0a9396;
+  --accent-contrast: #ffffff;
+}
+[data-accent="teal"].dark,
+.dark [data-accent="teal"] {
+  --accent-gold: #94d2bd; /* Mint Ocean Teal */
+  --accent-gold-hover: #e9d8a6;
+  --accent-contrast: #002d2e;
 }
 
 @layer base {
@@ -92,9 +124,13 @@
 /* Custom premium styles */
 .luxury-glass {
   background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--glass-border);
+}
+
+.premium-card-shadow {
+  box-shadow: var(--shadow-premium);
 }
 
 .gold-gradient {
@@ -111,13 +147,77 @@
   background: linear-gradient(
     135deg,
     #c5a880 0%,
-    #f2ebd4 30%,
+    #f4dfc4 30%,
     #a88f65 75%,
     #8d7853 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* Modern animations */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(197, 168, 128, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(197, 168, 128, 0.6);
+  }
+}
+
+@keyframes text-shine {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: pulse-glow 3s infinite;
+}
+
+.animate-text-shine {
+  background-size: 200% auto;
+  animation: text-shine 4s linear infinite;
+}
+
+/* Custom Premium Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent-gold);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-gold-hover);
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

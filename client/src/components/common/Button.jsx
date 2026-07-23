@@ -12,7 +12,7 @@ const Button = ({
   ...props
 }) => {
   const baseStyle =
-    "inline-flex items-center justify-center font-display font-semibold uppercase tracking-widest transition-all duration-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-accent-gold disabled:opacity-50 disabled:cursor-not-allowed";
+    "inline-flex items-center justify-center font-display font-semibold uppercase tracking-widest transition-all duration-200 active:scale-[0.97] rounded-sm focus:outline-none focus:ring-1 focus:ring-accent-gold disabled:opacity-50 disabled:cursor-not-allowed";
 
   const variants = {
     primary:

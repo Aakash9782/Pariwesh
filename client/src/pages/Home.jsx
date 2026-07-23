@@ -276,16 +276,26 @@ const Home = () => {
 
       {/* SECTION 1: HERO SPOTLIGHT SLIDER (Vibrant premium hero layout) */}
       <section className="relative h-[80vh] overflow-hidden bg-secondary w-full">
-        {/* Decorative backdrop */}
-        <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=1200&auto=format&fit=crop')] bg-cover bg-center"></div>
+        {/* Decorative backdrop with slow-zoom animation */}
+        <motion.div
+          initial={{ scale: 1 }}
+          animate={{ scale: 1.05 }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            repeatType: "reverse",
+            ease: "easeInOut",
+          }}
+          className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=1200&auto=format&fit=crop')] bg-cover bg-center"
+        ></motion.div>
         <div className="absolute inset-0 bg-gradient-to-r from-secondary to-transparent z-1"></div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center items-start text-primary z-10 space-y-6">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center items-start text-primary z-10 space-y-6 text-left">
           <motion.span
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-xs uppercase tracking-widest text-accent-gold font-bold"
+            className="text-xs uppercase tracking-[0.25em] text-accent-gold font-bold"
           >
             Spring / Summer 2026 Collection
           </motion.span>
@@ -293,10 +303,10 @@ const Home = () => {
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-5xl md:text-7xl font-display font-medium tracking-tight leading-tight max-w-2xl"
+            className="text-5xl md:text-7xl font-display font-medium tracking-tight leading-[1.1] max-w-2xl"
           >
             The Radiance of{" "}
-            <span className="gold-text-gradient block mt-1">
+            <span className="gold-text-gradient block mt-2 animate-text-shine bg-clip-text text-transparent">
               Indian Heritage
             </span>
           </motion.h1>
@@ -328,12 +338,12 @@ const Home = () => {
 
       {/* SECTION 2: FLASH SALE FEATURE WITH COUNTDOWN TIMER */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-primary border border-borderLight rounded-sm shadow-xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="bg-primary/50 backdrop-blur-md border border-borderLight rounded-sm shadow-xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 text-left">
           <div className="space-y-3">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-danger bg-danger/10 px-3 py-1 rounded-full">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-red-650 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/25">
               Limited Sale Event
             </span>
-            <h2 className="text-3xl font-display font-bold text-textPrimary">
+            <h2 className="text-3xl font-display font-semibold tracking-tight text-textPrimary">
               Hurry! Offer Closes Soon
             </h2>
             <p className="text-xs text-textSecondary max-w-sm leading-relaxed">
@@ -343,30 +353,37 @@ const Home = () => {
           </div>
 
           {/* Countdown Clock Layout */}
-          <div className="flex space-x-4">
+          <div className="flex items-center space-x-4">
             <div className="flex flex-col items-center">
-              <div className="w-16 h-16 bg-secondary text-primary font-display font-semibold text-2xl flex items-center justify-center rounded shadow-inner">
+              <div className="w-16 h-16 bg-primary border border-borderLight text-textPrimary font-display font-semibold text-2xl flex items-center justify-center rounded-sm shadow-md premium-card-shadow relative overflow-hidden group hover:border-accent-gold transition-colors duration-300">
+                <div className="absolute top-0 left-0 w-full h-[3px] bg-accent-gold"></div>
                 {String(timeLeft.hours).padStart(2, "0")}
               </div>
-              <span className="text-[9px] uppercase tracking-widest mt-2 font-semibold text-textSecondary">
+              <span className="text-[9px] uppercase tracking-widest mt-2 font-bold text-textSecondary">
                 Hours
               </span>
             </div>
-            <div className="text-2xl font-bold pt-4">:</div>
+
+            <div className="h-8 w-[1px] bg-borderLight self-center"></div>
+
             <div className="flex flex-col items-center">
-              <div className="w-16 h-16 bg-secondary text-primary font-display font-semibold text-2xl flex items-center justify-center rounded shadow-inner">
+              <div className="w-16 h-16 bg-primary border border-borderLight text-textPrimary font-display font-semibold text-2xl flex items-center justify-center rounded-sm shadow-md premium-card-shadow relative overflow-hidden group hover:border-accent-gold transition-colors duration-300">
+                <div className="absolute top-0 left-0 w-full h-[3px] bg-accent-gold"></div>
                 {String(timeLeft.minutes).padStart(2, "0")}
               </div>
-              <span className="text-[9px] uppercase tracking-widest mt-2 font-semibold text-textSecondary">
+              <span className="text-[9px] uppercase tracking-widest mt-2 font-bold text-textSecondary">
                 Mins
               </span>
             </div>
-            <div className="text-2xl font-bold pt-4">:</div>
+
+            <div className="h-8 w-[1px] bg-borderLight self-center"></div>
+
             <div className="flex flex-col items-center">
-              <div className="w-16 h-16 bg-secondary text-accent-gold font-display font-semibold text-2xl flex items-center justify-center rounded shadow-inner">
+              <div className="w-16 h-16 bg-primary border border-accent-gold text-accent-gold font-display font-semibold text-2xl flex items-center justify-center rounded-sm shadow-md premium-card-shadow relative overflow-hidden group hover:border-accent-gold transition-colors duration-300">
+                <div className="absolute top-0 left-0 w-full h-[3px] bg-accent-gold"></div>
                 {String(timeLeft.seconds).padStart(2, "0")}
               </div>
-              <span className="text-[9px] uppercase tracking-widest mt-2 font-semibold text-textSecondary">
+              <span className="text-[9px] uppercase tracking-widest mt-2 font-bold text-accent-gold animate-pulse">
                 Secs
               </span>
             </div>
@@ -470,7 +487,7 @@ const Home = () => {
                 </div>
 
                 <div className="pt-0.5">
-                  <span className="bg-danger text-white text-[9px] uppercase tracking-wider px-2.5 py-0.5 rounded-sm font-bold inline-block shadow-sm">
+                  <span className="bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-900/30 text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-sm font-bold inline-block">
                     {Math.round(
                       ((product.mrp - product.sellingPrice) / product.mrp) *
                         100,
