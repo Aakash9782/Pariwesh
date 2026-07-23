@@ -12,6 +12,7 @@ import {
 import Button from "../../components/common/Button.jsx";
 import { addToCart } from "../../redux/slices/cartSlice.js";
 import { toggleWishlistProduct } from "../../redux/slices/wishlistSlice.js";
+import API from "../../services/api.js";
 
 // Reusable mock database matching ShopListings
 const PRODUCT_CATALOG = [
@@ -100,14 +101,32 @@ const ProductDetails = () => {
   const [addedPopup, setAddedPopup] = useState(false);
 
   useEffect(() => {
-    // Lookup product metadata by matching parameters slug
-    const foundProduct =
-      PRODUCT_CATALOG.find((p) => p.slug === slug) || PRODUCT_CATALOG[0];
-    setProduct(foundProduct);
-    if (foundProduct) {
-      setActiveImage(foundProduct.images[0]);
-      setSelectedSize(foundProduct.sizes[0]);
-    }
+    const fetchProductDetails = async () => {
+      try {
+        const res = await API.get(`/products/${slug}`);
+        if (res.data && res.data.success) {
+          const data = res.data.data;
+          setProduct(data);
+          setActiveImage(data.images?.[0] || "");
+          setSelectedSize(data.sizes?.[0] || "M");
+        } else {
+          throw new Error("No data found");
+        }
+      } catch (err) {
+        console.error(
+          "Failed fetching database details, falling back to mock catalog:",
+          err,
+        );
+        const foundProduct =
+          PRODUCT_CATALOG.find((p) => p.slug === slug) || PRODUCT_CATALOG[0];
+        setProduct(foundProduct);
+        if (foundProduct) {
+          setActiveImage(foundProduct.images[0]);
+          setSelectedSize(foundProduct.sizes[0]);
+        }
+      }
+    };
+    fetchProductDetails();
   }, [slug]);
 
   if (!product) {

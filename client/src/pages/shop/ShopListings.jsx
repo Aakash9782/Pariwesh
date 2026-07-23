@@ -9,6 +9,7 @@ import {
 } from "react-icons/ri";
 import Button from "../../components/common/Button.jsx";
 import { ProductSkeleton } from "../../components/common/Skeleton.jsx";
+import API from "../../services/api.js";
 
 // Comprehensive mock database for ethnic/women clothing - 24 high-end items
 const MOCK_CATALOG = [
@@ -463,29 +464,24 @@ const ShopListings = () => {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    const custom = JSON.parse(localStorage.getItem("customProducts") || "[]");
-    if (custom.length > 0) {
-      const formattedCustom = custom.map((p) => ({
-        _id: p._id,
-        name: p.name,
-        slug: p.name.toLowerCase().replace(/\s+/g, "-"),
-        sku: p.sku,
-        category: "suits",
-        fabric: "Chanderi Silk",
-        color: "Gold",
-        colorHex: "#D4AF37",
-        sizes: ["S", "M", "L"],
-        mrp: Math.round(p.price * 1.5),
-        price: p.price,
-        images: [p.image],
-        video: p.video || "",
-        tag: p.tags,
-        rating: 4.8,
-      }));
-      setProducts([...formattedCustom, ...MOCK_CATALOG]);
-    } else {
-      setProducts(MOCK_CATALOG);
-    }
+    const fetchProducts = async () => {
+      try {
+        setIsLoading(true);
+        const res = await API.get("/products");
+        if (res.data && res.data.success) {
+          setProducts(res.data.data);
+        }
+      } catch (err) {
+        console.error(
+          "Failed fetching database products, falling back to mock catalog:",
+          err,
+        );
+        setProducts(MOCK_CATALOG);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProducts();
   }, []);
 
   // Keep track of search strings

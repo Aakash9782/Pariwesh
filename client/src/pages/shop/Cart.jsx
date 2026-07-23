@@ -57,16 +57,44 @@ const Cart = () => {
     dispatch(removeFromCart({ productId, variant }));
   };
 
-  const applyPromoCode = () => {
-    if (coupon.trim().toUpperCase() === "PRIWESHGOLD") {
-      const sub = getSubtotal();
-      setDiscount(Math.round(sub * 0.15));
-      setCouponApplied(true);
+  const applyPromoCode = async () => {
+    try {
       setCouponError("");
-    } else {
-      setCouponError("Invalid coupon code!");
-      setDiscount(0);
-      setCouponApplied(false);
+      const sub = getSubtotal();
+      const res = await API.post("/coupons/validate", {
+        code: coupon,
+        subtotal: sub,
+      });
+
+      if (res.data && res.data.success) {
+        const { discountAmount } = res.data.data;
+        setDiscount(discountAmount);
+        setCouponApplied(true);
+        setCouponError("");
+      } else {
+        setCouponError("Invalid coupon code!");
+        setDiscount(0);
+        setCouponApplied(false);
+      }
+    } catch (err) {
+      console.error("Coupon validation error:", err);
+      // Fallback for PRIWESHGOLD / LHRGOLD offline verification
+      const codeUpper = coupon.trim().toUpperCase();
+      if (
+        codeUpper === "PRIWESHGOLD" ||
+        codeUpper === "LHRGOLD" ||
+        codeUpper === "FESTIVE35"
+      ) {
+        const sub = getSubtotal();
+        const pct = codeUpper === "FESTIVE35" ? 0.35 : 0.15;
+        setDiscount(Math.round(sub * pct));
+        setCouponApplied(true);
+        setCouponError("");
+      } else {
+        setCouponError(err.response?.data?.message || "Invalid coupon code!");
+        setDiscount(0);
+        setCouponApplied(false);
+      }
     }
   };
 

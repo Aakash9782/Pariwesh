@@ -153,73 +153,42 @@ const Dashboard = () => {
     }
   };
 
+  const fetchProductsList = async () => {
+    try {
+      const res = await API.get("/products");
+      if (res.data && res.data.success) {
+        setProductsList(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to load products:", err);
+    }
+  };
+
+  const fetchCouponsList = async () => {
+    try {
+      const res = await API.get("/coupons");
+      if (res.data && res.data.success) {
+        setCouponsList(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to load coupons:", err);
+    }
+  };
+
   useEffect(() => {
     if (activeSegment === "orders") {
       fetchOrders();
+    } else if (activeSegment === "products") {
+      fetchProductsList();
+    } else if (activeSegment === "coupons") {
+      fetchCouponsList();
     }
   }, [activeSegment]);
 
   // Catalogs state
-  const [productsList, setProductsList] = useState(() => {
-    const saved = localStorage.getItem("customProducts");
-    if (saved) return JSON.parse(saved);
-    return [
-      {
-        _id: "1",
-        name: "Elysian Gold Chanderi Suit",
-        sku: "LHR-CH-001",
-        price: 2499,
-        tags: "Best Seller",
-        stock: 45,
-        image:
-          "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop",
-        video: "",
-      },
-      {
-        _id: "2",
-        name: "Scarlet Floral Rayon Kurti",
-        sku: "LHR-RY-002",
-        price: 1199,
-        tags: "New",
-        stock: 80,
-        image:
-          "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=600&auto=format&fit=crop",
-        video: "",
-      },
-      {
-        _id: "3",
-        name: "Ivory Zari Premium Anarkali Set",
-        sku: "LHR-AK-003",
-        price: 3999,
-        tags: "Exclusive",
-        stock: 25,
-        image:
-          "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop",
-        video: "",
-      },
-    ];
-  });
+  const [productsList, setProductsList] = useState([]);
 
-  useEffect(() => {
-    localStorage.setItem("customProducts", JSON.stringify(productsList));
-  }, [productsList]);
-
-  const [couponsList, setCouponsList] = useState([
-    {
-      code: "PRIWESHGOLD",
-      discountType: "Percentage",
-      value: "15%",
-      status: "Active",
-      ordersUsed: 142,
-    },
-    {
-      code: "SUMMERSET",
-      discountType: "Flat",
-      value: "₹300",
-      status: "Scheduled",
-      ordersUsed: 0,
-    },
-  ]);
+  const [couponsList, setCouponsList] = useState([]);
 
   // Form states to add product
   const [newProduct, setNewProduct] = useState({
@@ -239,7 +208,11 @@ const Dashboard = () => {
     const file = e.target.files[0];
     if (file) {
       setProductImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -260,7 +233,11 @@ const Dashboard = () => {
           setVideoPreview("");
         } else {
           setProductVideoFile(file);
-          setVideoPreview(URL.createObjectURL(file));
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setVideoPreview(reader.result);
+          };
+          reader.readAsDataURL(file);
         }
       };
     }
@@ -273,58 +250,95 @@ const Dashboard = () => {
     discountType: "Percentage",
   });
 
-  const handleAddProduct = (e) => {
+  const handleAddProduct = async (e) => {
     e.preventDefault();
     if (!newProduct.name || !newProduct.sku || !newProduct.price) {
       alert("Please fill out Name, SKU and selling price.");
       return;
     }
-    const product = {
-      _id: String(Date.now()),
-      name: newProduct.name,
-      sku: newProduct.sku,
-      price: Number(newProduct.price),
-      stock: Number(newProduct.stock || 10),
-      tags: newProduct.tags || "Regular",
-      image:
-        imagePreview ||
-        "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop",
-      video: videoPreview || "",
-    };
-    setProductsList((prev) => [product, ...prev]);
-    setNewProduct({ name: "", sku: "", price: "", stock: "", tags: "" });
-    setProductImageFile(null);
-    setProductVideoFile(null);
-    setImagePreview("");
-    setVideoPreview("");
+    try {
+      const payload = {
+        name: newProduct.name,
+        sku: newProduct.sku,
+        mrp: Math.round(Number(newProduct.price) * 1.5),
+        price: Number(newProduct.price),
+        stock: Number(newProduct.stock || 10),
+        tag: newProduct.tags || "New",
+        image:
+          imagePreview ||
+          "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop",
+        video: videoPreview || "",
+      };
+      const res = await API.post("/products", payload);
+      if (res.data && res.data.success) {
+        setProductsList((prev) => [res.data.data, ...prev]);
+        setNewProduct({ name: "", sku: "", price: "", stock: "", tags: "" });
+        setProductImageFile(null);
+        setProductVideoFile(null);
+        setImagePreview("");
+        setVideoPreview("");
+        alert("Product added successfully to the catalog.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Failed to add product to catalog.");
+    }
   };
 
-  const handleAddCoupon = (e) => {
+  const handleAddCoupon = async (e) => {
     e.preventDefault();
     if (!newCoupon.code || !newCoupon.value) {
       alert("Please fill out Coupon Code & Discount Value.");
       return;
     }
-    const couponObj = {
-      code: newCoupon.code.toUpperCase(),
-      discountType: newCoupon.discountType,
-      value:
-        newCoupon.discountType === "Percentage"
-          ? `${newCoupon.value}%`
-          : `₹${newCoupon.value}`,
-      status: "Active",
-      ordersUsed: 0,
-    };
-    setCouponsList((prev) => [couponObj, ...prev]);
-    setNewCoupon({ code: "", value: "", discountType: "Percentage" });
+    try {
+      const payload = {
+        code: newCoupon.code.toUpperCase(),
+        discountType: newCoupon.discountType,
+        value: Number(newCoupon.value),
+      };
+      const res = await API.post("/coupons", payload);
+      if (res.data && res.data.success) {
+        setCouponsList((prev) => [res.data.data, ...prev]);
+        setNewCoupon({ code: "", value: "", discountType: "Percentage" });
+        alert("Coupon generated successfully in database!");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Failed to add coupon.");
+    }
   };
 
-  const handleDeleteProduct = (id) => {
-    setProductsList((prev) => prev.filter((p) => p._id !== id));
+  const handleDeleteProduct = async (id) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this product from database?",
+      )
+    )
+      return;
+    try {
+      const res = await API.delete(`/products/id/${id}`);
+      if (res.data && res.data.success) {
+        setProductsList((prev) => prev.filter((p) => p._id !== id));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete product.");
+    }
   };
 
-  const handleDeleteCoupon = (code) => {
-    setCouponsList((prev) => prev.filter((c) => c.code !== code));
+  const handleDeleteCoupon = async (code) => {
+    if (!window.confirm(`Are you sure you want to delete coupon ${code}?`))
+      return;
+    try {
+      const res = await API.delete(`/coupons/${code}`);
+      if (res.data && res.data.success) {
+        setCouponsList((prev) => prev.filter((c) => c.code !== code));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete coupon.");
+    }
   };
 
   return (
@@ -754,7 +768,9 @@ const Dashboard = () => {
                       </td>
                       <td className="p-4 font-medium">{cpn.discountType}</td>
                       <td className="p-4 text-center font-bold text-textPrimary">
-                        {cpn.value}
+                        {cpn.discountType === "Percentage"
+                          ? `${cpn.value}%`
+                          : `₹${cpn.value}`}
                       </td>
                       <td className="p-4 text-center font-semibold">
                         {cpn.ordersUsed} orders
