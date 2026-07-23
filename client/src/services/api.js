@@ -2,8 +2,23 @@ import axios from "axios";
 import { store } from "../redux/store.js";
 import { logoutSuccess, authSuccess } from "../redux/slices/authSlice.js";
 
+// Dynamic Base URL Selection:
+// - Local Dev (import.meta.env.DEV is true): Automatically hits local port 5001 backend.
+// - Live Prod (import.meta.env.DEV is false): Hits VITE_API_URL env variable or live Render server URL.
+const getBaseURL = () => {
+  if (import.meta.env.DEV) {
+    return "http://localhost:5001/api/v1";
+  }
+  return (
+    import.meta.env.VITE_API_URL ||
+    "https://pariwesh-backend.onrender.com/api/v1"
+  );
+};
+
+const BASE_URL = getBaseURL();
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5001/api/v1",
+  baseURL: BASE_URL,
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
@@ -38,7 +53,7 @@ API.interceptors.response.use(
       try {
         // Request token refresh
         const res = await axios.post(
-          `${import.meta.env.VITE_API_URL || "http://localhost:5001/api/v1"}/auth/refresh-token`,
+          `${BASE_URL}/auth/refresh-token`,
           {},
           { withCredentials: true },
         );
