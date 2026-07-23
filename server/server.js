@@ -18,13 +18,11 @@ const server = app.listen(PORT, () => {
 
 // Capture unexpected system exceptions to run clean shutdowns
 process.on("unhandledRejection", (err, promise) => {
-  console.error(`🔥 Unhandled Rejection Error: ${err.message}`);
-  // Gracefully close server & exit process
-  server.close(() => process.exit(1));
+  console.error(`🔥 Unhandled Rejection Error:`, err);
+  // Log the error but do not exit process so Render server stays online.
 });
 
 process.on("uncaughtException", (err) => {
-  console.error(`🔥 Uncaught Exception Error: ${err.message}`);
-  // Gracefull exit
-  process.exit(1);
+  console.error(`🔥 Uncaught Exception Error:`, err);
+  // Log the error but do not exit process so Render server stays online.
 });
