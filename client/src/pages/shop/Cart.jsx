@@ -14,6 +14,7 @@ import {
   removeFromCart,
   clearCart,
 } from "../../redux/slices/cartSlice.js";
+import API from "../../services/api.js";
 
 const Cart = () => {
   const dispatch = useDispatch();
@@ -28,6 +29,8 @@ const Cart = () => {
   // Checkout flow states
   const [checkoutStep, setCheckoutStep] = useState(false); // false = show cart, true = show address form
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [placedOrderId, setPlacedOrderId] = useState("");
   const [address, setAddress] = useState({
     fullName: "",
     phone: "",
@@ -72,7 +75,7 @@ const Cart = () => {
     setAddress((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handlePlaceOrder = (e) => {
+  const handlePlaceOrder = async (e) => {
     e.preventDefault();
     if (
       !address.fullName ||
@@ -83,9 +86,58 @@ const Cart = () => {
       alert("Please fill out all mandatory shipping details.");
       return;
     }
-    // Simulate order placement
-    setOrderSuccess(true);
-    dispatch(clearCart());
+
+    try {
+      setLoading(true);
+
+      const orderItemsPayload = cartItems.map((item) => ({
+        productId: item.product._id,
+        name: item.product.name,
+        sku: item.product.sku,
+        price: item.product.price,
+        quantity: item.quantity,
+        size: item.variant.size,
+        color: item.variant.color,
+        image: item.product.images[0],
+      }));
+
+      const payload = {
+        items: orderItemsPayload,
+        shippingAddress: address,
+        pricing: {
+          subtotal,
+          delivery,
+          gst,
+          discount,
+          grandTotal,
+          appliedCoupon: couponApplied ? coupon.trim().toUpperCase() : "",
+        },
+        paymentMethod: address.paymentMethod,
+        paymentStatus: address.paymentMethod === "ONLINE" ? "Paid" : "Pending",
+        customer: {
+          name: address.fullName,
+          phone: address.phone,
+        },
+      };
+
+      const res = await API.post("/orders", payload);
+
+      if (res.data && res.data.success) {
+        setPlacedOrderId(res.data.data.orderId);
+        setOrderSuccess(true);
+        dispatch(clearCart());
+      } else {
+        alert("Failed to place order. Please try again.");
+      }
+    } catch (error) {
+      console.error("Failed placing order:", error);
+      alert(
+        error.response?.data?.message ||
+          "Error placing order. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const subtotal = getSubtotal();
@@ -102,6 +154,11 @@ const Cart = () => {
         <h2 className="text-3xl font-display font-medium text-textPrimary uppercase tracking-wider">
           Order Placed Successfully!
         </h2>
+        {placedOrderId && (
+          <p className="text-sm font-bold text-accent-gold uppercase tracking-widest bg-secondary/95 text-primary py-2 px-4 rounded-sm inline-block">
+            Order ID: {placedOrderId}
+          </p>
+        )}
         <p className="text-sm text-textSecondary leading-relaxed">
           Thank you for choosing PRIWESH. Your premium wardrobe ensemble has
           been been booked! We have sent a confirmation details invoice to your
@@ -380,8 +437,14 @@ const Cart = () => {
               </div>
             </div>
 
-            <Button type="submit" variant="gold" size="lg" className="w-full">
-              Confirm & Book Order Ensembles
+            <Button
+              type="submit"
+              variant="gold"
+              size="lg"
+              className="w-full"
+              disabled={loading}
+            >
+              {loading ? "Placing Order..." : "Confirm & Book Order Ensembles"}
             </Button>
           </form>
         )}

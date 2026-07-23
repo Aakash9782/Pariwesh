@@ -115,6 +115,50 @@ const Dashboard = () => {
     window.dispatchEvent(new Event("logo-updated"));
   };
 
+  // Orders management states
+  const [ordersList, setOrdersList] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const fetchOrders = async () => {
+    try {
+      setLoadingOrders(true);
+      const res = await API.get("/orders");
+      if (res.data && res.data.success) {
+        setOrdersList(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed fetching orders:", err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    try {
+      const res = await API.put(`/orders/${orderId}/status`, {
+        orderStatus: newStatus,
+      });
+      if (res.data && res.data.success) {
+        setOrdersList((prev) =>
+          prev.map((o) => (o._id === orderId ? res.data.data : o)),
+        );
+        if (selectedOrder && selectedOrder._id === orderId) {
+          setSelectedOrder(res.data.data);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to update status:", err);
+      alert("Failed updating order status.");
+    }
+  };
+
+  useEffect(() => {
+    if (activeSegment === "orders") {
+      fetchOrders();
+    }
+  }, [activeSegment]);
+
   // Catalogs state
   const [productsList, setProductsList] = useState(() => {
     const saved = localStorage.getItem("customProducts");
@@ -308,6 +352,17 @@ const Dashboard = () => {
           >
             <RiFundsBoxLine />
             <span>Overview</span>
+          </button>
+          <button
+            onClick={() => setActiveSegment("orders")}
+            className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 border transition-all ${
+              activeSegment === "orders"
+                ? "bg-secondary text-primary border-secondary"
+                : "bg-primary text-textPrimary border-borderLight hover:bg-bgLight"
+            }`}
+          >
+            <RiShoppingBag4Line />
+            <span>Orders</span>
           </button>
           <button
             onClick={() => setActiveSegment("products")}
@@ -891,6 +946,472 @@ const Dashboard = () => {
             </Button>
           </div>
         </form>
+      )}
+
+      {/* ORDERS MANAGEMENT PANEL */}
+      {activeSegment === "orders" && (
+        <div className="space-y-6 animate-fade-in text-left">
+          <div className="bg-primary border border-borderLight p-6 rounded-sm shadow-sm">
+            <div className="flex justify-between items-center pb-4 border-b border-borderLight mb-6">
+              <div>
+                <h3 className="text-sm font-display font-bold uppercase tracking-wider text-textPrimary">
+                  Customer Orders Registry
+                </h3>
+                <p className="text-[11px] text-textSecondary mt-0.5">
+                  Track customer sales transactions, order statuses, generate
+                  shipping labels & invoices
+                </p>
+              </div>
+              <button
+                onClick={fetchOrders}
+                className="text-xs font-bold text-accent-gold hover:underline bg-transparent border-0 outline-none cursor-pointer"
+              >
+                Refresh Queue
+              </button>
+            </div>
+
+            {loadingOrders ? (
+              <div className="py-20 text-center text-xs text-textSecondary">
+                Loading database transactions...
+              </div>
+            ) : ordersList.length === 0 ? (
+              <div className="py-20 text-center text-xs text-textSecondary bg-bgLight border border-dashed rounded">
+                No orders registered in the database yet. Place orders from the
+                cart page to populate this screen.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-bgLight text-textSecondary uppercase font-bold text-[9px] border-b border-borderLight">
+                      <th className="p-4">Order ID & Date</th>
+                      <th className="p-4">Customer Details</th>
+                      <th className="p-4">Purchased Items</th>
+                      <th className="p-4 text-right">Payment</th>
+                      <th className="p-4 text-center">Status</th>
+                      <th className="p-4 text-center">Logistics / Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-borderLight">
+                    {ordersList.map((order) => (
+                      <tr
+                        key={order._id}
+                        className="hover:bg-bgLight/40 transition-colors"
+                      >
+                        {/* ID & Date */}
+                        <td className="p-4 font-bold text-textPrimary leading-normal">
+                          <span className="block font-mono tracking-wide text-xs">
+                            {order.orderId}
+                          </span>
+                          <span className="block text-[10px] text-textSecondary font-semibold mt-1">
+                            {new Date(order.createdAt).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
+                          </span>
+                        </td>
+
+                        {/* Customer */}
+                        <td className="p-4 leading-relaxed font-semibold">
+                          <span className="block text-textPrimary">
+                            {order.shippingAddress?.fullName}
+                          </span>
+                          <span className="block text-[10px] text-textSecondary font-mono mt-0.5">
+                            {order.shippingAddress?.phone}
+                          </span>
+                        </td>
+
+                        {/* Ordered Items */}
+                        <td className="p-4 max-w-[250px] leading-relaxed">
+                          {order.items?.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="truncate text-[11px] text-textPrimary font-medium"
+                            >
+                              {item.quantity}x {item.name}{" "}
+                              <span className="text-[10px] text-textSecondary font-bold">
+                                ({item.size}/{item.color})
+                              </span>
+                            </div>
+                          ))}
+                        </td>
+
+                        {/* Payment */}
+                        <td className="p-4 text-right leading-relaxed font-bold">
+                          <span className="block text-textPrimary">
+                            ₹{order.pricing?.grandTotal}
+                          </span>
+                          <span
+                            className={`inline-block px-1.5 py-0.5 rounded-[3px] text-[8.5px] uppercase font-bold mt-1 ${
+                              order.paymentStatus === "Paid"
+                                ? "bg-green-600/10 text-green-600"
+                                : "bg-amber-600/10 text-amber-600"
+                            }`}
+                          >
+                            {order.paymentMethod} • {order.paymentStatus}
+                          </span>
+                        </td>
+
+                        {/* Status dropdown */}
+                        <td className="p-4 text-center">
+                          <select
+                            value={order.orderStatus}
+                            onChange={(e) =>
+                              handleUpdateStatus(order._id, e.target.value)
+                            }
+                            className={`text-[10px] font-bold uppercase py-1.5 px-2.5 rounded border focus:outline-none cursor-pointer ${
+                              order.orderStatus === "Placed"
+                                ? "bg-blue-50/10 text-blue-600 border-blue-200"
+                                : order.orderStatus === "Processing"
+                                  ? "bg-amber-50/10 text-amber-600 border-amber-200"
+                                  : order.orderStatus === "Shipped"
+                                    ? "bg-purple-50/10 text-purple-600 border-purple-200"
+                                    : order.orderStatus === "Delivered"
+                                      ? "bg-green-50/10 text-green-600 border-green-200"
+                                      : "bg-red-50/10 text-red-600 border-red-200"
+                            }`}
+                          >
+                            <option value="Placed">Placed</option>
+                            <option value="Processing">Processing</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Cancelled">Cancelled</option>
+                          </select>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="p-4 text-center space-y-1.5">
+                          {order.trackingId && (
+                            <div className="text-[10px] leading-snug font-semibold text-textSecondary">
+                              <span className="block uppercase text-[7.5px] font-extrabold text-accent-gold">
+                                {order.shippingProvider}
+                              </span>
+                              <span className="font-mono text-xs">
+                                {order.trackingId}
+                              </span>
+                            </div>
+                          )}
+                          <Button
+                            onClick={() => setSelectedOrder(order)}
+                            variant="gold"
+                            size="sm"
+                            className="w-full text-[9px] uppercase tracking-wider py-1 font-bold"
+                          >
+                            Label / Invoice
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* PRINTABLE SHIPPING LABEL & INVOICE MODAL */}
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto">
+          {/* Print Style Injector */}
+          <style
+            dangerouslySetInnerHTML={{
+              __html: `
+            @media print {
+              body {
+                background: white !important;
+                color: black !important;
+              }
+              body > * {
+                display: none !important;
+              }
+              #printable-shipping-label-container {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100% !important;
+                height: auto;
+                background: white !important;
+                z-index: 9999999 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+              }
+              .no-print-area {
+                display: none !important;
+              }
+            }
+          `,
+            }}
+          />
+
+          <div
+            id="printable-shipping-label-container"
+            className="bg-primary text-textPrimary border border-borderLight rounded-sm shadow-2xl max-w-2xl w-full p-8 space-y-6 text-left relative animate-fade-in"
+          >
+            {/* Modal Title Actions (Hidden in Print) */}
+            <div className="no-print-area flex justify-between items-center pb-4 border-b border-borderLight">
+              <h3 className="text-sm font-display font-bold uppercase tracking-wider text-textPrimary">
+                Print Logistics Manifest & Invoice
+              </h3>
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="text-textSecondary hover:text-textPrimary font-bold text-xs uppercase cursor-pointer"
+              >
+                Close (Esc)
+              </button>
+            </div>
+
+            {/* Label Core Design */}
+            <div className="border border-black p-6 space-y-6 bg-white text-black font-sans leading-relaxed">
+              {/* Header Branding */}
+              <div className="flex justify-between items-start border-b-2 border-black pb-4">
+                <div>
+                  <h2 className="text-xl font-bold tracking-widest uppercase">
+                    PARIWESH
+                    <span className="text-[#D4AF37] font-extrabold">.</span>
+                  </h2>
+                  <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">
+                    Premium Fashion Ensembles
+                  </p>
+                </div>
+                <div className="text-right text-xs">
+                  <p className="font-bold uppercase tracking-widest text-[#D4AF37]">
+                    TAX INVOICE
+                  </p>
+                  <p className="font-mono mt-0.5">
+                    <span className="font-bold">INV:</span>{" "}
+                    {selectedOrder.orderId}
+                  </p>
+                  <p className="text-[10px] text-gray-500 font-medium">
+                    Date:{" "}
+                    {new Date(selectedOrder.createdAt).toLocaleDateString(
+                      "en-IN",
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Shipper & Consignee */}
+              <div className="grid grid-cols-2 gap-8 text-xs border-b border-black pb-4">
+                <div>
+                  <h4 className="font-bold text-[9px] uppercase tracking-wider text-gray-400 mb-1">
+                    Sender (Shipper)
+                  </h4>
+                  <p className="font-bold">PARIWESH LOGISTICS HUB</p>
+                  <p className="text-gray-600 mt-1">
+                    Plot 45-B, Sector 7, Vidhyadhar Nagar
+                  </p>
+                  <p className="text-gray-600">Jaipur, Rajasthan, 302039</p>
+                  <p className="font-semibold text-gray-800 mt-1">
+                    Contact: warehouse@priwesh.com
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-bold text-[9px] uppercase tracking-wider text-gray-400 mb-1">
+                    Deliver To (Consignee)
+                  </h4>
+                  <p className="font-bold uppercase">
+                    {selectedOrder.shippingAddress?.fullName}
+                  </p>
+                  <p className="text-gray-600 mt-1">
+                    {selectedOrder.shippingAddress?.street}
+                  </p>
+                  <p className="text-gray-600">
+                    {selectedOrder.shippingAddress?.city},{" "}
+                    {selectedOrder.shippingAddress?.state} -{" "}
+                    <span className="font-bold">
+                      {selectedOrder.shippingAddress?.pincode}
+                    </span>
+                  </p>
+                  <p className="font-bold text-gray-800 mt-1">
+                    Mob: {selectedOrder.shippingAddress?.phone}
+                  </p>
+                </div>
+              </div>
+
+              {/* Logistics Routing Barcode */}
+              <div className="bg-gray-50 border border-gray-300 p-4 rounded-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="space-y-1 text-center md:text-left">
+                  <span className="block text-[8px] uppercase tracking-widest font-extrabold text-gray-400">
+                    Courier Partner
+                  </span>
+                  <span className="block text-md font-bold uppercase text-[#D4AF37]">
+                    {selectedOrder.shippingProvider || "Self-Shipped / Pending"}
+                  </span>
+                  <span className="block text-[10px] text-gray-500 font-mono">
+                    Routing AWB Tracking:{" "}
+                    <span className="font-bold text-black">
+                      {selectedOrder.trackingId || "PENDING"}
+                    </span>
+                  </span>
+                </div>
+                {/* Visual Barcode mockup */}
+                <div className="flex flex-col items-center">
+                  <div className="h-10 w-44 flex items-center justify-between border-x border-black bg-white px-1">
+                    {[
+                      1, 2.5, 1, 1.5, 3, 1, 1, 2, 1.5, 1, 3.5, 1, 2.5, 1, 1, 2,
+                      1.5, 1, 3,
+                    ].map((w, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-black h-full"
+                        style={{ width: `${w}px` }}
+                      />
+                    ))}
+                  </div>
+                  <span className="font-mono text-[9px] mt-1 tracking-[0.25em]">
+                    {selectedOrder.trackingId || "0918237912"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Itemized summary */}
+              <div>
+                <h4 className="font-bold text-[9px] uppercase tracking-wider text-gray-400 mb-2">
+                  Itemized Particulars
+                </h4>
+                <table className="w-full text-xs text-left border-collapse border border-gray-200">
+                  <thead>
+                    <tr className="bg-gray-100 font-bold border-b border-gray-200">
+                      <th className="p-2 border-r border-gray-200">
+                        Description
+                      </th>
+                      <th className="p-2 border-r border-gray-200">SKU</th>
+                      <th className="p-2 border-r border-gray-200 text-center">
+                        Specs
+                      </th>
+                      <th className="p-2 border-r border-gray-200 text-right">
+                        Price
+                      </th>
+                      <th className="p-2 border-r border-gray-200 text-center">
+                        Qty
+                      </th>
+                      <th className="p-2 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {selectedOrder.items?.map((item, idx) => (
+                      <tr key={idx}>
+                        <td className="p-2 border-r border-gray-200 font-semibold">
+                          {item.name}
+                        </td>
+                        <td className="p-2 border-r border-gray-200 font-mono text-[10px]">
+                          {item.sku}
+                        </td>
+                        <td className="p-2 border-r border-gray-200 text-center uppercase text-[10px] font-bold">
+                          {item.size} / {item.color}
+                        </td>
+                        <td className="p-2 border-r border-gray-200 text-right">
+                          ₹{item.price}
+                        </td>
+                        <td className="p-2 border-r border-gray-200 text-center">
+                          {item.quantity}
+                        </td>
+                        <td className="p-2 text-right">
+                          ₹{item.price * item.quantity}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Payout & Charges breakdown */}
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-end pt-4 border-t-2 border-dashed border-black">
+                {/* Method Alert */}
+                <div
+                  className={`p-4 border-2 rounded-sm text-center font-bold text-sm tracking-widest uppercase md:max-w-[280px] w-full ${
+                    selectedOrder.paymentMethod === "COD"
+                      ? "border-red-600 bg-red-50 text-red-700"
+                      : "border-green-600 bg-green-50 text-green-700"
+                  }`}
+                >
+                  {selectedOrder.paymentMethod === "COD" ? (
+                    <div>
+                      <span className="block text-[8px] tracking-wider text-gray-500 font-mono font-semibold">
+                        Payment Mode: COD
+                      </span>
+                      CASH ON DELIVERY
+                      <span className="block text-[#D4AF37] font-display text-lg mt-1 font-bold">
+                        COLLECT ₹{selectedOrder.pricing?.grandTotal}
+                      </span>
+                    </div>
+                  ) : (
+                    <div>
+                      <span className="block text-[8px] tracking-wider text-gray-500 font-mono font-semibold">
+                        Payment Mode: PREPAID
+                      </span>
+                      PREPAID ORDER
+                      <span className="block text-xs mt-1 text-green-800 font-semibold lowercase italic">
+                        do not collect cash
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pricing Ledger */}
+                <div className="w-full md:w-60 text-xs space-y-1.5 font-medium text-right mt-4 md:mt-0">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Subtotal:</span>
+                    <span>₹{selectedOrder.pricing?.subtotal}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">GST (12%):</span>
+                    <span>₹{selectedOrder.pricing?.gst}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Delivery:</span>
+                    <span>
+                      {selectedOrder.pricing?.delivery === 0
+                        ? "FREE"
+                        : `₹${selectedOrder.pricing?.delivery}`}
+                    </span>
+                  </div>
+                  {selectedOrder.pricing?.discount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span className="text-red-500">
+                        Discount (
+                        {selectedOrder.pricing?.appliedCoupon || "Promo"}):
+                      </span>
+                      <span>-₹{selectedOrder.pricing?.discount}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t border-black pt-2 font-bold text-sm">
+                    <span>Total Paid/Collectible:</span>
+                    <span className="text-[#D4AF37] font-display text-lg">
+                      ₹{selectedOrder.pricing?.grandTotal}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Print Trigger Action Box (Hidden in Print) */}
+            <div className="no-print-area flex justify-end gap-3 pt-4 border-t border-borderLight">
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="px-5 py-2.5 bg-bgLight text-textPrimary hover:bg-borderLight text-xs uppercase font-semibold transition-all rounded-sm cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="px-8 py-2.5 bg-accent-gold text-secondary hover:bg-accent-goldHover text-xs uppercase font-bold tracking-wider transition-all rounded-sm shadow-md cursor-pointer"
+              >
+                Print Label & Manifest
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
