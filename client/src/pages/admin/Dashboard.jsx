@@ -93,35 +93,39 @@ const Dashboard = () => {
       const reader = new FileReader();
       reader.onload = async () => {
         const base64Logo = reader.result;
-        setLogoUrl(base64Logo);
-        localStorage.setItem("brandLogoUrl", base64Logo);
 
         try {
-          await API.post("/settings", {
+          const res = await API.post("/settings", {
             key: "brandLogoUrl",
             value: base64Logo,
           });
+          const savedUrl = res.data?.data?.value || base64Logo;
+          setLogoUrl(savedUrl);
+          localStorage.setItem("brandLogoUrl", savedUrl);
+          alert("Brand Logo updated successfully!");
+          window.dispatchEvent(new Event("logo-updated"));
         } catch (err) {
           console.error("Error saving brand logo to database:", err);
+          alert(
+            "Failed to save logo to database. Please verify backend server state.",
+          );
         }
-
-        alert("Brand Logo updated successfully!");
-        window.dispatchEvent(new Event("logo-updated"));
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleResetLogo = async () => {
-    setLogoUrl("");
-    localStorage.removeItem("brandLogoUrl");
     try {
       await API.post("/settings", { key: "brandLogoUrl", value: "" });
+      setLogoUrl("");
+      localStorage.removeItem("brandLogoUrl");
+      alert("Logo reset to default Text Brand Name.");
+      window.dispatchEvent(new Event("logo-updated"));
     } catch (err) {
       console.error("Error resetting brand logo in database:", err);
+      alert("Failed to reset logo in database. Please check connection.");
     }
-    alert("Logo reset to default Text Brand Name.");
-    window.dispatchEvent(new Event("logo-updated"));
   };
 
   // Orders management states
