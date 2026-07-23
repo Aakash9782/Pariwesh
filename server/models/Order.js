@@ -43,6 +43,7 @@ const OrderSchema = new mongoose.Schema(
       unique: true,
     },
     customer: {
+      userId: { type: String, default: "" },
       name: { type: String, required: true },
       email: { type: String, default: "" },
       phone: { type: String, required: true },

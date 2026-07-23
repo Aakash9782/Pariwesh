@@ -19,6 +19,7 @@ import API from "../../services/api.js";
 const Cart = () => {
   const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.cart.items);
+  const { user } = useSelector((state) => state.auth);
 
   // States code
   const [coupon, setCoupon] = useState("");
@@ -143,6 +144,7 @@ const Cart = () => {
         paymentMethod: address.paymentMethod,
         paymentStatus: address.paymentMethod === "ONLINE" ? "Paid" : "Pending",
         customer: {
+          userId: user?._id || "",
           name: address.fullName,
           phone: address.phone,
         },

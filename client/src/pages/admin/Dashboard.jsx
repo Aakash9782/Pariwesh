@@ -12,7 +12,16 @@ import Button from "../../components/common/Button.jsx";
 import Input from "../../components/form/Input.jsx";
 import API from "../../services/api.js";
 
+import { useSelector } from "react-redux";
+import { Navigate } from "react-router-dom";
+
 const Dashboard = () => {
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
+
+  if (!isAuthenticated || user?.role !== "admin") {
+    return <Navigate to="/login" replace />;
+  }
+
   const [activeSegment, setActiveSegment] = useState("overview"); // overview, products, coupons
 
   // Banner ad settings state

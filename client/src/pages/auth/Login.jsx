@@ -50,20 +50,26 @@ const Login = () => {
     setTimeout(() => {
       setLoading(false);
 
+      const isAdmin =
+        phoneNumber === "9876543210" || phoneNumber === "9999999999";
       const mockUser = {
-        _id: "usr_abc123",
-        name: "Priyanjali Sen",
-        email: "priyanjali.sen@priwesh.com",
+        _id: isAdmin ? "usr_admin999" : "usr_abc123",
+        name: isAdmin ? "Pariwesh Admin Desk" : "Priyanjali Sen",
+        email: isAdmin ? "admin@pariwesh.com" : "priyanjali.sen@priwesh.com",
         phone: phoneNumber,
-        role: "customer",
+        role: isAdmin ? "admin" : "customer",
       };
       const mockToken = "mock_jwt_access_token_jwt_signature";
 
       // Update credentials inside redux
       dispatch(authSuccess({ user: mockUser, token: mockToken }));
 
-      // Navigate to profile page
-      navigate("/profile");
+      // Navigate to profile page or admin dashboard if admin
+      if (isAdmin) {
+        navigate("/admin");
+      } else {
+        navigate("/profile");
+      }
     }, 800);
   };
 
@@ -83,7 +89,8 @@ const Login = () => {
             Member login
           </h2>
           <p className="text-xs text-textSecondary">
-            Sign in with phone verification to track orders and save wishlists.
+            Sign in with phone verification to track orders. (For Admin use:
+            9876543210)
           </p>
         </div>
 

@@ -6,7 +6,12 @@ import { sendSuccess, sendError } from "../utils/responseFormatter.js";
 // @access  Public (Admin restricted conceptually)
 export const getOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find({}).sort({ createdAt: -1 });
+    const { userId } = req.query;
+    const filter = {};
+    if (userId) {
+      filter["customer.userId"] = userId;
+    }
+    const orders = await Order.find(filter).sort({ createdAt: -1 });
     return sendSuccess(res, "Orders retrieved successfully", orders);
   } catch (error) {
     return sendError(res, error.message, 500);

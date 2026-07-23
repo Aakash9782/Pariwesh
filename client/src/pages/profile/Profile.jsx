@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,6 +10,7 @@ import {
 } from "react-icons/ri";
 import Button from "../../components/common/Button.jsx";
 import { logoutSuccess } from "../../redux/slices/authSlice.js";
+import API from "../../services/api.js";
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -23,52 +24,27 @@ const Profile = () => {
     navigate("/");
   };
 
-  // Mock ledger array of orders
-  const mockOrders = [
-    {
-      orderId: "LHR-ORD-980712",
-      date: "July 14, 2026",
-      total: 2499,
-      status: "In Transit",
-      items: [
-        {
-          name: "Elysian Gold Chanderi Suit",
-          image:
-            "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=200&auto=format&fit=crop",
-          size: "M",
-          color: "Gold",
-          price: 2499,
-          qty: 1,
-        },
-      ],
-    },
-    {
-      orderId: "LHR-ORD-980205",
-      date: "June 28, 2026",
-      total: 5198,
-      status: "Delivered",
-      items: [
-        {
-          name: "Scarlet Floral Rayon Kurti",
-          image:
-            "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=200&auto=format&fit=crop",
-          size: "L",
-          color: "Red",
-          price: 1199,
-          qty: 1,
-        },
-        {
-          name: "Ivory Zari Premium Anarkali Set",
-          image:
-            "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=200&auto=format&fit=crop",
-          size: "L",
-          color: "Ivory",
-          price: 3999,
-          qty: 1,
-        },
-      ],
-    },
-  ];
+  // Dynamic order registry loading from backend
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+
+  useEffect(() => {
+    const fetchUserOrders = async () => {
+      try {
+        if (user?._id) {
+          const res = await API.get(`/orders?userId=${user._id}`);
+          if (res.data && res.data.success) {
+            setOrders(res.data.data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed fetching user orders:", err);
+      } finally {
+        setLoadingOrders(false);
+      }
+    };
+    fetchUserOrders();
+  }, [user]);
 
   const mockAddresses = [
     {
@@ -150,82 +126,102 @@ const Profile = () => {
                 My Orders
               </h3>
               <div className="space-y-6">
-                {mockOrders.map((ord, oIdx) => (
-                  <div
-                    key={oIdx}
-                    className="border border-borderLight rounded-sm"
-                  >
-                    {/* Header stats bar */}
-                    <div className="bg-bgLight px-6 py-4 flex flex-col sm:flex-row justify-between text-xs text-textSecondary gap-2 border-b border-borderLight">
-                      <div>
-                        <span className="block text-[9px] uppercase font-bold tracking-wider">
-                          Order ID
-                        </span>
-                        <span className="font-bold text-textPrimary">
-                          {ord.orderId}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="block text-[9px] uppercase font-bold tracking-wider">
-                          Date Booked
-                        </span>
-                        <span className="font-bold text-textPrimary">
-                          {ord.date}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="block text-[9px] uppercase font-bold tracking-wider">
-                          Estimated Total
-                        </span>
-                        <span className="font-bold text-accent-gold">
-                          ₹{ord.total}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="block text-[9px] uppercase font-bold tracking-wider">
-                          Live Status
-                        </span>
-                        <span
-                          className={`font-bold inline-block px-2.5 py-0.5 rounded-full text-[9px] ${
-                            ord.status === "Delivered"
-                              ? "bg-green-55/10 text-green-600"
-                              : "bg-blue-55/10 text-blue-600"
-                          }`}
-                        >
-                          {ord.status}
-                        </span>
-                      </div>
-                    </div>
-                    {/* Items lists */}
-                    <div className="p-6 divide-y divide-borderLight">
-                      {ord.items.map((it, iIdx) => (
-                        <div
-                          key={iIdx}
-                          className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
-                        >
-                          <div className="flex space-x-3 items-center">
-                            <img
-                              src={it.image}
-                              alt={it.name}
-                              className="w-12 h-14 object-cover bg-bgLight border border-borderLight rounded"
-                            />
-                            <div className="space-y-0.5">
-                              <h4 className="text-xs font-bold text-textPrimary leading-snug">
-                                {it.name}
-                              </h4>
-                              <p className="text-[10px] text-textSecondary uppercase">
-                                Size: {it.size} | Qty: {it.qty}
-                              </p>
-                            </div>
-                          </div>
-                          <span className="text-xs font-bold text-textPrimary">
-                            ₹{it.price}
+                {loadingOrders ? (
+                  <p className="text-xs text-textSecondary text-center py-6 animate-pulse">
+                    Loading your order history...
+                  </p>
+                ) : orders.length === 0 ? (
+                  <p className="text-xs text-textSecondary text-center py-6">
+                    No orders placed yet. Head over to our catalog to shop!
+                  </p>
+                ) : (
+                  orders.map((ord, oIdx) => (
+                    <div
+                      key={oIdx}
+                      className="border border-borderLight rounded-sm animate-fade-in"
+                    >
+                      {/* Header stats bar */}
+                      <div className="bg-bgLight px-6 py-4 flex flex-col sm:flex-row justify-between text-xs text-textSecondary gap-2 border-b border-borderLight">
+                        <div>
+                          <span className="block text-[9px] uppercase font-bold tracking-wider">
+                            Order ID
+                          </span>
+                          <span className="font-bold text-textPrimary">
+                            {ord.orderId}
                           </span>
                         </div>
-                      ))}
+                        <div>
+                          <span className="block text-[9px] uppercase font-bold tracking-wider">
+                            Date Booked
+                          </span>
+                          <span className="font-bold text-textPrimary">
+                            {new Date(ord.createdAt).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="block text-[9px] uppercase font-bold tracking-wider">
+                            Estimated Total
+                          </span>
+                          <span className="font-bold text-accent-gold">
+                            ₹{ord.pricing?.grandTotal || 0}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="block text-[9px] uppercase font-bold tracking-wider">
+                            Live Status
+                          </span>
+                          <span
+                            className={`font-bold inline-block px-2.5 py-0.5 rounded-full text-[9px] ${
+                              ord.orderStatus === "Delivered"
+                                ? "bg-green-55/10 text-green-600"
+                                : "bg-blue-55/10 text-blue-600"
+                            }`}
+                          >
+                            {ord.orderStatus}
+                          </span>
+                        </div>
+                      </div>
+                      {/* Items lists */}
+                      <div className="p-6 divide-y divide-borderLight">
+                        {ord.items.map((it, iIdx) => (
+                          <div
+                            key={iIdx}
+                            className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
+                          >
+                            <div className="flex space-x-3 items-center">
+                              <img
+                                src={
+                                  it.image ||
+                                  "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=200&auto=format&fit=crop"
+                                }
+                                alt={it.name}
+                                className="w-12 h-14 object-cover bg-bgLight border border-borderLight rounded"
+                              />
+                              <div className="space-y-0.5">
+                                <h4 className="text-xs font-bold text-textPrimary leading-snug">
+                                  {it.name}
+                                </h4>
+                                <p className="text-[10px] text-textSecondary uppercase">
+                                  Size: {it.size} | Qty: {it.quantity || it.qty}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-xs font-bold text-textPrimary">
+                              ₹{it.price}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           )}
