@@ -62,6 +62,13 @@ app.get("/api/v1/health", (req, res) => {
   });
 });
 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Pariwesh API is Running 🚀",
+  });
+});
+
 // 6. ROUTE REGISTRATIONS
 app.use("/api/v1/settings", settingRouter);
 app.use("/api/v1/orders", orderRouter);
