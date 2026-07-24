@@ -9,7 +9,14 @@ const getBaseURL = () => {
   if (import.meta.env.DEV) {
     return "http://localhost:5001/api/v1";
   }
-  return import.meta.env.VITE_API_URL || "https://pariwesh.onrender.com/api/v1";
+  let url =
+    import.meta.env.VITE_API_URL || "https://pariwesh.onrender.com/api/v1";
+  // Safely ensure the URL always ends with /api/v1
+  if (url && !url.endsWith("/api/v1") && !url.endsWith("/api/v1/")) {
+    url = url.endsWith("/") ? url.slice(0, -1) : url;
+    url = `${url}/api/v1`;
+  }
+  return url;
 };
 
 const BASE_URL = getBaseURL();
