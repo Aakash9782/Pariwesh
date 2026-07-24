@@ -7,7 +7,7 @@ import {
   RiHeartLine,
   RiCheckboxCircleLine,
 } from "react-icons/ri";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { addToCart } from "../redux/slices/cartSlice.js";
 import API from "../services/api.js";
 import { useAlert } from "../contexts/AlertContext.jsx";
@@ -29,6 +29,19 @@ const Home = () => {
     link: "/shop",
     theme: "royal-gold",
   });
+
+  const [sliderConfig, setSliderConfig] = useState({
+    active: true,
+    images: [
+      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1612459284970-e8f027596582?q=80&w=1200&auto=format&fit=crop",
+    ],
+  });
+
+  const [activeSlide, setActiveSlide] = useState(0);
 
   // Dynamic products catalog state
   const [products, setProducts] = useState([]);
@@ -61,6 +74,29 @@ const Home = () => {
             link: settings.festiveAdLink || "/shop",
             theme: settings.festiveAdTheme || "royal-gold",
           });
+          const fallbackImages = [
+            "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=1200&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=1200&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=1200&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1612459284970-e8f027596582?q=80&w=1200&auto=format&fit=crop",
+          ];
+          const loadedImages = [
+            settings.slideImg1,
+            settings.slideImg2,
+            settings.slideImg3,
+            settings.slideImg4,
+            settings.slideImg5,
+          ].filter(Boolean);
+
+          setSliderConfig({
+            active:
+              settings.slideBarActive === undefined
+                ? true
+                : settings.slideBarActive === "true" ||
+                  settings.slideBarActive === true,
+            images: loadedImages.length > 0 ? loadedImages : fallbackImages,
+          });
         } else {
           // Fallback to localStorage if any
           const savedActive =
@@ -82,6 +118,29 @@ const Home = () => {
             code: savedCode,
             link: savedLink,
             theme: savedTheme,
+          });
+
+          const fallbackImages = [
+            "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=1200&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=1200&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=1200&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1612459284970-e8f027596582?q=80&w=1200&auto=format&fit=crop",
+          ];
+          const loadedImages = [
+            localStorage.getItem("slideImg1"),
+            localStorage.getItem("slideImg2"),
+            localStorage.getItem("slideImg3"),
+            localStorage.getItem("slideImg4"),
+            localStorage.getItem("slideImg5"),
+          ].filter(Boolean);
+
+          setSliderConfig({
+            active:
+              localStorage.getItem("slideBarActive") === null
+                ? true
+                : localStorage.getItem("slideBarActive") === "true",
+            images: loadedImages.length > 0 ? loadedImages : fallbackImages,
           });
         }
       } catch (err) {
@@ -122,9 +181,16 @@ const Home = () => {
         setProducts(mockProducts);
       }
     };
-
     fetchPageData();
   }, []);
+
+  useEffect(() => {
+    if (!sliderConfig.active || sliderConfig.images.length === 0) return;
+    const interval = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % sliderConfig.images.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [sliderConfig.active, sliderConfig.images.length]);
 
   // 1. Flash Sale Countdown State
   const [timeLeft, setTimeLeft] = useState({
@@ -471,66 +537,89 @@ const Home = () => {
         })()}
 
       {/* SECTION 1: HERO SPOTLIGHT SLIDER (Vibrant premium hero layout) */}
-      <section className="relative h-[80vh] overflow-hidden bg-secondary w-full">
-        {/* Decorative backdrop with slow-zoom animation */}
-        <motion.div
-          initial={{ scale: 1 }}
-          animate={{ scale: 1.05 }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            repeatType: "reverse",
-            ease: "easeInOut",
-          }}
-          className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=1200&auto=format&fit=crop')] bg-cover bg-center"
-        ></motion.div>
-        <div className="absolute inset-0 bg-gradient-to-r from-secondary to-transparent z-1"></div>
+      {sliderConfig.active && (
+        <section className="relative h-[80vh] overflow-hidden bg-secondary w-full">
+          {/* Loop over sliderConfig.images and render active using Framer Motion absolute layers for premium crossfade! */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeSlide}
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 0.45, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.8 }}
+              className="absolute inset-0 bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${sliderConfig.images[activeSlide]})`,
+              }}
+            />
+          </AnimatePresence>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center items-start text-primary z-10 space-y-6 text-left">
-          <motion.span
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-xs uppercase tracking-[0.25em] text-accent-gold font-bold"
-          >
-            Spring / Summer 2026 Collection
-          </motion.span>
-          <motion.h1
-            initial={{ opacity: 0, y: 25 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-5xl md:text-7xl font-display font-medium tracking-tight leading-[1.1] max-w-2xl"
-          >
-            The Radiance of{" "}
-            <span className="gold-text-gradient block mt-2 animate-text-shine bg-clip-text text-transparent">
-              Indian Heritage
-            </span>
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="text-sm md:text-base text-gray-300 max-w-md leading-relaxed"
-          >
-            Discover our premium selection of Kurtas, Suits, and Ethnic sets
-            woven in luxury chanderi and pure cottons.
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="pt-4"
-          >
-            <Link
-              to="/shop"
-              className="inline-flex items-center space-x-2 bg-accent-gold text-secondary font-bold text-xs uppercase tracking-widest px-8 py-4 rounded-sm hover:bg-white hover:text-secondary hover:shadow-lg transition-all duration-300"
+          <div className="absolute inset-0 bg-gradient-to-r from-secondary to-transparent z-1"></div>
+
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center items-start text-primary z-10 space-y-6 text-left">
+            <motion.span
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-xs uppercase tracking-[0.25em] text-accent-gold font-bold"
             >
-              <span>Explore Collection</span>
-              <RiArrowRightLine size={14} />
-            </Link>
-          </motion.div>
-        </div>
-      </section>
+              Spring / Summer 2026 Collection
+            </motion.span>
+            <motion.h1
+              initial={{ opacity: 0, y: 25 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-5xl md:text-7xl font-display font-medium tracking-tight leading-[1.1] max-w-2xl"
+            >
+              The Radiance of{" "}
+              <span className="gold-text-gradient block mt-2 animate-text-shine bg-clip-text text-transparent">
+                Indian Heritage
+              </span>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-sm md:text-base text-gray-300 max-w-md leading-relaxed"
+            >
+              Discover our premium selection of Kurtas, Suits, and Ethnic sets
+              woven in luxury chanderi and pure cottons.
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              className="pt-4"
+            >
+              <Link
+                to="/shop"
+                className="inline-flex items-center space-x-2 bg-accent-gold text-secondary font-bold text-xs uppercase tracking-widest px-8 py-4 rounded-sm hover:bg-white hover:text-secondary hover:shadow-lg transition-all duration-300"
+              >
+                <span>Explore Collection</span>
+                <RiArrowRightLine size={14} />
+              </Link>
+            </motion.div>
+          </div>
+
+          {/* Navigation Dot Indicators */}
+          {sliderConfig.images.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2.5 z-20">
+              {sliderConfig.images.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveSlide(idx)}
+                  className={`w-2.5 h-2.5 rounded-full transition-all ${
+                    idx === activeSlide
+                      ? "bg-accent-gold w-6"
+                      : "bg-white/40 hover:bg-white/70"
+                  }`}
+                  aria-label={`Go to slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* EXQUISITE CATEGORY SELECTION CIRCLES (Boutique Horizontal Navigation) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">

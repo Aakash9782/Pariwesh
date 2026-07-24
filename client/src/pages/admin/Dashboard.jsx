@@ -97,6 +97,19 @@ const Dashboard = () => {
     localStorage.getItem("festiveAdTheme") || "royal-gold",
   );
 
+  const [slideBarActive, setSlideBarActive] = useState(
+    localStorage.getItem("slideBarActive") === null
+      ? true
+      : localStorage.getItem("slideBarActive") === "true",
+  );
+  const [slideImages, setSlideImages] = useState([
+    localStorage.getItem("slideImg1") || "",
+    localStorage.getItem("slideImg2") || "",
+    localStorage.getItem("slideImg3") || "",
+    localStorage.getItem("slideImg4") || "",
+    localStorage.getItem("slideImg5") || "",
+  ]);
+
   const handleSaveBanner = async (e) => {
     e.preventDefault();
     try {
@@ -137,6 +150,74 @@ const Dashboard = () => {
     }
   };
 
+  const handleToggleSlideBar = async (val) => {
+    try {
+      setSlideBarActive(val);
+      await API.post("/settings", {
+        key: "slideBarActive",
+        value: val ? "true" : "false",
+      });
+      localStorage.setItem("slideBarActive", val ? "true" : "false");
+      alert(`Hero Slide Bar visibility turned ${val ? "ON" : "OFF"}`);
+    } catch (err) {
+      console.error("Failed to toggle slide bar status:", err);
+      alert("Failed to update slide bar status in database.");
+    }
+  };
+
+  const handleSlideImageChange = (e, slideNum) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5000000) {
+        alert("Image file is too large. Please select an image under 5MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Img = reader.result;
+        try {
+          const slideKey = `slideImg${slideNum}`;
+          const res = await API.post("/settings", {
+            key: slideKey,
+            value: base64Img,
+          });
+          const savedUrl = res.data?.data?.value || base64Img;
+          setSlideImages((prev) => {
+            const updated = [...prev];
+            updated[slideNum - 1] = savedUrl;
+            return updated;
+          });
+          localStorage.setItem(slideKey, savedUrl);
+          alert(`Slide Image ${slideNum} uploaded and updated successfully!`);
+        } catch (err) {
+          console.error("Error saving slide image:", err);
+          alert("Failed to save slide image to backend.");
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleResetSlideImage = async (slideNum) => {
+    try {
+      const slideKey = `slideImg${slideNum}`;
+      await API.post("/settings", {
+        key: slideKey,
+        value: "",
+      });
+      setSlideImages((prev) => {
+        const updated = [...prev];
+        updated[slideNum - 1] = "";
+        return updated;
+      });
+      localStorage.removeItem(slideKey);
+      alert(`Slide Image ${slideNum} reset to default curation template.`);
+    } catch (err) {
+      console.error("Failed to reset slide image:", err);
+      alert("Failed to reset image in database.");
+    }
+  };
+
   // Logo brand state
   const [logoUrl, setLogoUrl] = useState(
     localStorage.getItem("brandLogoUrl") || "",
@@ -173,6 +254,32 @@ const Dashboard = () => {
           if (settings.festiveAdCode) setBannerCode(settings.festiveAdCode);
           if (settings.festiveAdLink) setBannerLink(settings.festiveAdLink);
           if (settings.festiveAdTheme) setBannerTheme(settings.festiveAdTheme);
+
+          // Load slide bar properties
+          if (settings.slideBarActive !== undefined) {
+            setSlideBarActive(
+              settings.slideBarActive === "true" ||
+                settings.slideBarActive === true,
+            );
+            localStorage.setItem("slideBarActive", settings.slideBarActive);
+          }
+          setSlideImages([
+            settings.slideImg1 || "",
+            settings.slideImg2 || "",
+            settings.slideImg3 || "",
+            settings.slideImg4 || "",
+            settings.slideImg5 || "",
+          ]);
+          if (settings.slideImg1)
+            localStorage.setItem("slideImg1", settings.slideImg1);
+          if (settings.slideImg2)
+            localStorage.setItem("slideImg2", settings.slideImg2);
+          if (settings.slideImg3)
+            localStorage.setItem("slideImg3", settings.slideImg3);
+          if (settings.slideImg4)
+            localStorage.setItem("slideImg4", settings.slideImg4);
+          if (settings.slideImg5)
+            localStorage.setItem("slideImg5", settings.slideImg5);
         }
       } catch (err) {
         console.error("Failed to load settings from DB:", err);
@@ -1807,6 +1914,96 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* HERO IMAGE SLIDER CURATION MANAGEMENT */}
+      {activeSegment === "banner-ads" && (
+        <div className="bg-primary border border-borderLight p-8 rounded-sm shadow-sm space-y-6 max-w-3xl mx-auto mb-8 animate-fade-in text-left">
+          <div className="border-b border-borderLight pb-4 flex justify-between items-center">
+            <div>
+              <h3 className="text-sm font-display font-bold uppercase tracking-wider text-textPrimary">
+                Hero Image Slider Curation
+              </h3>
+              <p className="text-[11px] text-textSecondary mt-0.5">
+                Manage the 4-5 rotating catalog slides shown on the home page
+                hero section
+              </p>
+            </div>
+
+            {/* Toggle Status switch */}
+            <div className="flex items-center space-x-3 bg-bgLight px-4 py-2 border rounded-sm">
+              <span className="text-xs uppercase font-extrabold tracking-wider text-textSecondary">
+                Show Slide Bar
+              </span>
+              <button
+                type="button"
+                onClick={() => handleToggleSlideBar(!slideBarActive)}
+                className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  slideBarActive ? "bg-accent-gold" : "bg-borderLight"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    slideBarActive ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6">
+            {[1, 2, 3, 4, 5].map((num) => {
+              const currentImg = slideImages[num - 1];
+              return (
+                <div
+                  key={num}
+                  className="border border-borderLight p-4 rounded-sm bg-bgLight flex flex-col md:flex-row items-center justify-between gap-6"
+                >
+                  <div className="flex-grow space-y-3 w-full text-left">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-textSecondary block">
+                      Slide Image {num}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleSlideImageChange(e, num)}
+                      className="text-xs text-textSecondary file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-[10px] file:font-semibold file:bg-primary file:text-textPrimary hover:file:bg-borderLight cursor-pointer file:cursor-pointer w-full"
+                    />
+                    <span className="text-[9px] text-textSecondary block">
+                      Recommended size: 1200x600px. Uploaded files save to
+                      Cloudinary or database storage automatically.
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                    <div className="h-16 w-28 border border-dashed border-borderLight rounded-sm flex items-center justify-center bg-primary overflow-hidden relative shadow-sm">
+                      {currentImg ? (
+                        <img
+                          src={currentImg}
+                          className="h-full w-full object-cover"
+                          alt={`slide ${num} preview`}
+                        />
+                      ) : (
+                        <span className="text-[9px] font-semibold text-textSecondary text-center p-1 select-none">
+                          Default Curation {num}
+                        </span>
+                      )}
+                    </div>
+                    {currentImg && (
+                      <button
+                        type="button"
+                        onClick={() => handleResetSlideImage(num)}
+                        className="text-[10px] text-danger hover:underline font-bold"
+                      >
+                        Reset to Default
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* OFFER AD BANNER MANAGEMENT */}
       {activeSegment === "banner-ads" && (
         <form
@@ -2400,7 +2597,7 @@ const Dashboard = () => {
                     <span>₹{selectedOrder.pricing?.subtotal}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">GST (12%):</span>
+                    <span className="text-gray-500">GST (5%):</span>
                     <span>₹{selectedOrder.pricing?.gst}</span>
                   </div>
                   <div className="flex justify-between">

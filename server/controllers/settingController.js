@@ -29,7 +29,11 @@ export const updateSetting = async (req, res, next) => {
     }
 
     let finalValue = value;
-    if (key === "brandLogoUrl" && value && value.startsWith("data:image")) {
+    if (
+      (key === "brandLogoUrl" || key.startsWith("slideImg")) &&
+      value &&
+      value.startsWith("data:image")
+    ) {
       finalValue = await uploadBase64Image(value, "pariwesh/branding");
     }
 

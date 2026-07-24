@@ -209,9 +209,9 @@ const Cart = () => {
   };
 
   const subtotal = getSubtotal();
-  const delivery = subtotal >= 1500 || subtotal === 0 ? 0 : 99;
-  const gst = Math.round(subtotal * 0.12); // 12% apparel GST
-  const grandTotal = subtotal + delivery + gst - discount;
+  const delivery = subtotal >= 1500 || subtotal === 0 ? 0 : 45;
+  const gst = Math.round(subtotal * 0.05); // 5% GST portion (inclusive in price, sent for Admin ledger only)
+  const grandTotal = subtotal + delivery - discount;
 
   if (orderSuccess) {
     return (
@@ -229,8 +229,8 @@ const Cart = () => {
         )}
         <p className="text-sm text-textSecondary leading-relaxed">
           Thank you for choosing PARIWESH. Your premium wardrobe ensemble has
-          been been booked! We have sent a confirmation details invoice to your
-          email interface.
+          been booked! We have sent a confirmation details invoice to your email
+          interface.
         </p>
         <div className="bg-bgLight p-6 border border-borderLight rounded-sm text-xs text-left space-y-2">
           <p>
@@ -620,10 +620,6 @@ const Cart = () => {
                   `₹${delivery}`
                 )}
               </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Estimated GST (12%)</span>
-              <span>₹{gst}</span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-green-600 bg-green-55/10 p-2 rounded">

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
 import {
   RiShoppingBagLine,
   RiHeartLine,
@@ -20,6 +20,14 @@ import API from "../services/api.js";
 const MainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
+  });
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const cartItems = useSelector((state) => state.cart.items);
   const wishlistProducts = useSelector((state) => state.wishlist.products);
@@ -126,6 +134,11 @@ const MainLayout = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-bgLight">
+      {/* Scroll Progress Bar (follows active theme color) */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-[3px] bg-accent-gold z-[99999] origin-[0%]"
+        style={{ scaleX }}
+      />
       {/* GLOBAL ARCH CLIP PATH */}
       <svg width="0" height="0" className="absolute pointer-events-none">
         <defs>
