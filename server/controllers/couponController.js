@@ -41,7 +41,7 @@ export const getCoupons = async (req, res, next) => {
 // @access  Public
 export const validateCoupon = async (req, res, next) => {
   try {
-    const { code, subtotal } = req.body;
+    const { code, subtotal, phone } = req.body;
 
     if (!code) {
       return sendError(res, "Please provide a coupon code to validate", 400);
@@ -54,7 +54,33 @@ export const validateCoupon = async (req, res, next) => {
     }
 
     if (coupon.status !== "Active") {
-      return sendError(res, "This coupon has expired or is deactivated", 400);
+      return sendError(res, "This coupon is currently inactive", 400);
+    }
+
+    // 1. Expiry Date validation check
+    if (coupon.expiryDate && new Date(coupon.expiryDate) < new Date()) {
+      return sendError(res, "This coupon code has expired", 400);
+    }
+
+    // 2. Global Coupon usage limit check
+    if (coupon.usageLimit && coupon.ordersUsed >= coupon.usageLimit) {
+      return sendError(res, "This coupon's usage limit has been reached", 400);
+    }
+
+    // 3. User usage limit validation check
+    if (phone) {
+      const userUsage = coupon.usedBy?.find((item) => item.phone === phone);
+      if (
+        userUsage &&
+        coupon.userLimit &&
+        userUsage.usageCount >= coupon.userLimit
+      ) {
+        return sendError(
+          res,
+          `You have reached the usage limit for this coupon (${coupon.userLimit} time(s))`,
+          400,
+        );
+      }
     }
 
     // Calculate details
@@ -81,7 +107,8 @@ export const validateCoupon = async (req, res, next) => {
 // @access  Public
 export const createCoupon = async (req, res, next) => {
   try {
-    const { code, discountType, value } = req.body;
+    const { code, discountType, value, usageLimit, userLimit, expiryDate } =
+      req.body;
 
     if (!code || !value) {
       return sendError(res, "Please fill in all mandatory coupon details", 400);
@@ -93,6 +120,9 @@ export const createCoupon = async (req, res, next) => {
       value: Number(value),
       status: "Active",
       ordersUsed: 0,
+      usageLimit: usageLimit !== undefined ? Number(usageLimit) : 9999,
+      userLimit: userLimit !== undefined ? Number(userLimit) : 1,
+      expiryDate: expiryDate ? new Date(expiryDate) : undefined,
     });
 
     return sendSuccess(

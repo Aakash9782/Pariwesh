@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -18,10 +18,24 @@ import { logoutSuccess } from "../redux/slices/authSlice.js";
 import API from "../services/api.js";
 
 const MainLayout = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const cartItems = useSelector((state) => state.cart.items);
   const wishlistProducts = useSelector((state) => state.wishlist.products);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+
+  React.useEffect(() => {
+    if (!isAuthenticated && location.pathname !== "/login") {
+      navigate("/login");
+    } else if (isAuthenticated && location.pathname === "/login") {
+      if (user?.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
+    }
+  }, [isAuthenticated, location.pathname, navigate, user]);
 
   const [darkMode, setDarkMode] = useState(
     localStorage.getItem("theme") === "dark",
@@ -273,9 +287,9 @@ const MainLayout = () => {
               )}
             </div>
 
-            {/* Auth Menu (Hidden on Mobile) */}
+            {/* Auth Menu (Visible on Desktop & Mobile) */}
             {isAuthenticated ? (
-              <div className="relative group hidden md:block">
+              <div className="relative group">
                 <Link
                   to="/profile"
                   className="hover:text-accent-gold transition-colors flex items-center space-x-1"
@@ -285,8 +299,8 @@ const MainLayout = () => {
                     Hi, {user?.name?.split(" ")[0]}
                   </span>
                 </Link>
-                {/* Dropdown Menu */}
-                <div className="absolute right-0 mt-2 w-48 bg-primary border border-borderLight rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 text-textPrimary">
+                {/* Dropdown Menu (Desktop Hover only) */}
+                <div className="absolute right-0 mt-2 w-48 bg-primary border border-borderLight rounded-md shadow-lg opacity-0 invisible md:group-hover:opacity-100 md:group-hover:visible transition-all duration-300 text-textPrimary hidden md:block z-50">
                   <Link
                     to="/profile"
                     className="block px-4 py-2 text-sm text-textPrimary hover:bg-bgLight hover:text-accent-gold"
@@ -310,7 +324,7 @@ const MainLayout = () => {
             ) : (
               <Link
                 to="/login"
-                className="hidden md:block hover:text-accent-gold transition-colors"
+                className="hover:text-accent-gold transition-colors"
               >
                 <RiUserLine size={22} />
               </Link>

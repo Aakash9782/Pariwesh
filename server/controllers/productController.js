@@ -163,6 +163,7 @@ export const createProduct = async (req, res, next) => {
       color,
       colorHex,
       sizes,
+      sizesStock,
       mrp,
       price,
       image, // Accept single base64 image or string url
@@ -170,6 +171,7 @@ export const createProduct = async (req, res, next) => {
       video,
       tag,
       description,
+      discount,
     } = req.body;
 
     if (!name || !sku || !mrp || !price) {
@@ -219,8 +221,10 @@ export const createProduct = async (req, res, next) => {
       color: color || "Multicolor",
       colorHex: colorHex || "#D4AF37",
       sizes: sizes || ["S", "M", "L", "XL"],
+      sizesStock: sizesStock || { S: 10, M: 10, L: 10, XL: 10, XXL: 10 },
       mrp,
       price,
+      discount: discount || 0,
       images: productImages,
       video: productVideo,
       tag: tag || "Regular",
@@ -260,6 +264,116 @@ export const deleteProduct = async (req, res, next) => {
 
     return sendSuccess(res, "Product deleted from catalog");
   } catch (error) {
+    return sendError(res, error.message, 500);
+  }
+};
+
+// @desc    Update catalog product (Admin)
+// @route   PUT /api/v1/products/id/:id
+// @access  Public
+export const updateProduct = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const {
+      name,
+      sku,
+      category,
+      fabric,
+      washCare,
+      color,
+      colorHex,
+      sizes,
+      sizesStock,
+      mrp,
+      price,
+      stock,
+      image,
+      images,
+      video,
+      tag,
+      description,
+      discount,
+    } = req.body;
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return sendError(res, "Product not found", 404);
+    }
+
+    // Process new images/image if present and base64
+    let productImages = product.images || [];
+    if (images && images.length > 0) {
+      const processedImages = [];
+      for (const img of images) {
+        if (img.startsWith("data:image")) {
+          const uploadedUrl = await uploadBase64Image(img, "pariwesh/products");
+          processedImages.push(uploadedUrl);
+        } else {
+          processedImages.push(img);
+        }
+      }
+      productImages = processedImages;
+    } else if (image) {
+      if (image.startsWith("data:image")) {
+        const uploadedUrl = await uploadBase64Image(image, "pariwesh/products");
+        productImages = [uploadedUrl];
+      } else {
+        productImages = [image];
+      }
+    }
+
+    // Process video if present and base64
+    let productVideo = product.video;
+    if (video !== undefined) {
+      if (video && video.startsWith("data:video")) {
+        productVideo = await uploadBase64Video(video, "pariwesh/videos");
+      } else {
+        productVideo = video;
+      }
+    }
+
+    product.name = name !== undefined ? name : product.name;
+    product.sku = sku !== undefined ? sku : product.sku;
+    product.category = category !== undefined ? category : product.category;
+    product.fabric = fabric !== undefined ? fabric : product.fabric;
+    product.washCare = washCare !== undefined ? washCare : product.washCare;
+    product.color = color !== undefined ? color : product.color;
+    product.colorHex = colorHex !== undefined ? colorHex : product.colorHex;
+    product.sizes = sizes !== undefined ? sizes : product.sizes;
+    product.sizesStock =
+      sizesStock !== undefined ? sizesStock : product.sizesStock;
+    product.mrp = mrp !== undefined ? Number(mrp) : product.mrp;
+    product.price = price !== undefined ? Number(price) : product.price;
+    product.discount =
+      discount !== undefined ? Number(discount) : product.discount;
+    product.stock = stock !== undefined ? Number(stock) : product.stock;
+    product.images = productImages;
+    product.video = productVideo;
+    product.tag = tag !== undefined ? tag : product.tag;
+    product.description =
+      description !== undefined ? description : product.description;
+
+    if (name) {
+      product.slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)+/g, "");
+    }
+
+    const updatedProduct = await product.save();
+    return sendSuccess(
+      res,
+      "Product updated in catalog successfully",
+      updatedProduct,
+    );
+  } catch (error) {
+    if (error.code === 11000) {
+      return sendError(
+        res,
+        "Product with this Name, Slug, or SKU already exists",
+        400,
+      );
+    }
     return sendError(res, error.message, 500);
   }
 };

@@ -9,6 +9,7 @@ import {
 import Button from "../../components/common/Button.jsx";
 import Input from "../../components/form/Input.jsx";
 import { authSuccess } from "../../redux/slices/authSlice.js";
+import API from "../../services/api.js";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -37,7 +38,7 @@ const Login = () => {
     }, 800);
   };
 
-  const handleVerifyOTP = (e) => {
+  const handleVerifyOTP = async (e) => {
     e.preventDefault();
     if (otpCode.length !== 4) {
       setError("OTP must be exactly 4 digits.");
@@ -46,33 +47,30 @@ const Login = () => {
     setError("");
     setLoading(true);
 
-    // Simulate OTP validation
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const res = await API.post("/users/login", { phone: phoneNumber });
+      if (res.data && res.data.success) {
+        const { token, user } = res.data.data;
+        dispatch(authSuccess({ user, token }));
 
-      const isAdmin =
-        phoneNumber === "9782681155" ||
-        phoneNumber === "9876543210" ||
-        phoneNumber === "9999999999";
-      const mockUser = {
-        _id: isAdmin ? "usr_admin999" : "usr_abc123",
-        name: isAdmin ? "Pariwesh Admin Desk" : "Priyanjali Sen",
-        email: isAdmin ? "admin@pariwesh.com" : "priyanjali.sen@pariwesh.com",
-        phone: phoneNumber,
-        role: isAdmin ? "admin" : "customer",
-      };
-      const mockToken = "mock_jwt_access_token_jwt_signature";
-
-      // Update credentials inside redux
-      dispatch(authSuccess({ user: mockUser, token: mockToken }));
-
-      // Navigate to profile page or admin dashboard if admin
-      if (isAdmin) {
-        navigate("/admin");
+        // Save to browser session variables for persistence
+        if (user.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/profile");
+        }
       } else {
-        navigate("/profile");
+        setError(res.data?.message || "Login failed");
       }
-    }, 800);
+    } catch (err) {
+      console.error("Login verification error:", err);
+      setError(
+        err.response?.data?.message ||
+          "Invalid OTP code or verification failed.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

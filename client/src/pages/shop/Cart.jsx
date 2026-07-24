@@ -15,8 +15,13 @@ import {
   clearCart,
 } from "../../redux/slices/cartSlice.js";
 import API from "../../services/api.js";
+import { useAlert } from "../../contexts/AlertContext.jsx";
 
 const Cart = () => {
+  const { showAlert } = useAlert();
+  const alert = (msg) => {
+    showAlert(msg);
+  };
   const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.cart.items);
   const { user } = useSelector((state) => state.auth);
@@ -65,6 +70,7 @@ const Cart = () => {
       const res = await API.post("/coupons/validate", {
         code: coupon,
         subtotal: sub,
+        phone: address.phone || undefined,
       });
 
       if (res.data && res.data.success) {
@@ -118,6 +124,25 @@ const Cart = () => {
 
     try {
       setLoading(true);
+
+      // Verify that the coupon is still valid for this specific customer phone
+      if (couponApplied) {
+        try {
+          await API.post("/coupons/validate", {
+            code: coupon.trim().toUpperCase(),
+            subtotal: getSubtotal(),
+            phone: address.phone,
+          });
+        } catch (couponErr) {
+          alert(
+            `Coupon Validation Failed: ${couponErr.response?.data?.message || "Usage limit exceeded or coupon expired."}`,
+          );
+          setCouponApplied(false);
+          setDiscount(0);
+          setLoading(false);
+          return;
+        }
+      }
 
       const orderItemsPayload = cartItems.map((item) => ({
         productId: item.product._id,
@@ -352,6 +377,50 @@ const Cart = () => {
               </button>
             </div>
 
+            {user?.addresses && user.addresses.length > 0 && (
+              <div className="bg-bgLight p-4 border border-borderLight rounded-sm space-y-3">
+                <span className="block text-[9px] uppercase font-bold text-textSecondary tracking-wider">
+                  Quick Select Saved Address
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {user.addresses.map((addr, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setAddress((prev) => ({
+                          ...prev,
+                          fullName: addr.fullName,
+                          phone: addr.phone,
+                          street: addr.street,
+                          city: addr.city,
+                          state: addr.state,
+                          pincode: addr.pincode,
+                        }));
+                      }}
+                      className="text-left border border-borderLight hover:border-accent-gold p-3 bg-primary text-xs rounded-sm transition-all flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="font-bold flex justify-between items-center text-textPrimary">
+                          <span>{addr.fullName}</span>
+                          <span className="text-[8px] bg-secondary text-primary px-1.5 py-0.5 rounded uppercase font-bold">
+                            {addr.type || "Home"}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-textSecondary mt-1 leading-snug">
+                          {addr.street}, {addr.city}, {addr.state} -{" "}
+                          {addr.pincode}
+                        </p>
+                      </div>
+                      <span className="text-[9px] text-accent-gold font-bold mt-2">
+                        Use this address
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="Full Customer Name"
@@ -359,7 +428,7 @@ const Cart = () => {
                 required
                 value={address.fullName}
                 onChange={handleAddressInput}
-                placeholder="e.g. Priyanjali Sen"
+                placeholder="e.g. Pariwesh Customer"
               />
               <Input
                 label="Mobile Contact Number"
@@ -367,7 +436,7 @@ const Cart = () => {
                 required
                 value={address.phone}
                 onChange={handleAddressInput}
-                placeholder="e.g. +91 9876543210"
+                placeholder="e.g. +91 9782681155"
               />
             </div>
 

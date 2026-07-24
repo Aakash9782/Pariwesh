@@ -13,6 +13,7 @@ import Wishlist from "./pages/shop/Wishlist.jsx";
 import Login from "./pages/auth/Login.jsx";
 import Profile from "./pages/profile/Profile.jsx";
 import AdminDashboard from "./pages/admin/Dashboard.jsx";
+import { AlertProvider } from "./contexts/AlertContext.jsx";
 import "./index.css";
 
 // Create a client for TanStack Query
@@ -42,28 +43,30 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<MainLayout />}>
-              <Route index element={<Home />} />
-              <Route path="shop" element={<ShopListings />} />
-              <Route path="product/:slug" element={<ProductDetails />} />
+        <AlertProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<MainLayout />}>
+                <Route index element={<Home />} />
+                <Route path="shop" element={<ShopListings />} />
+                <Route path="product/:slug" element={<ProductDetails />} />
+                <Route
+                  path="collections"
+                  element={<PlaceholderPage title="Curated Collections" />}
+                />
+                <Route path="wishlist" element={<Wishlist />} />
+                <Route path="cart" element={<Cart />} />
+                <Route path="login" element={<Login />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="admin" element={<AdminDashboard />} />
+              </Route>
               <Route
-                path="collections"
-                element={<PlaceholderPage title="Curated Collections" />}
+                path="*"
+                element={<PlaceholderPage title="404 Page Not Found" />}
               />
-              <Route path="wishlist" element={<Wishlist />} />
-              <Route path="cart" element={<Cart />} />
-              <Route path="login" element={<Login />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="admin" element={<AdminDashboard />} />
-            </Route>
-            <Route
-              path="*"
-              element={<PlaceholderPage title="404 Page Not Found" />}
-            />
-          </Routes>
-        </BrowserRouter>
+            </Routes>
+          </BrowserRouter>
+        </AlertProvider>
       </QueryClientProvider>
     </Provider>
   </React.StrictMode>,

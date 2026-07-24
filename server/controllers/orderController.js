@@ -1,4 +1,5 @@
 import Order from "../models/Order.js";
+import Coupon from "../models/Coupon.js";
 import { sendSuccess, sendError } from "../utils/responseFormatter.js";
 
 // @desc    Get all orders (Admin views)
@@ -56,6 +57,28 @@ export const createOrder = async (req, res, next) => {
       orderStatus: "Placed",
     });
 
+    // Update dynamic coupon limit logs in DB if applied
+    if (pricing && pricing.appliedCoupon) {
+      const coupon = await Coupon.findOne({
+        code: pricing.appliedCoupon.toUpperCase(),
+      });
+      if (coupon) {
+        coupon.ordersUsed = (coupon.ordersUsed || 0) + 1;
+        const phone = customer?.phone || shippingAddress?.phone;
+        if (phone) {
+          const usedIndex = coupon.usedBy.findIndex(
+            (item) => item.phone === phone,
+          );
+          if (usedIndex > -1) {
+            coupon.usedBy[usedIndex].usageCount += 1;
+          } else {
+            coupon.usedBy.push({ phone, usageCount: 1 });
+          }
+        }
+        await coupon.save();
+      }
+    }
+
     return sendSuccess(res, "Order placed successfully", newOrder, 201);
   } catch (error) {
     return sendError(res, error.message, 500);
@@ -111,6 +134,22 @@ export const updateOrderStatus = async (req, res, next) => {
       `Order status updated to ${order.orderStatus}`,
       order,
     );
+  } catch (error) {
+    return sendError(res, error.message, 500);
+  }
+};
+
+// @desc    Delete order (Admin)
+// @route   DELETE /api/v1/orders/:id
+// @access  Public
+export const deleteOrder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findByIdAndDelete(id);
+    if (!order) {
+      return sendError(res, "Order not found", 404);
+    }
+    return sendSuccess(res, "Order deleted from queue");
   } catch (error) {
     return sendError(res, error.message, 500);
   }

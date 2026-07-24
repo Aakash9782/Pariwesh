@@ -27,6 +27,26 @@ const CouponSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    usageLimit: {
+      type: Number,
+      default: 9999,
+    },
+    userLimit: {
+      type: Number,
+      default: 1,
+    },
+    expiryDate: {
+      type: Date,
+    },
+    usedBy: [
+      {
+        phone: String,
+        usageCount: {
+          type: Number,
+          default: 1,
+        },
+      },
+    ],
   },
   { timestamps: true },
 );

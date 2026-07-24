@@ -10,8 +10,13 @@ import {
 import { motion } from "framer-motion";
 import { addToCart } from "../redux/slices/cartSlice.js";
 import API from "../services/api.js";
+import { useAlert } from "../contexts/AlertContext.jsx";
 
 const Home = () => {
+  const { showAlert } = useAlert();
+  const alert = (msg) => {
+    showAlert(msg);
+  };
   const dispatch = useDispatch();
 
   // Festive Ad Campaign configuration state
@@ -27,6 +32,15 @@ const Home = () => {
 
   // Dynamic products catalog state
   const [products, setProducts] = useState([]);
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  const handleCopyCode = () => {
+    if (adConfig.code) {
+      navigator.clipboard.writeText(adConfig.code.trim().toUpperCase());
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    }
+  };
 
   useEffect(() => {
     const fetchPageData = async () => {
@@ -277,70 +291,184 @@ const Home = () => {
   return (
     <div className="space-y-16 pb-20">
       {/* Dynamic Festive Offer Banner Row */}
-      {adConfig.active && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 animate-fade-in">
-          <div
-            className={`relative overflow-hidden rounded-sm border p-6 md:p-10 shadow-lg ${
-              adConfig.theme === "royal-gold"
-                ? "bg-gradient-to-r from-amber-950 via-yellow-900 to-amber-950 text-amber-100 border-amber-800"
-                : adConfig.theme === "emerald-green"
-                  ? "bg-gradient-to-r from-emerald-955 via-green-900 to-emerald-955 text-emerald-100 border-emerald-800"
-                  : adConfig.theme === "ruby-red"
-                    ? "bg-gradient-to-r from-rose-955 via-red-900 to-rose-955 text-red-100 border-red-900"
-                    : "bg-gradient-to-r from-purple-955 via-violet-900 to-purple-955 text-violet-100 border-violet-850"
-            }`}
-          >
-            {/* Background design elements */}
-            <div className="absolute right-0 top-0 bottom-0 opacity-10 pointer-events-none select-none flex items-center justify-end pr-10">
-              <svg
-                width="200"
-                height="200"
-                viewBox="0 0 100 100"
-                fill="currentColor"
+      {adConfig.active &&
+        (() => {
+          const getBannerTheme = () => {
+            switch (adConfig.theme) {
+              case "royal-gold":
+                return {
+                  wrapper:
+                    "bg-[linear-gradient(135deg,#0a0702_0%,#1c1407_30%,#3d2b0e_50%,#1c1407_70%,#0a0702_100%)] border-amber-500/35 text-amber-100",
+                  badge: "bg-amber-500/20 text-amber-250 border-amber-500/35",
+                  glow: "from-amber-400/25 to-transparent",
+                  mandala: "text-amber-500",
+                  btnGrab:
+                    "bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-neutral-950 shadow-[0_0_15px_rgba(245,158,11,0.25)]",
+                  btnCoupon:
+                    "bg-amber-950/40 border-amber-500/30 text-amber-205 hover:border-amber-450 hover:bg-amber-950/60",
+                  sparkle: "text-amber-400",
+                };
+              case "emerald-green":
+                return {
+                  wrapper:
+                    "bg-[linear-gradient(135deg,#010704_0%,#051c11_30%,#0e4226_50%,#051c11_70%,#010704_100%)] border-emerald-500/35 text-emerald-100",
+                  badge:
+                    "bg-emerald-500/20 text-emerald-250 border-emerald-500/35",
+                  glow: "from-emerald-400/25 to-transparent",
+                  mandala: "text-emerald-500",
+                  btnGrab:
+                    "bg-gradient-to-r from-emerald-400 to-emerald-600 hover:from-emerald-300 hover:to-emerald-500 text-neutral-950 shadow-[0_0_15px_rgba(16,185,129,0.25)]",
+                  btnCoupon:
+                    "bg-emerald-950/40 border-emerald-500/30 text-emerald-205 hover:border-emerald-450 hover:bg-emerald-950/60",
+                  sparkle: "text-emerald-400",
+                };
+              case "ruby-red":
+                return {
+                  wrapper:
+                    "bg-[linear-gradient(135deg,#0a0104_0%,#240510_30%,#540d23_50%,#240510_70%,#0a0104_100%)] border-rose-500/35 text-rose-100",
+                  badge: "bg-rose-500/20 text-rose-250 border-rose-500/35",
+                  glow: "from-rose-450/25 to-transparent",
+                  mandala: "text-rose-550",
+                  btnGrab:
+                    "bg-gradient-to-r from-rose-400 to-rose-600 hover:from-rose-300 hover:to-rose-500 text-neutral-950 shadow-[0_0_15px_rgba(244,63,94,0.25)]",
+                  btnCoupon:
+                    "bg-rose-955/40 border-rose-500/30 text-rose-205 hover:border-rose-450 hover:bg-rose-955/60",
+                  sparkle: "text-rose-400",
+                };
+              default: // velvet-purple
+                return {
+                  wrapper:
+                    "bg-[linear-gradient(135deg,#04010a_0%,#140529_30%,#390e66_50%,#140529_70%,#04010a_100%)] border-purple-500/35 text-purple-100",
+                  badge:
+                    "bg-purple-500/20 text-purple-250 border-purple-500/35",
+                  glow: "from-purple-400/25 to-transparent",
+                  mandala: "text-purple-500",
+                  btnGrab:
+                    "bg-gradient-to-r from-purple-400 to-purple-600 hover:from-purple-300 hover:to-purple-500 text-neutral-950 shadow-[0_0_15px_rgba(168,85,247,0.25)]",
+                  btnCoupon:
+                    "bg-purple-955/40 border-purple-500/30 text-purple-205 hover:border-purple-450 hover:bg-purple-955/60",
+                  sparkle: "text-purple-400",
+                };
+            }
+          };
+
+          const theme = getBannerTheme();
+
+          return (
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 animate-fade-in relative z-10">
+              <div
+                className={`relative overflow-hidden rounded-sm border p-6 md:p-10 shadow-2xl transition-all duration-500 festive-gradient-flow ${theme.wrapper}`}
               >
-                <path
-                  d="M50 0 L61 35 L97 36 L68 57 L79 93 L50 72 L21 93 L32 57 L3 36 L39 35 Z"
-                  fill="#D4AF37"
-                />
-              </svg>
-            </div>
+                {/* Radial Backdrop Glow */}
+                <div
+                  className={`absolute inset-0 bg-gradient-radial ${theme.glow} animate-radial-pulse pointer-events-none opacity-40`}
+                ></div>
 
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10 text-left">
-              <div className="space-y-2 md:max-w-2xl">
-                <span className="inline-block text-[9px] uppercase font-extrabold tracking-widest bg-white/20 text-white px-2.5 py-0.5 rounded-sm">
-                  ✨ Special Festival Promotion
-                </span>
-                <h2 className="text-xl md:text-3xl font-display font-bold uppercase tracking-wide drop-shadow-sm text-white">
-                  {adConfig.title}
-                </h2>
-                <p className="text-xs md:text-sm text-white/90 font-medium font-sans">
-                  {adConfig.subtitle}
-                </p>
-              </div>
+                {/* Gold Shimmering Sparkles */}
+                <div
+                  className={`absolute top-4 left-[20%] animate-pulse pointer-events-none ${theme.sparkle} opacity-60 text-sm hidden md:block`}
+                >
+                  ✦
+                </div>
+                <div
+                  className={`absolute bottom-4 left-[40%] animate-ping pointer-events-none ${theme.sparkle} opacity-40 text-xs hidden md:block`}
+                >
+                  ✦
+                </div>
+                <div
+                  className={`absolute top-6 right-[35%] animate-pulse pointer-events-none ${theme.sparkle} opacity-60 text-lg hidden md:block`}
+                >
+                  ✨
+                </div>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-                {adConfig.code && (
-                  <div className="flex flex-col">
-                    <span className="text-[8px] uppercase tracking-wider text-white/60 font-bold mb-1">
-                      Copy Coupon Code
+                {/* Background Slowly Rotating Mandala Design */}
+                <div
+                  className={`absolute -right-16 -bottom-16 md:-right-8 md:-bottom-8 opacity-10 pointer-events-none select-none flex items-center justify-end animate-slow-spin ${theme.mandala}`}
+                >
+                  <svg
+                    width="220"
+                    height="220"
+                    viewBox="0 0 100 100"
+                    fill="currentColor"
+                  >
+                    <path d="M50,0 C52,15 48,15 50,30 C45,35 35,35 30,30 C35,25 35,15 50,0 Z" />
+                    <path d="M50,100 C48,85 52,85 50,70 C55,65 65,65 70,70 C65,75 65,85 50,100 Z" />
+                    <path d="M0,50 C15,48 15,52 30,50 C35,55 35,65 30,70 C25,65 15,65 0,50 Z" />
+                    <path d="M100,50 C85,52 85,48 70,50 C65,45 65,35 70,30 C75,35 85,35 100,50 Z" />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="15"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      fill="none"
+                    />
+                    <path
+                      d="M50,5 L58,35 L88,27 L65,48 L88,68 L58,60 L50,90 L42,60 L12,68 L35,48 L12,27 L42,35 Z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="0.8"
+                    />
+                  </svg>
+                </div>
+
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10 text-left">
+                  <div className="space-y-3 lg:max-w-3xl">
+                    <span
+                      className={`inline-flex items-center gap-1.5 text-[9px] uppercase font-black tracking-[0.2em] px-3 py-1 rounded-sm border ${theme.badge} backdrop-blur-md`}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                      Special Festival Promotion
                     </span>
-                    <div className="bg-white/10 border border-white/20 px-3 py-1.5 rounded-sm font-mono text-xs tracking-wider font-bold text-white flex items-center gap-1 select-all cursor-pointer">
-                      💡 {adConfig.code.toUpperCase()}
+                    <h2 className="text-2xl md:text-4xl font-display font-extrabold uppercase tracking-wider drop-shadow-md text-white">
+                      {adConfig.title}
+                    </h2>
+                    <p className="text-xs md:text-sm text-white/80 font-medium font-sans leading-relaxed tracking-wide">
+                      {adConfig.subtitle}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-4 lg:self-center">
+                    {adConfig.code && (
+                      <div className="flex flex-col">
+                        <span className="text-[9px] uppercase tracking-widest text-white/40 font-bold mb-1.5">
+                          Promo Code
+                        </span>
+                        <button
+                          onClick={handleCopyCode}
+                          title="Click to copy coupon code"
+                          className={`px-4 py-2 border rounded-sm font-mono text-xs tracking-widest font-black flex items-center gap-2 overflow-hidden transition-all duration-300 relative ${theme.btnCoupon}`}
+                        >
+                          {copiedCode ? (
+                            <span className="text-green-400 flex items-center gap-1.5 animate-bounce">
+                              ✔ COPIED!
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5">
+                              ✨ {adConfig.code.toUpperCase()}
+                            </span>
+                          )}
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col">
+                      <span className="text-[9px] uppercase tracking-widest text-[#000000]/0 font-bold mb-1.5 pointer-events-none hidden sm:block">
+                        Shop
+                      </span>
+                      <Link
+                        to={adConfig.link}
+                        className={`font-black text-[10px] uppercase tracking-widest px-6 py-3 rounded-sm transition-all duration-300 flex items-center justify-center gap-1 hover:scale-105 active:scale-95 ${theme.btnGrab}`}
+                      >
+                        Grab Offer <RiArrowRightLine size={12} />
+                      </Link>
                     </div>
                   </div>
-                )}
-
-                <Link
-                  to={adConfig.link}
-                  className="bg-white hover:bg-neutral-100 text-neutral-900 hover:text-black font-extrabold text-[10px] uppercase tracking-wider px-5 py-3 rounded-sm shadow-md transition-all duration-300 flex items-center justify-center self-start sm:self-center"
-                >
-                  Grab Offer
-                </Link>
+                </div>
               </div>
-            </div>
-          </div>
-        </section>
-      )}
+            </section>
+          );
+        })()}
 
       {/* SECTION 1: HERO SPOTLIGHT SLIDER (Vibrant premium hero layout) */}
       <section className="relative h-[80vh] overflow-hidden bg-secondary w-full">

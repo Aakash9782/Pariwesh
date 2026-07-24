@@ -229,3 +229,51 @@
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
+
+/* Luxury design & micro-animations for ad banners */
+@keyframes gold-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.festive-gradient-flow {
+  background-size: 250% 250%;
+  animation: gold-flow 12s ease-in-out infinite;
+}
+
+@keyframes slow-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-slow-spin {
+  animation: slow-spin 40s linear infinite;
+}
+
+/* Pulse shine overlays */
+@keyframes radial-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.25;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.45;
+  }
+}
+
+.animate-radial-pulse {
+  animation: radial-pulse 6s ease-in-out infinite;
+}

@@ -47,9 +47,20 @@ const ProductSchema = new mongoose.Schema(
       enum: ["S", "M", "L", "XL", "XXL"],
       default: ["S", "M", "L", "XL"],
     },
+    sizesStock: {
+      S: { type: Number, default: 10 },
+      M: { type: Number, default: 10 },
+      L: { type: Number, default: 10 },
+      XL: { type: Number, default: 10 },
+      XXL: { type: Number, default: 10 },
+    },
     mrp: {
       type: Number,
       required: true,
+    },
+    discount: {
+      type: Number,
+      default: 0,
     },
     price: {
       type: Number,

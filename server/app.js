@@ -12,6 +12,8 @@ import settingRouter from "./routes/settingRoutes.js";
 import orderRouter from "./routes/orderRoutes.js";
 import productRouter from "./routes/productRoutes.js";
 import couponRouter from "./routes/couponRoutes.js";
+import notificationRouter from "./routes/notificationRoutes.js";
+import userRouter from "./routes/userRoutes.js";
 
 const app = express();
 
@@ -86,7 +88,8 @@ app.use("/api/v1/settings", settingRouter);
 app.use("/api/v1/orders", orderRouter);
 app.use("/api/v1/products", productRouter);
 app.use("/api/v1/coupons", couponRouter);
-// app.use('/api/v1/auth', authRouter);
+app.use("/api/v1/notifications", notificationRouter);
+app.use("/api/v1/users", userRouter);
 
 // 7. 404 HANDLER
 app.use("*", (req, res, next) => {

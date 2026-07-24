@@ -7,6 +7,10 @@ import {
   RiAddCircleLine,
   RiDeleteBinLine,
   RiSparklingLine,
+  RiEditLine,
+  RiGroupLine,
+  RiNotification4Line,
+  RiRadio2Line,
 } from "react-icons/ri";
 import Button from "../../components/common/Button.jsx";
 import Input from "../../components/form/Input.jsx";
@@ -14,8 +18,13 @@ import API from "../../services/api.js";
 
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
+import { useAlert } from "../../contexts/AlertContext.jsx";
 
 const Dashboard = () => {
+  const { showAlert, showConfirm } = useAlert();
+  const alert = (msg) => {
+    showAlert(msg);
+  };
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   if (!isAuthenticated || user?.role !== "admin") {
@@ -23,6 +32,49 @@ const Dashboard = () => {
   }
 
   const [activeSegment, setActiveSegment] = useState("overview"); // overview, products, coupons
+
+  const [notifications, setNotifications] = useState([]);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await API.get("/notifications");
+      if (res.data && res.data.success) {
+        setNotifications(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to load notifications:", err);
+    }
+  };
+
+  const handleMarkAsRead = async (notifId) => {
+    try {
+      const res = await API.put(`/notifications/${notifId}/read`);
+      if (res.data && res.data.success) {
+        setNotifications((prev) =>
+          prev.map((n) => (n._id === notifId ? { ...n, isRead: true } : n)),
+        );
+      }
+    } catch (err) {
+      console.error("Failed to mark as read:", err);
+    }
+  };
+
+  const handleDeleteNotif = async (notifId) => {
+    try {
+      const res = await API.delete(`/notifications/${notifId}`);
+      if (res.data && res.data.success) {
+        setNotifications((prev) => prev.filter((n) => n._id !== notifId));
+      }
+    } catch (err) {
+      console.error("Failed to delete notification:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Banner ad settings state
   const [bannerActive, setBannerActive] = useState(
@@ -208,9 +260,31 @@ const Dashboard = () => {
       }
     } catch (err) {
       console.error("Failed to update status:", err);
-      alert("Failed updating order status.");
     }
   };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (
+      !(await showConfirm(
+        "Are you sure you want to permanently delete this order from records?",
+      ))
+    ) {
+      return;
+    }
+    try {
+      const res = await API.delete(`/orders/${orderId}`);
+      if (res.data && res.data.success) {
+        setOrdersList((prev) => prev.filter((o) => o._id !== orderId));
+        alert("Order deleted successfully.");
+      }
+    } catch (err) {
+      console.error("Failed to delete order:", err);
+      alert("Failed deleting order from database.");
+    }
+  };
+  const [productsList, setProductsList] = useState([]);
+  const [couponsList, setCouponsList] = useState([]);
+  const [customersList, setCustomersList] = useState([]);
 
   const fetchProductsList = async () => {
     try {
@@ -234,9 +308,64 @@ const Dashboard = () => {
     }
   };
 
+  const fetchCustomersList = async (currentOrders = ordersList) => {
+    try {
+      const usersRes = await API.get("/users");
+      if (usersRes.data && usersRes.data.success) {
+        const users = usersRes.data.data;
+        const audienceMapped = users.map((u) => {
+          const userOrders = currentOrders.filter(
+            (o) =>
+              (o.customer?._id && String(o.customer._id) === String(u._id)) ||
+              (o.customer && String(o.customer) === String(u._id)) ||
+              o.shippingAddress?.phone === u.phone,
+          );
+          const totalSpend = userOrders.reduce(
+            (acc, curr) => acc + (curr.pricing?.grandTotal || 0),
+            0,
+          );
+          const city =
+            u.addresses?.[0]?.city ||
+            userOrders[0]?.shippingAddress?.city ||
+            "N/A";
+
+          return {
+            _id: u._id,
+            id: u._id,
+            name: u.name,
+            phone: u.phone,
+            email: u.email,
+            ordersCount: userOrders.length,
+            totalSpend,
+            role: u.role === "admin" ? "Admin" : "Customer",
+            city,
+          };
+        });
+        setCustomersList(audienceMapped);
+      }
+    } catch (err) {
+      console.error("Failed loading customer details:", err);
+    }
+  };
+
   useEffect(() => {
     if (activeSegment === "orders") {
       fetchOrders();
+    } else if (activeSegment === "customers") {
+      const loadCRM = async () => {
+        try {
+          const res = await API.get("/orders");
+          let currentOrders = [];
+          if (res.data && res.data.success) {
+            setOrdersList(res.data.data);
+            currentOrders = res.data.data;
+          }
+          await fetchCustomersList(currentOrders);
+        } catch (err) {
+          console.error("Failed loading CRM space details:", err);
+        }
+      };
+      loadCRM();
     } else if (activeSegment === "products") {
       fetchProductsList();
     } else if (activeSegment === "coupons") {
@@ -244,24 +373,49 @@ const Dashboard = () => {
     }
   }, [activeSegment]);
 
-  // Catalogs state
-  const [productsList, setProductsList] = useState([]);
-
-  const [couponsList, setCouponsList] = useState([]);
-
   // Form states to add product
   const [newProduct, setNewProduct] = useState({
     name: "",
     sku: "",
+    mrp: "",
+    discount: "0",
     price: "",
-    stock: "",
-    tags: "",
+    stock: "15",
+    tags: "New Special",
+    stockS: "10",
+    stockM: "10",
+    stockL: "10",
+    stockXL: "10",
+    stockXXL: "10",
   });
+
+  const handleMrpChange = (val) => {
+    const mrpNum = Number(val) || 0;
+    const discNum = Number(newProduct.discount) || 0;
+    const calculated = Math.round(mrpNum * (1 - discNum / 100));
+    setNewProduct((prev) => ({
+      ...prev,
+      mrp: val,
+      price: calculated > 0 ? String(calculated) : "",
+    }));
+  };
+
+  const handleDiscountChange = (val) => {
+    const discNum = Number(val) || 0;
+    const mrpNum = Number(newProduct.mrp) || 0;
+    const calculated = Math.round(mrpNum * (1 - discNum / 100));
+    setNewProduct((prev) => ({
+      ...prev,
+      discount: val,
+      price: calculated > 0 ? String(calculated) : "",
+    }));
+  };
 
   const [productImageFile, setProductImageFile] = useState(null);
   const [productVideoFile, setProductVideoFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [videoPreview, setVideoPreview] = useState("");
+  const [editingProduct, setEditingProduct] = useState(null);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -307,40 +461,129 @@ const Dashboard = () => {
     code: "",
     value: "",
     discountType: "Percentage",
+    usageLimit: "100",
+    userLimit: "1",
+    expiryDate: "",
   });
+
+  const EMPTY_PRODUCT_FORM = {
+    name: "",
+    sku: "",
+    mrp: "",
+    discount: "0",
+    price: "",
+    stock: "15",
+    tags: "New Special",
+    stockS: "10",
+    stockM: "10",
+    stockL: "10",
+    stockXL: "10",
+    stockXXL: "10",
+  };
+
+  const startEditProduct = (prod) => {
+    setEditingProduct(prod);
+    setNewProduct({
+      name: prod.name,
+      sku: prod.sku,
+      mrp: prod.mrp ? String(prod.mrp) : "",
+      discount: prod.discount !== undefined ? String(prod.discount) : "0",
+      price: prod.price ? String(prod.price) : "",
+      stock: prod.stock || 15,
+      tags: prod.tag || prod.tags || "",
+      stockS:
+        prod.sizesStock?.S !== undefined ? String(prod.sizesStock.S) : "10",
+      stockM:
+        prod.sizesStock?.M !== undefined ? String(prod.sizesStock.M) : "10",
+      stockL:
+        prod.sizesStock?.L !== undefined ? String(prod.sizesStock.L) : "10",
+      stockXL:
+        prod.sizesStock?.XL !== undefined ? String(prod.sizesStock.XL) : "10",
+      stockXXL:
+        prod.sizesStock?.XXL !== undefined ? String(prod.sizesStock.XXL) : "10",
+    });
+    setImagePreview((prod.images && prod.images[0]) || prod.image || "");
+    setVideoPreview(prod.video || "");
+    window.scrollTo({ top: 300, behavior: "smooth" });
+  };
+
+  const cancelEditProduct = () => {
+    setEditingProduct(null);
+    setNewProduct(EMPTY_PRODUCT_FORM);
+    setProductImageFile(null);
+    setProductVideoFile(null);
+    setImagePreview("");
+    setVideoPreview("");
+  };
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
-    if (!newProduct.name || !newProduct.sku || !newProduct.price) {
-      alert("Please fill out Name, SKU and selling price.");
+    if (
+      !newProduct.name ||
+      !newProduct.sku ||
+      !newProduct.mrp ||
+      !newProduct.price
+    ) {
+      alert("Please fill out Name, SKU, MRP, and Price.");
       return;
     }
     try {
       const payload = {
         name: newProduct.name,
         sku: newProduct.sku,
-        mrp: Math.round(Number(newProduct.price) * 1.5),
+        mrp: Number(newProduct.mrp),
+        discount: Number(newProduct.discount || 0),
         price: Number(newProduct.price),
-        stock: Number(newProduct.stock || 10),
+        stock: Number(newProduct.stock || 15),
         tag: newProduct.tags || "New",
+        sizesStock: {
+          S: Number(newProduct.stockS || 0),
+          M: Number(newProduct.stockM || 0),
+          L: Number(newProduct.stockL || 0),
+          XL: Number(newProduct.stockXL || 0),
+          XXL: Number(newProduct.stockXXL || 0),
+        },
         image:
           imagePreview ||
           "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop",
         video: videoPreview || "",
       };
-      const res = await API.post("/products", payload);
-      if (res.data && res.data.success) {
-        setProductsList((prev) => [res.data.data, ...prev]);
-        setNewProduct({ name: "", sku: "", price: "", stock: "", tags: "" });
-        setProductImageFile(null);
-        setProductVideoFile(null);
-        setImagePreview("");
-        setVideoPreview("");
-        alert("Product added successfully to the catalog.");
+
+      if (editingProduct) {
+        const res = await API.put(
+          `/products/id/${editingProduct._id}`,
+          payload,
+        );
+        if (res.data && res.data.success) {
+          setProductsList((prev) =>
+            prev.map((p) => (p._id === editingProduct._id ? res.data.data : p)),
+          );
+          setEditingProduct(null);
+          setNewProduct(EMPTY_PRODUCT_FORM);
+          setProductImageFile(null);
+          setProductVideoFile(null);
+          setImagePreview("");
+          setVideoPreview("");
+          alert("Product updated successfully in the catalog.");
+        }
+      } else {
+        const res = await API.post("/products", payload);
+        if (res.data && res.data.success) {
+          setProductsList((prev) => [res.data.data, ...prev]);
+          setNewProduct(EMPTY_PRODUCT_FORM);
+          setProductImageFile(null);
+          setProductVideoFile(null);
+          setImagePreview("");
+          setVideoPreview("");
+          alert("Product added successfully to the catalog.");
+        }
       }
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Failed to add product to catalog.");
+      alert(
+        err.response?.data?.message ||
+          `Failed to ${editingProduct ? "update" : "add"} product.`,
+      );
     }
   };
 
@@ -355,11 +598,21 @@ const Dashboard = () => {
         code: newCoupon.code.toUpperCase(),
         discountType: newCoupon.discountType,
         value: Number(newCoupon.value),
+        usageLimit: Number(newCoupon.usageLimit || 9999),
+        userLimit: Number(newCoupon.userLimit || 1),
+        expiryDate: newCoupon.expiryDate || undefined,
       };
       const res = await API.post("/coupons", payload);
       if (res.data && res.data.success) {
         setCouponsList((prev) => [res.data.data, ...prev]);
-        setNewCoupon({ code: "", value: "", discountType: "Percentage" });
+        setNewCoupon({
+          code: "",
+          value: "",
+          discountType: "Percentage",
+          usageLimit: "100",
+          userLimit: "1",
+          expiryDate: "",
+        });
         alert("Coupon generated successfully in database!");
       }
     } catch (err) {
@@ -370,9 +623,9 @@ const Dashboard = () => {
 
   const handleDeleteProduct = async (id) => {
     if (
-      !window.confirm(
+      !(await showConfirm(
         "Are you sure you want to delete this product from database?",
-      )
+      ))
     )
       return;
     try {
@@ -387,7 +640,7 @@ const Dashboard = () => {
   };
 
   const handleDeleteCoupon = async (code) => {
-    if (!window.confirm(`Are you sure you want to delete coupon ${code}?`))
+    if (!(await showConfirm(`Are you sure you want to delete coupon ${code}?`)))
       return;
     try {
       const res = await API.delete(`/coupons/${code}`);
@@ -414,10 +667,10 @@ const Dashboard = () => {
         </div>
 
         {/* Dashboard quick links */}
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setActiveSegment("overview")}
-            className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 border transition-all ${
+            className={`px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 border transition-all ${
               activeSegment === "overview"
                 ? "bg-secondary text-primary border-secondary"
                 : "bg-primary text-textPrimary border-borderLight hover:bg-bgLight"
@@ -428,7 +681,7 @@ const Dashboard = () => {
           </button>
           <button
             onClick={() => setActiveSegment("orders")}
-            className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 border transition-all ${
+            className={`px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 border transition-all ${
               activeSegment === "orders"
                 ? "bg-secondary text-primary border-secondary"
                 : "bg-primary text-textPrimary border-borderLight hover:bg-bgLight"
@@ -439,7 +692,7 @@ const Dashboard = () => {
           </button>
           <button
             onClick={() => setActiveSegment("products")}
-            className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 border transition-all ${
+            className={`px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 border transition-all ${
               activeSegment === "products"
                 ? "bg-secondary text-primary border-secondary"
                 : "bg-primary text-textPrimary border-borderLight hover:bg-bgLight"
@@ -449,8 +702,19 @@ const Dashboard = () => {
             <span>Products</span>
           </button>
           <button
+            onClick={() => setActiveSegment("customers")}
+            className={`px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 border transition-all ${
+              activeSegment === "customers"
+                ? "bg-secondary text-primary border-secondary"
+                : "bg-primary text-textPrimary border-borderLight hover:bg-bgLight"
+            }`}
+          >
+            <RiGroupLine />
+            <span>Customers</span>
+          </button>
+          <button
             onClick={() => setActiveSegment("coupons")}
-            className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 border transition-all ${
+            className={`px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 border transition-all ${
               activeSegment === "coupons"
                 ? "bg-secondary text-primary border-secondary"
                 : "bg-primary text-textPrimary border-borderLight hover:bg-bgLight"
@@ -461,14 +725,37 @@ const Dashboard = () => {
           </button>
           <button
             onClick={() => setActiveSegment("banner-ads")}
-            className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 border transition-all ${
+            className={`px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 border transition-all ${
               activeSegment === "banner-ads"
-                ? "bg-secondary text-primary border-secondary"
+                ? "bg-secondary text-primary border-[#000]"
                 : "bg-primary text-textPrimary border-borderLight hover:bg-bgLight"
             }`}
           >
             <RiSparklingLine />
             <span>Offer Banners</span>
+          </button>
+
+          <button
+            onClick={() => setActiveSegment("alerts")}
+            className={`px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 border transition-all relative ${
+              activeSegment === "alerts"
+                ? "bg-secondary text-primary border-secondary"
+                : "bg-primary text-textPrimary border-borderLight hover:bg-bgLight"
+            }`}
+          >
+            <RiNotification4Line
+              className={
+                notifications.filter((n) => !n.isRead).length > 0
+                  ? "text-red-500 animate-bounce"
+                  : ""
+              }
+            />
+            <span>Inventory Alerts</span>
+            {notifications.filter((n) => !n.isRead).length > 0 && (
+              <span className="bg-red-600 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-full font-mono">
+                {notifications.filter((n) => !n.isRead).length}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -561,10 +848,21 @@ const Dashboard = () => {
           {/* Add product Form */}
           <form
             onSubmit={handleAddProduct}
-            className="lg:col-span-4 bg-primary border border-borderLight p-6 rounded-sm shadow-sm space-y-6"
+            className="lg:col-span-4 bg-primary border border-borderLight p-6 rounded-sm shadow-sm space-y-4"
           >
-            <h3 className="text-xs font-display font-bold uppercase tracking-wider text-textPrimary pb-3 border-b border-borderLight">
-              Add New Dress Suit
+            <h3 className="text-xs font-display font-bold uppercase tracking-wider text-textPrimary pb-3 border-b border-borderLight flex justify-between items-center">
+              <span>
+                {editingProduct ? "Edit Dress Suit" : "Add New Dress Suit"}
+              </span>
+              {editingProduct && (
+                <button
+                  type="button"
+                  onClick={cancelEditProduct}
+                  className="text-[10px] text-danger uppercase font-bold hover:underline"
+                >
+                  Cancel
+                </button>
+              )}
             </h3>
             <Input
               label="Product Name"
@@ -575,7 +873,7 @@ const Dashboard = () => {
               }
               placeholder="e.g. Saffron Organza Kurti"
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="SKU ID"
                 required
@@ -594,19 +892,36 @@ const Dashboard = () => {
                 placeholder="New Arrival"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
-                label="Price (₹)"
+                label="MRP (₹)"
                 required
                 type="number"
-                value={newProduct.price}
-                onChange={(e) =>
-                  setNewProduct({ ...newProduct, price: e.target.value })
-                }
-                placeholder="1599"
+                value={newProduct.mrp}
+                onChange={(e) => handleMrpChange(e.target.value)}
+                placeholder="100"
               />
               <Input
-                label="Stock Level"
+                label="Discount (% Off)"
+                type="number"
+                value={newProduct.discount}
+                onChange={(e) => handleDiscountChange(e.target.value)}
+                placeholder="15"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Calculated Price (₹)"
+                required
+                disabled
+                type="number"
+                value={newProduct.price}
+                placeholder="Auto-calculated (85)"
+              />
+              <Input
+                label="Global Stock Level"
                 type="number"
                 value={newProduct.stock}
                 onChange={(e) =>
@@ -614,6 +929,80 @@ const Dashboard = () => {
                 }
                 placeholder="40"
               />
+            </div>
+
+            {/* Individual size quantities */}
+            <div className="space-y-1.5 pt-2 border-t border-borderLight text-left">
+              <span className="text-[10px] uppercase font-display font-semibold tracking-wider text-textSecondary">
+                Physical Inventory by Size
+              </span>
+              <div className="grid grid-cols-5 gap-2">
+                <div className="flex flex-col space-y-1 text-center font-mono">
+                  <span className="text-[9px] font-bold text-textSecondary">
+                    S
+                  </span>
+                  <input
+                    type="number"
+                    value={newProduct.stockS}
+                    onChange={(e) =>
+                      setNewProduct({ ...newProduct, stockS: e.target.value })
+                    }
+                    className="w-full bg-primary text-textPrimary border border-borderLight text-[10px] py-1 text-center rounded-sm focus:border-accent-gold focus:outline-none"
+                  />
+                </div>
+                <div className="flex flex-col space-y-1 text-center font-mono font-bold">
+                  <span className="text-[9px] font-bold text-textSecondary">
+                    M
+                  </span>
+                  <input
+                    type="number"
+                    value={newProduct.stockM}
+                    onChange={(e) =>
+                      setNewProduct({ ...newProduct, stockM: e.target.value })
+                    }
+                    className="w-full bg-primary text-textPrimary border border-borderLight text-[10px] py-1 text-center rounded-sm focus:border-accent-gold focus:outline-none"
+                  />
+                </div>
+                <div className="flex flex-col space-y-1 text-center font-mono">
+                  <span className="text-[9px] font-bold text-textSecondary">
+                    L
+                  </span>
+                  <input
+                    type="number"
+                    value={newProduct.stockL}
+                    onChange={(e) =>
+                      setNewProduct({ ...newProduct, stockL: e.target.value })
+                    }
+                    className="w-full bg-primary text-textPrimary border border-borderLight text-[10px] py-1 text-center rounded-sm focus:border-accent-gold focus:outline-none"
+                  />
+                </div>
+                <div className="flex flex-col space-y-1 text-center font-mono font-bold">
+                  <span className="text-[9px] font-bold text-textSecondary">
+                    XL
+                  </span>
+                  <input
+                    type="number"
+                    value={newProduct.stockXL}
+                    onChange={(e) =>
+                      setNewProduct({ ...newProduct, stockXL: e.target.value })
+                    }
+                    className="w-full bg-primary text-textPrimary border border-borderLight text-[10px] py-1 text-center rounded-sm focus:border-accent-gold focus:outline-none"
+                  />
+                </div>
+                <div className="flex flex-col space-y-1 text-center font-mono">
+                  <span className="text-[9px] font-bold text-textSecondary">
+                    XXL
+                  </span>
+                  <input
+                    type="number"
+                    value={newProduct.stockXXL}
+                    onChange={(e) =>
+                      setNewProduct({ ...newProduct, stockXXL: e.target.value })
+                    }
+                    className="w-full bg-primary text-textPrimary border border-borderLight text-[10px] py-1 text-center rounded-sm focus:border-accent-gold focus:outline-none"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* File uploads */}
@@ -665,8 +1054,14 @@ const Dashboard = () => {
             </div>
 
             <Button type="submit" variant="gold" size="md" className="w-full">
-              <RiAddCircleLine size={14} className="mr-1.5" />
-              <span>Catalog Product</span>
+              {editingProduct ? (
+                <span>Save Changes</span>
+              ) : (
+                <>
+                  <RiAddCircleLine size={14} className="mr-1.5" />
+                  <span>Catalog Product</span>
+                </>
+              )}
             </Button>
           </form>
 
@@ -681,10 +1076,9 @@ const Dashboard = () => {
                   <tr className="bg-bgLight text-textSecondary uppercase font-bold text-[9px] border-b border-borderLight">
                     <th className="p-4">Suit Design Name</th>
                     <th className="p-4">SKU</th>
-                    <th className="p-4 text-right">Price</th>
-                    <th className="p-4 text-right">Stock</th>
-                    <th className="p-4 text-center">Tags</th>
-                    <th className="p-4 text-center">Action</th>
+                    <th className="p-4 text-center">MRP & Price</th>
+                    <th className="p-4 text-center">Stock by Size</th>
+                    <th className="p-4 text-right">Total Stock</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-borderLight">
@@ -717,30 +1111,375 @@ const Dashboard = () => {
                         </span>
                       </td>
                       <td className="p-4 font-semibold">{prod.sku}</td>
-                      <td className="p-4 text-right font-bold text-textPrimary">
-                        ₹{prod.price}
+                      <td className="p-4 text-center">
+                        <div className="flex flex-col items-center">
+                          <span className="font-bold text-textPrimary">
+                            ₹{prod.price}
+                          </span>
+                          {prod.mrp && prod.mrp > prod.price && (
+                            <span className="text-[10px] text-textSecondary line-through font-mono">
+                              ₹{prod.mrp}
+                            </span>
+                          )}
+                          {prod.discount > 0 && (
+                            <span className="text-[9px] text-accent-gold font-bold bg-accent-gold/10 px-1 rounded-sm mt-0.5">
+                              {prod.discount}% OFF
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="grid grid-cols-5 gap-0.5 min-w-[155px] mx-auto text-[8px] font-mono leading-none">
+                          <div className="bg-bgLight py-1 px-0.5 rounded-[2px] flex flex-col items-center">
+                            <span className="text-textSecondary font-bold">
+                              S
+                            </span>
+                            <span className="font-mono mt-0.5">
+                              {prod.sizesStock?.S ?? 0}
+                            </span>
+                          </div>
+                          <div
+                            className={`py-1 px-0.5 rounded-[2px] flex flex-col items-center ${(prod.sizesStock?.M ?? 0) === 0 ? "bg-danger/10 text-danger" : "bg-bgLight"}`}
+                          >
+                            <span className="text-textSecondary font-bold">
+                              M
+                            </span>
+                            <span className="font-mono mt-0.5 font-bold">
+                              {prod.sizesStock?.M ?? 0}
+                            </span>
+                          </div>
+                          <div className="bg-bgLight py-1 px-0.5 rounded-[2px] flex flex-col items-center">
+                            <span className="text-textSecondary font-bold">
+                              L
+                            </span>
+                            <span className="font-mono mt-0.5">
+                              {prod.sizesStock?.L ?? 0}
+                            </span>
+                          </div>
+                          <div className="bg-bgLight py-1 px-0.5 rounded-[2px] flex flex-col items-center">
+                            <span className="text-textSecondary font-bold">
+                              XL
+                            </span>
+                            <span className="font-mono mt-0.5">
+                              {prod.sizesStock?.XL ?? 0}
+                            </span>
+                          </div>
+                          <div className="bg-bgLight py-1 px-0.5 rounded-[2px] flex flex-col items-center">
+                            <span className="text-textSecondary font-bold font-mono">
+                              2XL
+                            </span>
+                            <span className="font-mono mt-0.5">
+                              {prod.sizesStock?.XXL ?? 0}
+                            </span>
+                          </div>
+                        </div>
                       </td>
                       <td className="p-4 text-right font-medium">
-                        {prod.stock} items
+                        <div className="flex items-center justify-end space-x-1.5 min-w-[70px]">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const newStock = Math.max(
+                                0,
+                                (prod.stock || 0) - 1,
+                              );
+                              try {
+                                const res = await API.put(
+                                  `/products/id/${prod._id}`,
+                                  { stock: newStock },
+                                );
+                                if (res.data && res.data.success) {
+                                  setProductsList((prev) =>
+                                    prev.map((p) =>
+                                      p._id === prod._id ? res.data.data : p,
+                                    ),
+                                  );
+                                }
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
+                            className="w-4 h-4 flex items-center justify-center bg-bgLight hover:bg-borderLight border border-borderLight rounded-full text-[10px] font-bold"
+                          >
+                            -
+                          </button>
+                          <span className="text-[11px] font-mono font-bold w-6 text-center">
+                            {prod.stock || 0}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const newStock = (prod.stock || 0) + 1;
+                              try {
+                                const res = await API.put(
+                                  `/products/id/${prod._id}`,
+                                  { stock: newStock },
+                                );
+                                if (res.data && res.data.success) {
+                                  setProductsList((prev) =>
+                                    prev.map((p) =>
+                                      p._id === prod._id ? res.data.data : p,
+                                    ),
+                                  );
+                                }
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
+                            className="w-4 h-4 flex items-center justify-center bg-bgLight hover:bg-borderLight border border-borderLight rounded-full text-[10px] font-bold"
+                          >
+                            +
+                          </button>
+                        </div>
                       </td>
                       <td className="p-4 text-center">
                         <span className="bg-secondary text-accent-gold text-[9px] uppercase tracking-wider px-2 py-0.5 rounded font-bold">
-                          {prod.tags}
+                          {prod.tag || prod.tags || "Regular"}
                         </span>
                       </td>
                       <td className="p-4 text-center">
-                        <button
-                          onClick={() => handleDeleteProduct(prod._id)}
-                          className="text-textSecondary hover:text-danger p-1 rounded-full hover:bg-danger/10"
-                        >
-                          <RiDeleteBinLine size={16} />
-                        </button>
+                        <div className="flex items-center justify-center space-x-1">
+                          <button
+                            type="button"
+                            onClick={() => startEditProduct(prod)}
+                            className="text-textSecondary hover:text-accent-gold p-1 rounded-full hover:bg-accent-gold/10"
+                            title="Edit Style"
+                          >
+                            <RiEditLine size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProduct(prod._id)}
+                            className="text-textSecondary hover:text-danger p-1 rounded-full hover:bg-danger/10"
+                            title="Delete Style"
+                          >
+                            <RiDeleteBinLine size={15} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+      {/* CUSTOMERS MANAGEMENT PANEL */}
+      {activeSegment === "customers" && (
+        <div className="space-y-6 animate-fade-in text-left">
+          {/* Summary Stats Widgets for CRM */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-primary border border-borderLight p-6 rounded-sm shadow-sm">
+              <span className="block text-[10px] uppercase font-bold text-textSecondary tracking-wider">
+                Total Ordered Audience
+              </span>
+              <h3 className="text-2xl font-display font-medium text-textPrimary mt-1">
+                {customersList.length} Accounts
+              </h3>
+              <p className="text-[10px] text-textSecondary font-semibold mt-2">
+                Aggregated from database order histories
+              </p>
+            </div>
+
+            <div className="bg-primary border border-borderLight p-6 rounded-sm shadow-sm">
+              <span className="block text-[10px] uppercase font-bold text-textSecondary tracking-wider">
+                VIP Clients Count
+              </span>
+              <h3 className="text-2xl font-display font-medium text-accent-gold mt-1">
+                {customersList.filter((c) => c.totalSpend > 5000).length}{" "}
+                Clients
+              </h3>
+              <p className="text-[10px] text-green-600 font-semibold mt-2">
+                With customer lifetime value &gt; ₹5,000
+              </p>
+            </div>
+
+            <div className="bg-primary border border-borderLight p-6 rounded-sm shadow-sm">
+              <span className="block text-[10px] uppercase font-bold text-textSecondary tracking-wider">
+                Total Customer Spent
+              </span>
+              <h3 className="text-2xl font-display font-medium text-textPrimary mt-1">
+                ₹
+                {customersList
+                  .reduce((acc, curr) => acc + curr.totalSpend, 0)
+                  .toLocaleString("en-IN")}
+              </h3>
+              <p className="text-[10px] text-textSecondary font-semibold mt-2 font-mono">
+                Lifetime conversion revenues
+              </p>
+            </div>
+          </div>
+
+          {/* Customer CRM Ledger */}
+          <div className="bg-primary border border-borderLight p-6 rounded-sm shadow-sm">
+            <h3 className="text-xs font-display font-bold uppercase tracking-wider text-textPrimary pb-3 border-b border-borderLight mb-4">
+              Database Customer Profiles Directory
+            </h3>
+
+            {customersList.length === 0 ? (
+              <div className="py-20 text-center text-xs text-textSecondary bg-bgLight border border-dashed rounded">
+                No customer profiles synced. Access requires successful
+                checkouts.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-bgLight text-textSecondary uppercase font-bold text-[9px] border-b border-borderLight">
+                      <th className="p-4">Customer Details & Location</th>
+                      <th className="p-4">Mobile Number ID</th>
+                      <th className="p-4 text-center">Orders Placed</th>
+                      <th className="p-4 text-right">LTV / Total Spend</th>
+                      <th className="p-4 text-center">Assigned Role</th>
+                      <th className="p-4 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-borderLight">
+                    {customersList.map((customer) => (
+                      <tr
+                        key={customer.phone}
+                        className="hover:bg-bgLight/40 transition-colors"
+                      >
+                        <td className="p-4 font-bold text-textPrimary">
+                          <span className="block text-xs">{customer.name}</span>
+                          <span className="block text-[10px] text-textSecondary font-normal lowercase mt-0.5">
+                            {customer.email}
+                          </span>
+                          <span className="inline-block bg-bgLight text-textSecondary text-[8.5px] px-1 rounded mt-1 font-semibold">
+                            {customer.city}
+                          </span>
+                        </td>
+                        <td className="p-4 font-mono font-semibold text-textPrimary">
+                          {customer.phone}
+                        </td>
+                        <td className="p-4 text-center font-bold">
+                          {customer.ordersCount} conversion(s)
+                        </td>
+                        <td className="p-4 text-right font-extrabold text-textPrimary">
+                          ₹{customer.totalSpend.toLocaleString("en-IN")}
+                        </td>
+                        <td className="p-4 text-center">
+                          <span
+                            onClick={async () => {
+                              const newRole =
+                                customer.role === "Admin"
+                                  ? "customer"
+                                  : "admin";
+                              if (
+                                !(await showConfirm(
+                                  `Are you sure you want to change role of ${customer.name} to ${newRole}?`,
+                                ))
+                              ) {
+                                return;
+                              }
+                              try {
+                                const res = await API.put(
+                                  `/users/${customer._id}`,
+                                  { role: newRole },
+                                );
+                                if (res.data && res.data.success) {
+                                  alert(
+                                    `Successfully changed role of ${customer.name} to ${newRole}!`,
+                                  );
+                                  fetchCustomersList();
+                                }
+                              } catch (err) {
+                                console.error(err);
+                                alert(
+                                  "Failed to change customer role in database.",
+                                );
+                              }
+                            }}
+                            className={`inline-block px-2 py-0.5 rounded text-[8.5px] uppercase tracking-wider font-bold cursor-pointer hover:opacity-85 ${
+                              customer.role === "Admin"
+                                ? "bg-accent-gold/15 text-accent-gold border border-accent-gold/30"
+                                : "bg-bgLight text-textSecondary border border-borderLight"
+                            }`}
+                            title="Click to toggle administrative clearance"
+                          >
+                            {customer.role}
+                          </span>
+                        </td>
+                        <td className="p-4 text-center">
+                          <div className="flex items-center justify-center space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const newName = prompt(
+                                  "Modify Customer Registered Name:",
+                                  customer.name,
+                                );
+                                if (newName === null) return;
+                                const newEmail = prompt(
+                                  "Modify Customer Registered Email:",
+                                  customer.email,
+                                );
+                                if (newEmail === null) return;
+
+                                try {
+                                  const res = await API.put(
+                                    `/users/${customer._id}`,
+                                    {
+                                      name: newName,
+                                      email: newEmail,
+                                    },
+                                  );
+                                  if (res.data && res.data.success) {
+                                    alert(
+                                      "Customer profile credentials updated in database!",
+                                    );
+                                    fetchCustomersList();
+                                  }
+                                } catch (err) {
+                                  console.error(err);
+                                  alert("Failed to update customer details.");
+                                }
+                              }}
+                              className="text-textSecondary hover:text-accent-gold p-1.5 rounded-full hover:bg-accent-gold/10"
+                              title="Override Profile Details"
+                            >
+                              <RiEditLine size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (
+                                  await showConfirm(
+                                    `Are you sure you want to permanently block or erase customer '${customer.name}' from database?`,
+                                  )
+                                ) {
+                                  try {
+                                    const res = await API.delete(
+                                      `/users/${customer._id}`,
+                                    );
+                                    if (res.data && res.data.success) {
+                                      alert(
+                                        `Customer ${customer.name} deleted successfully!`,
+                                      );
+                                      fetchCustomersList();
+                                    }
+                                  } catch (err) {
+                                    console.error(err);
+                                    alert(
+                                      "Failed to delete customer from database.",
+                                    );
+                                  }
+                                }
+                              }}
+                              className="text-textSecondary hover:text-danger p-1.5 rounded-full hover:bg-danger/10"
+                              title="Erase Customer Profile"
+                            >
+                              <RiDeleteBinLine size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -751,7 +1490,7 @@ const Dashboard = () => {
           {/* Add coupon form */}
           <form
             onSubmit={handleAddCoupon}
-            className="lg:col-span-4 bg-primary border border-borderLight p-6 rounded-sm shadow-sm space-y-6"
+            className="lg:col-span-4 bg-primary border border-borderLight p-6 rounded-sm shadow-sm space-y-4"
           >
             <h3 className="text-xs font-display font-bold uppercase tracking-wider text-textPrimary pb-3 border-b border-borderLight">
               Add Coupon Promo
@@ -768,8 +1507,8 @@ const Dashboard = () => {
               }
               placeholder="e.g. INVENTGOLD"
             />
-            <div className="flex flex-col space-y-1.5">
-              <span className="text-[10px] uppercase font-display font-semibold tracking-wider text-textSecondary">
+            <div className="flex flex-col space-y-1">
+              <span className="text-[9px] uppercase font-display font-semibold tracking-wider text-textSecondary">
                 Discount Type
               </span>
               <select
@@ -777,7 +1516,7 @@ const Dashboard = () => {
                 onChange={(e) =>
                   setNewCoupon({ ...newCoupon, discountType: e.target.value })
                 }
-                className="w-full bg-primary text-textPrimary border border-borderLight text-xs px-4 py-3 rounded-sm focus:border-accent-gold focus:outline-none"
+                className="w-full bg-primary text-textPrimary border border-borderLight text-xs px-3 py-2 rounded-sm focus:border-accent-gold focus:outline-none"
               >
                 <option value="Percentage">Percentage (%)</option>
                 <option value="Flat">Flat Price (₹)</option>
@@ -791,9 +1530,40 @@ const Dashboard = () => {
               onChange={(e) =>
                 setNewCoupon({ ...newCoupon, value: e.target.value })
               }
-              placeholder="e.g. 15 for 15% / 300 for ₹300"
+              placeholder="15 for 15% / 300 for ₹300"
             />
-            <Button type="submit" variant="gold" size="md" className="w-full">
+            <Input
+              label="Global Usage Limit"
+              type="number"
+              value={newCoupon.usageLimit}
+              onChange={(e) =>
+                setNewCoupon({ ...newCoupon, usageLimit: e.target.value })
+              }
+              placeholder="Maximum global uses (default: 100)"
+            />
+            <Input
+              label="Per-User Usage Limit"
+              type="number"
+              value={newCoupon.userLimit}
+              onChange={(e) =>
+                setNewCoupon({ ...newCoupon, userLimit: e.target.value })
+              }
+              placeholder="Uses per customer phone (default: 1)"
+            />
+            <Input
+              label="Campaign Expiry Date"
+              type="date"
+              value={newCoupon.expiryDate}
+              onChange={(e) =>
+                setNewCoupon({ ...newCoupon, expiryDate: e.target.value })
+              }
+            />
+            <Button
+              type="submit"
+              variant="gold"
+              size="md"
+              className="w-full pt-2"
+            >
               <RiAddCircleLine size={14} className="mr-1.5" />
               <span>Register Coupon Promo</span>
             </Button>
@@ -809,10 +1579,12 @@ const Dashboard = () => {
                 <thead>
                   <tr className="bg-bgLight text-textSecondary uppercase font-bold text-[9px] border-b border-borderLight">
                     <th className="p-4">Coupon Code</th>
-                    <th className="p-4">Discount Type</th>
-                    <th className="p-4 text-center">Value</th>
+                    <th className="p-4">Discount</th>
                     <th className="p-4 text-center">Conversions</th>
-                    <th className="p-4 text-center">Status</th>
+                    <th className="p-4 text-center">User Limit</th>
+                    <th className="p-4 text-center font-mono">
+                      Expiry / Active Range
+                    </th>
                     <th className="p-4 text-center">Action</th>
                   </tr>
                 </thead>
@@ -822,35 +1594,39 @@ const Dashboard = () => {
                       key={cIdx}
                       className="hover:bg-bgLight transition-colors"
                     >
-                      <td className="p-4 font-bold text-textPrimary tracking-widest">
+                      <td className="p-4 font-bold text-textPrimary tracking-widest text-[11px]">
                         {cpn.code}
                       </td>
-                      <td className="p-4 font-medium">{cpn.discountType}</td>
-                      <td className="p-4 text-center font-bold text-textPrimary">
+                      <td className="p-4 font-bold text-textPrimary">
                         {cpn.discountType === "Percentage"
-                          ? `${cpn.value}%`
-                          : `₹${cpn.value}`}
+                          ? `${cpn.value}% OFF`
+                          : `₹${cpn.value} Flat`}
                       </td>
                       <td className="p-4 text-center font-semibold">
-                        {cpn.ordersUsed} orders
+                        {cpn.ordersUsed} / {cpn.usageLimit || 9999} uses
                       </td>
-                      <td className="p-4 text-center">
-                        <span
-                          className={`text-[9px] uppercase tracking-wider px-2 py-0.5 rounded font-bold ${
-                            cpn.status === "Active"
-                              ? "bg-green-55/10 text-green-600"
-                              : "bg-amber-55/10 text-amber-600"
-                          }`}
-                        >
-                          {cpn.status}
-                        </span>
+                      <td className="p-4 text-center font-semibold">
+                        Max {cpn.userLimit || 1} uses
+                      </td>
+                      <td className="p-4 text-center font-mono text-[10px] text-textSecondary font-semibold">
+                        {cpn.expiryDate
+                          ? new Date(cpn.expiryDate).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )
+                          : "Non-expiring"}
                       </td>
                       <td className="p-4 text-center">
                         <button
+                          type="button"
                           onClick={() => handleDeleteCoupon(cpn.code)}
-                          className="text-textSecondary hover:text-danger p-1 rounded-full hover:bg-danger/10"
+                          className="text-textSecondary hover:text-danger p-1.5 rounded-full hover:bg-danger/10"
                         >
-                          <RiDeleteBinLine size={16} />
+                          <RiDeleteBinLine size={15} />
                         </button>
                       </td>
                     </tr>
@@ -859,6 +1635,115 @@ const Dashboard = () => {
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* INVENTORY ALERTS SEGMENT */}
+      {activeSegment === "alerts" && (
+        <div className="bg-primary border border-borderLight p-6 rounded-sm shadow-sm animate-fade-in text-left">
+          <div className="flex justify-between items-center pb-4 border-b border-borderLight mb-6">
+            <div>
+              <h3 className="text-sm font-display font-bold uppercase tracking-wider text-textPrimary">
+                Out of Stock Alert Log
+              </h3>
+              <p className="text-[11px] text-textSecondary mt-0.5">
+                Real-time reports when customers request sizes that are out of
+                stock. Address physical inventory levels below.
+              </p>
+            </div>
+            <button
+              onClick={fetchNotifications}
+              className="text-xs font-bold text-accent-gold hover:underline bg-transparent border-0 outline-none cursor-pointer"
+            >
+              Refresh Logs
+            </button>
+          </div>
+
+          {notifications.length === 0 ? (
+            <div className="py-20 text-center text-xs text-textSecondary bg-bgLight border border-dashed rounded">
+              No stock alerts or inquiries logged. Everything is in stock!
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-bgLight text-textSecondary uppercase font-bold text-[9px] border-b border-borderLight">
+                    <th className="p-4">Notification / Message</th>
+                    <th className="p-4 text-center">Ensemble Size</th>
+                    <th className="p-4 text-center">Status</th>
+                    <th className="p-4 text-center font-mono">Date Logged</th>
+                    <th className="p-4 text-center font-sans">Options</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-borderLight">
+                  {notifications.map((notif) => (
+                    <tr
+                      key={notif._id}
+                      className={`hover:bg-bgLight/40 transition-colors ${!notif.isRead ? "bg-red-50/10" : ""}`}
+                    >
+                      <td className="p-4 font-semibold">
+                        <div className="flex items-center space-x-2">
+                          {!notif.isRead && (
+                            <span className="w-2 h-2 bg-red-600 rounded-full flex-shrink-0 animate-pulse"></span>
+                          )}
+                          <span
+                            className={
+                              !notif.isRead
+                                ? "text-textPrimary font-bold"
+                                : "text-textSecondary"
+                            }
+                          >
+                            {notif.message}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-center">
+                        <span className="bg-secondary/15 text-accent-gold text-[10px] font-bold px-2 py-0.5 rounded font-mono">
+                          {notif.size || "Any"}
+                        </span>
+                      </td>
+                      <td className="p-4 text-center">
+                        <span
+                          className={`text-[9.5px] uppercase tracking-wider px-2 py-0.5 rounded font-extrabold ${notif.isRead ? "bg-bgLight text-textSecondary border border-borderLight" : "bg-red-55/10 text-red-600 border border-red-500/20"}`}
+                        >
+                          {notif.isRead ? "Read & Audited" : "Critical Alert"}
+                        </span>
+                      </td>
+                      <td className="p-4 text-center font-mono text-textSecondary text-[10.5px]">
+                        {new Date(notif.createdAt).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center space-x-2">
+                          {!notif.isRead && (
+                            <button
+                              type="button"
+                              onClick={() => handleMarkAsRead(notif._id)}
+                              className="text-[9.5px] bg-accent-gold/15 text-accent-gold border border-accent-gold/30 hover:bg-accent-gold/25 px-2.5 py-1 rounded font-bold uppercase transition-colors"
+                            >
+                              Acknowledge
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteNotif(notif._id)}
+                            className="text-textSecondary hover:text-danger p-1.5 rounded-full hover:bg-danger/10"
+                            title="Delete Log Entry"
+                          >
+                            <RiDeleteBinLine size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -1123,11 +2008,33 @@ const Dashboard = () => {
                             ₹{order.pricing?.grandTotal}
                           </span>
                           <span
-                            className={`inline-block px-1.5 py-0.5 rounded-[3px] text-[8.5px] uppercase font-bold mt-1 ${
+                            onClick={async () => {
+                              const nextStatus =
+                                order.paymentStatus === "Paid"
+                                  ? "Pending"
+                                  : "Paid";
+                              try {
+                                const res = await API.put(
+                                  `/orders/${order._id}/status`,
+                                  { paymentStatus: nextStatus },
+                                );
+                                if (res.data && res.data.success) {
+                                  setOrdersList((prev) =>
+                                    prev.map((o) =>
+                                      o._id === order._id ? res.data.data : o,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                console.error(e);
+                              }
+                            }}
+                            className={`inline-block px-1.5 py-0.5 rounded-[3px] text-[8.5px] uppercase font-bold mt-1 cursor-pointer hover:opacity-80 transition-all ${
                               order.paymentStatus === "Paid"
                                 ? "bg-green-600/10 text-green-600"
                                 : "bg-amber-600/10 text-amber-600"
                             }`}
+                            title="Click to toggle Payment Status"
                           >
                             {order.paymentMethod} • {order.paymentStatus}
                           </span>
@@ -1163,7 +2070,7 @@ const Dashboard = () => {
                         {/* Actions */}
                         <td className="p-4 text-center space-y-1.5">
                           {order.trackingId && (
-                            <div className="text-[10px] leading-snug font-semibold text-textSecondary">
+                            <div className="text-[10px] leading-snug font-semibold text-textSecondary mb-1">
                               <span className="block uppercase text-[7.5px] font-extrabold text-accent-gold">
                                 {order.shippingProvider}
                               </span>
@@ -1176,10 +2083,63 @@ const Dashboard = () => {
                             onClick={() => setSelectedOrder(order)}
                             variant="gold"
                             size="sm"
-                            className="w-full text-[9px] uppercase tracking-wider py-1 font-bold"
+                            className="w-full text-[9px] uppercase tracking-wider py-1.5 font-bold"
                           >
                             Label / Invoice
                           </Button>
+                          <div className="flex space-x-1 mt-1 justify-center width-full">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const newAWB = prompt(
+                                  "Provide AWB Routing Tracking ID:",
+                                  order.trackingId || "",
+                                );
+                                if (newAWB === null) return;
+                                const newProvider = prompt(
+                                  "Provide Shipping Courier Carrier (e.g. Delhivery, BlueDart, Shiprocket):",
+                                  order.shippingProvider || "Delhivery",
+                                );
+                                if (newProvider === null) return;
+                                try {
+                                  const res = await API.put(
+                                    `/orders/${order._id}/status`,
+                                    {
+                                      trackingId: newAWB,
+                                      shippingProvider: newProvider,
+                                    },
+                                  );
+                                  if (res.data && res.data.success) {
+                                    setOrdersList((prev) =>
+                                      prev.map((o) =>
+                                        o._id === order._id ? res.data.data : o,
+                                      ),
+                                    );
+                                    alert(
+                                      "AWB Logistics routing updated successfully.",
+                                    );
+                                  }
+                                } catch (err) {
+                                  console.error(err);
+                                  alert(
+                                    "Failed saving logistics routing information.",
+                                  );
+                                }
+                              }}
+                              className="flex-1 bg-primary text-textPrimary hover:bg-bgLight text-[8.5px] uppercase font-bold py-1 border border-borderLight rounded transition-all"
+                              title="Update Logistics Routing details"
+                            >
+                              Logistics
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteOrder(order._id)}
+                              className="bg-danger/10 hover:bg-danger text-danger hover:text-white p-1 rounded transition-all"
+                              title="Cancel / Delete Order record"
+                            >
+                              <RiDeleteBinLine size={13} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

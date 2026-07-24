@@ -13,6 +13,7 @@ import Button from "../../components/common/Button.jsx";
 import { addToCart } from "../../redux/slices/cartSlice.js";
 import { toggleWishlistProduct } from "../../redux/slices/wishlistSlice.js";
 import API from "../../services/api.js";
+import { useAlert } from "../../contexts/AlertContext.jsx";
 
 // Reusable mock database matching ShopListings
 const PRODUCT_CATALOG = [
@@ -88,6 +89,10 @@ const PRODUCT_CATALOG = [
 ];
 
 const ProductDetails = () => {
+  const { showAlert } = useAlert();
+  const alert = (msg) => {
+    showAlert(msg);
+  };
   const { slug } = useParams();
   const dispatch = useDispatch();
 
@@ -141,7 +146,28 @@ const ProductDetails = () => {
 
   const isWishlisted = wishlist.some((p) => p._id === product._id);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    // Check if the selected size is out-of-stock
+    const stockVal = product.sizesStock
+      ? Number(product.sizesStock[selectedSize])
+      : 10;
+    if (stockVal <= 0) {
+      alert(
+        `⚠️ Sorry, Size '${selectedSize}' is currently out of stock. We have notified our admin team to verify physical catalog inventory.`,
+      );
+      try {
+        await API.post("/notifications", {
+          message: `Stock Alert: Product '${product.name}' (SKU: ${product.sku}) size '${selectedSize}' requested by customer is OUT OF STOCK. Please check physical inventory.`,
+          productId: product._id,
+          productName: product.name,
+          size: selectedSize,
+        });
+      } catch (err) {
+        console.error("Failed to post stock alert:", err);
+      }
+      return;
+    }
+
     setLoading(true);
     setTimeout(() => {
       dispatch(
@@ -276,20 +302,43 @@ const ProductDetails = () => {
                   <span>Size Chart</span>
                 </span>
               </div>
-              <div className="flex space-x-3">
-                {product.sizes.map((sz) => (
-                  <button
-                    key={sz}
-                    onClick={() => setSelectedSize(sz)}
-                    className={`w-11 h-11 border text-xs font-bold transition-all ${
-                      selectedSize === sz
-                        ? "border-secondary bg-secondary text-primary"
-                        : "border-borderLight text-textPrimary hover:border-textSecondary"
-                    }`}
-                  >
-                    {sz}
-                  </button>
-                ))}
+              <div className="flex flex-col space-y-2">
+                <div className="flex space-x-3">
+                  {product.sizes.map((sz) => {
+                    const isOutOfStock = product.sizesStock
+                      ? Number(product.sizesStock[sz]) <= 0
+                      : false;
+                    return (
+                      <button
+                        key={sz}
+                        type="button"
+                        onClick={() => setSelectedSize(sz)}
+                        className={`w-11 h-11 border text-xs font-bold transition-all relative ${
+                          selectedSize === sz
+                            ? "border-secondary bg-secondary text-primary"
+                            : isOutOfStock
+                              ? "border-dashed border-red-300 text-red-500 bg-red-50/50 hover:border-red-400"
+                              : "border-borderLight text-textPrimary hover:border-textSecondary"
+                        }`}
+                      >
+                        {sz}
+                        {isOutOfStock && (
+                          <span
+                            className="absolute -top-1 -right-1 bg-red-600 w-2.5 h-2.5 rounded-full ring-2 ring-white"
+                            title="Out of Stock"
+                          ></span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {product.sizesStock &&
+                  Number(product.sizesStock[selectedSize]) <= 0 && (
+                    <p className="text-[11px] text-red-600 font-bold mt-1 text-left animate-pulse">
+                      ⚠️ Size {selectedSize} is currently out of stock. Ordering
+                      it will alert the admin to check inventory.
+                    </p>
+                  )}
               </div>
             </div>
 
