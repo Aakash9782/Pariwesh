@@ -7,7 +7,9 @@ import { logoutSuccess, authSuccess } from "../redux/slices/authSlice.js";
 // - Live Prod (import.meta.env.DEV is false): Hits VITE_API_URL env variable or live Render server URL.
 const getBaseURL = () => {
   if (import.meta.env.DEV) {
-    return "http://localhost:5001/api/v1";
+    const hostname =
+      typeof window !== "undefined" ? window.location.hostname : "localhost";
+    return `http://${hostname}:5001/api/v1`;
   }
   let url =
     import.meta.env.VITE_API_URL || "https://pariwesh.onrender.com/api/v1";

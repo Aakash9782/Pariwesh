@@ -24,17 +24,30 @@ export const loginUser = async (req, res, next) => {
       return sendError(res, "Please provide a valid phone number", 400);
     }
 
-    // Clean phone number (remove spaces/dashes)
-    const cleanPhone = phone.replace(/[\s-]/g, "");
+    // Clean phone number (strip all non-digits)
+    let cleanPhone = phone.replace(/\D/g, "");
+
+    // Normalize Indian phone numbers: strip leading "91" if total digit count exceeds 10.
+    if (cleanPhone.startsWith("91") && cleanPhone.length > 10) {
+      cleanPhone = cleanPhone.substring(2);
+    }
+    // Also handle "+91" check if leading + was somehow parsed
+    if (cleanPhone.length > 10 && cleanPhone.startsWith("+")) {
+      cleanPhone = cleanPhone.replace("+", "");
+      if (cleanPhone.startsWith("91") && cleanPhone.length > 10) {
+        cleanPhone = cleanPhone.substring(2);
+      }
+    }
+    // Ensure we slice it to exactly the last 10 digits as a final safety measure
+    if (cleanPhone.length > 10) {
+      cleanPhone = cleanPhone.slice(-10);
+    }
 
     // Check if user is one of the admin numbers
     const isAdminNumber =
       cleanPhone === "9782681155" ||
       cleanPhone === "9876543210" ||
-      cleanPhone === "9999999999" ||
-      cleanPhone === "+919782681155" ||
-      cleanPhone === "+919876543210" ||
-      cleanPhone === "+919999999999";
+      cleanPhone === "9999999999";
 
     let user = await User.findOne({ phone: cleanPhone });
 

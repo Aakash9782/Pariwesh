@@ -109,9 +109,13 @@ const Login = () => {
                 type="tel"
                 required
                 value={phoneNumber}
-                onChange={(e) =>
-                  setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 10))
-                }
+                onChange={(e) => {
+                  let cleaned = e.target.value.replace(/\D/g, "");
+                  if (cleaned.startsWith("91") && cleaned.length > 10) {
+                    cleaned = cleaned.substring(2);
+                  }
+                  setPhoneNumber(cleaned.slice(0, 10));
+                }}
                 placeholder="Enter 10-digit number"
                 className="pl-2"
                 helperText="We will send a non-expiry mock verification OTP to this number."
