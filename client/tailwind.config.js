@@ -23,6 +23,18 @@ export default {
       fontFamily: {
         sans: ["Inter", "sans-serif"],
         display: ["Outfit", "sans-serif"],
+        serif: ["'Playfair Display'", "serif"],
+        cinzel: ["Cinzel", "serif"],
+        script: ["Playball", "cursive"],
+      },
+      keyframes: {
+        marquee: {
+          "0%": { transform: "translateX(0%)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+      },
+      animation: {
+        marquee: "marquee 25s linear infinite",
       },
     },
   },

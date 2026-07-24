@@ -539,7 +539,6 @@ const Home = () => {
       {/* SECTION 1: HERO SPOTLIGHT SLIDER (Vibrant premium hero layout) */}
       {sliderConfig.active && (
         <section className="relative h-[80vh] overflow-hidden bg-secondary w-full">
-          {/* Loop over sliderConfig.images and render active using Framer Motion absolute layers for premium crossfade! */}
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSlide}
@@ -569,18 +568,18 @@ const Home = () => {
               initial={{ opacity: 0, y: 25 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-5xl md:text-7xl font-display font-medium tracking-tight leading-[1.1] max-w-2xl"
+              className="text-5xl md:text-7xl font-serif font-normal tracking-tight leading-[1.1] max-w-2xl text-white"
             >
               The Radiance of{" "}
-              <span className="gold-text-gradient block mt-2 animate-text-shine bg-clip-text text-transparent">
-                Indian Heritage
+              <span className="font-script text-accent-gold lowercase tracking-normal italic block mt-1">
+                Indian heritage
               </span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-sm md:text-base text-gray-300 max-w-md leading-relaxed"
+              className="text-sm md:text-base text-gray-300 max-w-md leading-relaxed font-light"
             >
               Discover our premium selection of Kurtas, Suits, and Ethnic sets
               woven in luxury chanderi and pure cottons.
@@ -593,7 +592,7 @@ const Home = () => {
             >
               <Link
                 to="/shop"
-                className="inline-flex items-center space-x-2 bg-accent-gold text-secondary font-bold text-xs uppercase tracking-widest px-8 py-4 rounded-sm hover:bg-white hover:text-secondary hover:shadow-lg transition-all duration-300"
+                className="inline-flex items-center space-x-2 bg-[#8a1c14] text-white font-bold text-xs uppercase tracking-widest px-8 py-4 rounded-sm hover:bg-white hover:text-secondary hover:shadow-lg transition-all duration-300 border border-[#8a1c14] hover:border-white"
               >
                 <span>Explore Collection</span>
                 <RiArrowRightLine size={14} />
@@ -621,14 +620,36 @@ const Home = () => {
         </section>
       )}
 
+      {/* MARQUEE VALUE BANNER */}
+      <div className="bg-[#8a1c14] text-white py-3 border-y border-white/10 overflow-hidden select-none">
+        <div className="flex whitespace-nowrap animate-[marquee_25s_linear_infinite] text-[10px] uppercase font-bold tracking-[0.25em] space-x-12">
+          <span>
+            Sustainable Fabrics • Handcrafted with Love • Made in India •
+            Premium Tailoring • Custom Fit
+          </span>
+          <span>
+            Sustainable Fabrics • Handcrafted with Love • Made in India •
+            Premium Tailoring • Custom Fit
+          </span>
+          <span>
+            Sustainable Fabrics • Handcrafted with Love • Made in India •
+            Premium Tailoring • Custom Fit
+          </span>
+          <span>
+            Sustainable Fabrics • Handcrafted with Love • Made in India •
+            Premium Tailoring • Custom Fit
+          </span>
+        </div>
+      </div>
+
       {/* EXQUISITE CATEGORY SELECTION CIRCLES (Boutique Horizontal Navigation) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
         <div className="flex flex-col space-y-4">
           <div className="text-left space-y-1">
-            <span className="text-[10px] text-accent-gold tracking-[0.2em] uppercase font-bold">
+            <span className="text-[10px] text-[#8a1c14] tracking-[0.2em] uppercase font-bold">
               Shop by Category
             </span>
-            <h2 className="text-xl font-display font-medium uppercase tracking-wider text-textPrimary">
+            <h2 className="text-2xl font-serif text-textPrimary">
               Boutique Curations
             </h2>
           </div>
@@ -687,11 +708,11 @@ const Home = () => {
                   </div>
                 </div>
                 <div className="space-y-0.5">
-                  <h4 className="text-[11px] sm:text-xs font-semibold text-textPrimary uppercase tracking-wider group-hover:text-accent-gold transition-colors">
+                  <h4 className="text-[11px] sm:text-xs font-semibold text-textPrimary uppercase tracking-wider group-hover:text-[#8a1c14] transition-colors">
                     {cat.title}
                   </h4>
-                  <span className="text-[9px] text-textSecondary hidden sm:block">
-                    {cat.desc}
+                  <span className="text-[9px] text-[#8a1c14] italic group-hover:underline">
+                    Explore
                   </span>
                 </div>
               </Link>
@@ -700,68 +721,217 @@ const Home = () => {
         </div>
       </section>
 
-      {/* SECTION 2: FLASH SALE FEATURE WITH COUNTDOWN TIMER */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-primary/50 backdrop-blur-md border border-borderLight rounded-sm shadow-xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 text-left">
-          <div className="space-y-3">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-red-650 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/25">
-              Limited Sale Event
-            </span>
-            <h2 className="text-3xl font-display font-semibold tracking-tight text-textPrimary">
-              Hurry! Offer Closes Soon
-            </h2>
-            <p className="text-xs text-textSecondary max-w-sm leading-relaxed">
-              Grab luxury silk ensembles and cotton matching kurtis at discounts
-              of up to 40%. Free shipping automatically applied!
-            </p>
+      {/* SECTION 2: THE PARIWESH EDIT (Comfort meets Couture 50/50 Split Section with countdown) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch">
+          {/* Left card - Portrait Image with Editor's Selection tag */}
+          <div className="relative overflow-hidden border border-borderLight bg-bgLight min-h-[400px] flex items-center justify-center p-4">
+            <div className="absolute top-4 left-4 z-10 bg-white border border-borderLight text-[9px] uppercase tracking-widest font-extrabold px-3 py-1.5 shadow-sm text-textPrimary rounded-none">
+              Editor's Pick
+            </div>
+            <img
+              src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop"
+              alt="The Pariwesh Edit showcase"
+              className="w-full h-full object-cover absolute inset-0 filter brightness-95"
+            />
+            <div className="absolute inset-0 border-[12px] border-white/25 pointer-events-none"></div>
           </div>
 
-          {/* Countdown Clock Layout */}
-          <div className="flex items-center space-x-4">
-            <div className="flex flex-col items-center">
-              <div className="w-16 h-16 bg-primary border border-borderLight text-textPrimary font-display font-semibold text-2xl flex items-center justify-center rounded-sm shadow-md premium-card-shadow relative overflow-hidden group hover:border-accent-gold transition-colors duration-300">
-                <div className="absolute top-0 left-0 w-full h-[3px] bg-accent-gold"></div>
-                {String(timeLeft.hours).padStart(2, "0")}
-              </div>
-              <span className="text-[9px] uppercase tracking-widest mt-2 font-bold text-textSecondary">
-                Hours
+          {/* Right card - Soft beige editorial layout */}
+          <div className="bg-[#FAF7F3] border border-borderLight p-8 md:p-12 flex flex-col justify-between text-left space-y-8">
+            <div className="space-y-4">
+              <span className="text-[9px] text-[#8a1c14] font-black uppercase tracking-[0.3em] block">
+                — The Pariwesh Edit —
               </span>
+              <h2 className="text-4xl md:text-5xl font-serif text-textPrimary leading-tight">
+                Where comfort <br />
+                meets{" "}
+                <span className="font-script text-[#8a1c14] text-4xl lowercase tracking-normal">
+                  couture.
+                </span>
+              </h2>
+              <p className="text-xs text-textSecondary leading-relaxed max-w-md font-light">
+                Every piece is thoughtfully designed for the woman who moves
+                through her day with grace - from morning coffee runs to festive
+                dinners. Soft textures and custom hand-tailored sizes.
+              </p>
             </div>
 
-            <div className="h-8 w-[1px] bg-borderLight self-center"></div>
-
-            <div className="flex flex-col items-center">
-              <div className="w-16 h-16 bg-primary border border-borderLight text-textPrimary font-display font-semibold text-2xl flex items-center justify-center rounded-sm shadow-md premium-card-shadow relative overflow-hidden group hover:border-accent-gold transition-colors duration-300">
-                <div className="absolute top-0 left-0 w-full h-[3px] bg-accent-gold"></div>
-                {String(timeLeft.minutes).padStart(2, "0")}
+            {/* Micro stats banner */}
+            <div className="grid grid-cols-3 gap-4 border-y border-[#8a1c14]/10 py-6">
+              <div>
+                <h4 className="text-2xl font-serif text-textPrimary font-semibold">
+                  150+
+                </h4>
+                <p className="text-[9px] uppercase tracking-widest text-textSecondary mt-1">
+                  Unique Styles
+                </p>
               </div>
-              <span className="text-[9px] uppercase tracking-widest mt-2 font-bold text-textSecondary">
-                Mins
-              </span>
+              <div>
+                <h4 className="text-2xl font-serif text-textPrimary font-semibold">
+                  4.9★
+                </h4>
+                <p className="text-[9px] uppercase tracking-widest text-textSecondary mt-1">
+                  Loved By You
+                </p>
+              </div>
+              <div>
+                <h4 className="text-2xl font-serif text-textPrimary font-semibold">
+                  100%
+                </h4>
+                <p className="text-[9px] uppercase tracking-widest text-textSecondary mt-1">
+                  Hand Finished
+                </p>
+              </div>
             </div>
 
-            <div className="h-8 w-[1px] bg-borderLight self-center"></div>
-
-            <div className="flex flex-col items-center">
-              <div className="w-16 h-16 bg-primary border border-accent-gold text-accent-gold font-display font-semibold text-2xl flex items-center justify-center rounded-sm shadow-md premium-card-shadow relative overflow-hidden group hover:border-accent-gold transition-colors duration-300">
-                <div className="absolute top-0 left-0 w-full h-[3px] bg-accent-gold"></div>
-                {String(timeLeft.seconds).padStart(2, "0")}
+            {/* Countdown Integration */}
+            <div className="space-y-3 bg-white p-4 border border-borderLight rounded-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-bold text-[#8a1c14] uppercase tracking-wider">
+                  Limited Collection Closes In:
+                </span>
+                <span className="text-[8px] bg-red-100 text-red-700 px-2 py-0.5 uppercase tracking-widest font-black rounded-none">
+                  Live offer
+                </span>
               </div>
-              <span className="text-[9px] uppercase tracking-widest mt-2 font-bold text-accent-gold animate-pulse">
-                Secs
-              </span>
+              <div className="flex items-center space-x-3">
+                <div className="text-center font-mono">
+                  <span className="text-xl font-bold font-serif text-textPrimary">
+                    {String(timeLeft.hours).padStart(2, "0")}
+                  </span>
+                  <span className="text-[8px] uppercase tracking-widest block text-textSecondary">
+                    Hrs
+                  </span>
+                </div>
+                <span className="text-textSecondary">:</span>
+                <div className="text-center font-mono">
+                  <span className="text-xl font-bold font-serif text-textPrimary">
+                    {String(timeLeft.minutes).padStart(2, "0")}
+                  </span>
+                  <span className="text-[8px] uppercase tracking-widest block text-textSecondary">
+                    Min
+                  </span>
+                </div>
+                <span className="text-textSecondary">:</span>
+                <div className="text-center font-mono text-[#8a1c14]">
+                  <span className="text-xl font-bold font-serif text-[#8a1c14] animate-pulse">
+                    {String(timeLeft.seconds).padStart(2, "0")}
+                  </span>
+                  <span className="text-[8px] uppercase tracking-widest block">
+                    Sec
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <Link
+                to="/shop"
+                className="inline-block bg-[#8a1c14] text-white font-bold text-xs uppercase tracking-widest px-8 py-4 hover:bg-secondary hover:shadow-lg transition-all duration-300 text-center w-full sm:w-auto"
+              >
+                Explore Collection
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
+      {/* SECTION 2.5: PICK YOUR VIBE (4-Column Style Mood Cards) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center space-y-2 mb-10">
+          <span className="text-[10px] text-[#8a1c14] tracking-[0.25em] uppercase font-black block">
+            your mood
+          </span>
+          <h2 className="text-3xl font-serif text-textPrimary">
+            Pick Your{" "}
+            <span className="font-script text-[#8a1c14] text-4xl lowercase tracking-normal">
+              vibe.
+            </span>
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            {
+              title: "Day To Dusk",
+              bgImg:
+                "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=400&auto=format&fit=crop",
+              insetImg:
+                "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=250&auto=format&fit=crop",
+              path: "/shop?tag=Best Seller",
+            },
+            {
+              title: "The Linen Edit",
+              bgImg:
+                "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=400&auto=format&fit=crop",
+              insetImg:
+                "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=250&auto=format&fit=crop",
+              path: "/shop?category=kurtis",
+            },
+            {
+              title: "Not So Boring",
+              bgImg:
+                "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=400&auto=format&fit=crop",
+              insetImg:
+                "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=250&auto=format&fit=crop",
+              path: "/shop?category=suits",
+            },
+            {
+              title: "Festive Essentials",
+              bgImg:
+                "https://images.unsplash.com/photo-1612459284970-e8f027596582?q=80&w=400&auto=format&fit=crop",
+              insetImg:
+                "https://images.unsplash.com/photo-1612459284970-e8f027596582?q=80&w=250&auto=format&fit=crop",
+              path: "/shop?category=ethnic",
+            },
+          ].map((vibe, idx) => (
+            <Link
+              key={idx}
+              to={vibe.path}
+              className="relative h-[480px] overflow-hidden border border-borderLight group flex flex-col items-center justify-between cursor-pointer"
+            >
+              {/* Grayscale Background Image */}
+              <div
+                className="absolute inset-0 bg-cover bg-center filter grayscale group-hover:grayscale-0 brightness-[0.4] group-hover:brightness-[0.5] transition-all duration-700 w-full h-full"
+                style={{ backgroundImage: `url(${vibe.bgImg})` }}
+              />
+
+              {/* Decorative Frame */}
+              <div className="absolute inset-4 border border-white/20 pointer-events-none z-1"></div>
+
+              <div>{/* Just spacing */}</div>
+
+              {/* Smaller Color Inset Photo centered */}
+              <div className="w-[140px] aspect-[4/5] overflow-hidden shadow-2xl relative border-[3px] border-white z-10 transition-transform duration-500 group-hover:scale-105">
+                <img
+                  src={vibe.insetImg}
+                  alt={vibe.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              {/* Cursive bottom title */}
+              <div className="pb-8 z-20 text-center w-full">
+                <h4 className="font-script text-white text-3xl tracking-wide drop-shadow-lg">
+                  {vibe.title}
+                </h4>
+                <span className="text-[8px] tracking-[0.25em] text-white/70 uppercase block mt-1 hover:text-white">
+                  explore mood
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* SECTION 3: TRENDING COLLECTION (Interactive Cards Grid) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
         <div className="text-center space-y-2">
-          <span className="text-xs text-accent-gold tracking-widest uppercase font-bold">
+          <span className="text-xs text-[#8a1c14] tracking-widest uppercase font-bold">
             Curated Picks
           </span>
-          <h2 className="text-3xl font-display font-bold tracking-tight text-textPrimary">
+          <h2 className="text-3xl font-serif text-textPrimary">
             Trending Classics
           </h2>
           <p className="text-xs text-textSecondary max-w-md mx-auto">
@@ -779,20 +949,20 @@ const Home = () => {
             >
               {/* Product Badge */}
               {product.tag && (
-                <span className="absolute top-10 left-3 z-10 bg-secondary text-accent-gold font-bold text-[9px] uppercase tracking-wider px-2 py-1 shadow-sm rounded-sm">
+                <span className="absolute top-3 left-3 z-10 bg-[#8a1c14] text-white font-bold text-[9px] uppercase tracking-wider px-2.5 py-1 shadow-sm">
                   {product.tag}
                 </span>
               )}
 
               {/* Product Heart Selector */}
-              <button className="absolute top-10 right-3 z-10 bg-primary/70 hover:bg-primary text-textPrimary hover:text-danger p-2 rounded-full shadow-sm hover:scale-115 transition-all">
+              <button className="absolute top-3 right-3 z-10 bg-white/80 hover:bg-white text-textPrimary hover:text-danger p-2 rounded-full shadow-sm hover:scale-110 transition-all border border-borderLight">
                 <RiHeartLine size={16} />
               </button>
 
-              {/* Image / Video Container with Zoom and clipPath */}
+              {/* Image / Video Container with Zoom */}
               <Link
                 to={`/product/${product.slug}`}
-                className="aspect-[4/5] overflow-hidden relative block bg-bgLight"
+                className="aspect-[4/5] overflow-hidden relative block bg-bgLight border border-borderLight"
                 style={{ clipPath: "url(#mehrab-clip)" }}
               >
                 {product.video ? (
@@ -815,7 +985,7 @@ const Home = () => {
                 {/* Arch outline SVG overlay */}
                 <svg
                   viewBox="0 0 100 125"
-                  className="absolute inset-0 w-full h-full pointer-events-none fill-none stroke-accent-gold stroke-[2px]"
+                  className="absolute inset-0 w-full h-full pointer-events-none fill-none stroke-accent-gold stroke-[1.5px] opacity-60"
                   preserveAspectRatio="none"
                 >
                   <path d="M 0,125 L 0,43.75 C 0,35 8,32.5 12,30 C 12,22.5 22,18.75 28,15 C 28,10 38,7.5 44,3.75 C 47,1.25 49,0 50,0 C 51,0 53,1.25 56,3.75 C 62,7.5 72,10 72,15 C 78,18.75 88,22.5 88,30 C 92,32.5 100,35 100,43.75 L 100,125" />
@@ -835,7 +1005,7 @@ const Home = () => {
                           e.stopPropagation();
                           handleQuickAddToCart(product, size);
                         }}
-                        className="w-8 h-8 rounded-full bg-primary/90 text-textPrimary hover:bg-accent-gold hover:text-secondary text-[10px] font-bold shadow-sm transition-all duration-200"
+                        className="w-8 h-8 rounded-full bg-primary/95 text-textPrimary hover:bg-[#8a1c14] hover:text-white text-[10px] font-bold shadow-sm transition-all duration-200"
                       >
                         {size}
                       </button>
@@ -847,25 +1017,25 @@ const Home = () => {
               {/* Info area */}
               <div className="py-4 flex flex-col flex-grow justify-between space-y-2 text-left">
                 <div className="space-y-1">
-                  <span className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">
+                  <span className="text-[9px] text-[#8a1c14] uppercase tracking-widest font-black block">
                     {product.category}
                   </span>
-                  <h3 className="text-xs font-semibold text-textPrimary leading-snug group-hover:text-accent-gold transition-colors line-clamp-2">
+                  <h3 className="text-xs font-semibold text-textPrimary leading-snug group-hover:text-[#8a1c14] transition-colors line-clamp-2">
                     <Link to={`/product/${product.slug}`}>{product.name}</Link>
                   </h3>
                 </div>
 
                 <div className="flex items-center space-x-2 text-xs">
+                  <span className="text-[#8a1c14] font-bold">
+                    ₹{product.sellingPrice}
+                  </span>
                   <span className="text-textSecondary line-through font-medium">
                     ₹{product.mrp}
-                  </span>
-                  <span className="text-secondary font-bold">
-                    ₹{product.sellingPrice}
                   </span>
                 </div>
 
                 <div className="pt-0.5">
-                  <span className="bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-900/30 text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-sm font-bold inline-block">
+                  <span className="bg-[#8a1c14]/10 text-[#8a1c14] border border-[#8a1c14]/20 text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-none font-bold inline-block">
                     {Math.round(
                       ((product.mrp - product.sellingPrice) / product.mrp) *
                         100,
@@ -880,40 +1050,50 @@ const Home = () => {
       </section>
 
       {/* SECTION 4: WHY CHOOSE PARIWESH */}
-      <section className="bg-primary py-16 border-y border-borderLight">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div className="flex flex-col items-center text-center space-y-3">
-              <RiCheckboxCircleLine size={36} className="text-accent-gold" />
-              <h3 className="text-lg font-bold text-textPrimary">
-                Premium Curations
-              </h3>
-              <p className="text-xs text-textSecondary leading-relaxed max-w-xs">
-                Handpicked collections designed by seasoned stylists with
-                premium zari and block threadings.
-              </p>
-            </div>
-            <div className="flex flex-col items-center text-center space-y-3">
-              <RiCheckboxCircleLine size={36} className="text-accent-gold" />
-              <h3 className="text-lg font-bold text-textPrimary">
-                Artisanal Tailoring
-              </h3>
-              <p className="text-xs text-textSecondary leading-relaxed max-w-xs">
-                Each suit is custom adjusted, following extreme validation
-                methods checking seams, cuffs, and hemlines.
-              </p>
-            </div>
-            <div className="flex flex-col items-center text-center space-y-3">
-              <RiCheckboxCircleLine size={36} className="text-accent-gold" />
-              <h3 className="text-lg font-bold text-textPrimary">
-                Eco Friendly Shipping
-              </h3>
-              <p className="text-xs text-textSecondary leading-relaxed max-w-xs">
-                All order sets are dispatched in cotton muslin wraps inside
-                organic cardboard containers.
-              </p>
-            </div>
+      <section className="bg-primary py-16 border-t border-borderLight grid grid-cols-1 md:grid-cols-3 gap-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-center text-center space-y-3">
+          <div className="w-12 h-12 rounded-full border border-[#8a1c14]/20 bg-[#FAF7F3] flex items-center justify-center text-[#8a1c14] font-script text-xl italic font-bold">
+            1
           </div>
+          <h3 className="text-sm font-semibold tracking-wide text-textPrimary uppercase">
+            handmade with{" "}
+            <span className="font-script text-[#8a1c14] text-lg lowercase tracking-normal">
+              love.
+            </span>
+          </h3>
+          <p className="text-[11px] text-textSecondary leading-relaxed max-w-xs font-light">
+            Handpicked collections designed by seasoned stylists with premium
+            zari and block threadings.
+          </p>
+        </div>
+        <div className="flex flex-col items-center text-center space-y-3">
+          <div className="w-12 h-12 rounded-full border border-[#8a1c14]/20 bg-[#FAF7F3] flex items-center justify-center text-[#8a1c14] font-script text-xl italic font-bold">
+            2
+          </div>
+          <h3 className="text-sm font-semibold tracking-wide text-textPrimary uppercase">
+            your{" "}
+            <span className="font-script text-[#8a1c14] text-lg lowercase tracking-normal">
+              perfect fit.
+            </span>
+          </h3>
+          <p className="text-[11px] text-textSecondary leading-relaxed max-w-xs font-light">
+            Each suit is custom adjusted, following extreme validation checks.
+          </p>
+        </div>
+        <div className="flex flex-col items-center text-center space-y-3">
+          <div className="w-12 h-12 rounded-full border border-[#8a1c14]/20 bg-[#FAF7F3] flex items-center justify-center text-[#8a1c14] font-script text-xl italic font-bold">
+            3
+          </div>
+          <h3 className="text-sm font-semibold tracking-wide text-textPrimary uppercase">
+            pure{" "}
+            <span className="font-script text-[#8a1c14] text-lg lowercase tracking-normal">
+              heritage.
+            </span>
+          </h3>
+          <p className="text-[11px] text-textSecondary leading-relaxed max-w-xs font-light">
+            All order sets are dispatched in premium cardboard containers
+            wrapped in cotton muslin cloths.
+          </p>
         </div>
       </section>
     </div>
