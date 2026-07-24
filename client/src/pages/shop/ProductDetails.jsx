@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   RiShoppingBagLine,
@@ -89,6 +89,7 @@ const PRODUCT_CATALOG = [
 ];
 
 const ProductDetails = () => {
+  const navigate = useNavigate();
   const { showAlert } = useAlert();
   const alert = (msg) => {
     showAlert(msg);
@@ -181,6 +182,38 @@ const ProductDetails = () => {
       setAddedPopup(true);
       setTimeout(() => setAddedPopup(false), 3000);
     }, 500);
+  };
+
+  const handleBuyNow = async () => {
+    // Check if the selected size is out-of-stock
+    const stockVal = product.sizesStock
+      ? Number(product.sizesStock[selectedSize])
+      : 10;
+    if (stockVal <= 0) {
+      alert(
+        `⚠️ Sorry, Size '${selectedSize}' is currently out of stock. We have notified our admin team to verify physical catalog inventory.`,
+      );
+      try {
+        await API.post("/notifications", {
+          message: `Stock Alert: Product '${product.name}' (SKU: ${product.sku}) size '${selectedSize}' requested by customer is OUT OF STOCK. Please check physical inventory.`,
+          productId: product._id,
+          productName: product.name,
+          size: selectedSize,
+        });
+      } catch (err) {
+        console.error("Failed to post stock alert:", err);
+      }
+      return;
+    }
+
+    dispatch(
+      addToCart({
+        product,
+        quantity,
+        variant: { color: product.color, size: selectedSize },
+      }),
+    );
+    navigate("/cart?checkout=true");
   };
 
   const handleWishlistToggle = () => {
@@ -367,16 +400,25 @@ const ProductDetails = () => {
             </div>
 
             {/* Submitions */}
-            <div className="flex gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button
                 onClick={handleAddToCart}
                 loading={loading}
-                variant="primary"
+                variant="outline"
                 size="lg"
                 className="flex-grow space-x-2"
               >
                 <RiShoppingBagLine size={16} />
-                <span>Add to Shopping Bag</span>
+                <span>Add to Bag</span>
+              </Button>
+
+              <Button
+                onClick={handleBuyNow}
+                variant="gold"
+                size="lg"
+                className="flex-grow font-bold"
+              >
+                <span>Buy It Now</span>
               </Button>
 
               <button

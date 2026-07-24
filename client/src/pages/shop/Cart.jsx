@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   RiDeleteBinLine,
   RiPercentLine,
@@ -26,6 +26,13 @@ const Cart = () => {
   const cartItems = useSelector((state) => state.cart.items);
   const { user } = useSelector((state) => state.auth);
 
+  const location = useLocation();
+  const queryParams = React.useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search],
+  );
+  const isDirectCheckout = queryParams.get("checkout") === "true";
+
   // States code
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
@@ -33,7 +40,7 @@ const Cart = () => {
   const [couponError, setCouponError] = useState("");
 
   // Checkout flow states
-  const [checkoutStep, setCheckoutStep] = useState(false); // false = show cart, true = show address form
+  const [checkoutStep, setCheckoutStep] = useState(isDirectCheckout);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState("");
@@ -46,6 +53,12 @@ const Cart = () => {
     pincode: "",
     paymentMethod: "COD",
   });
+
+  React.useEffect(() => {
+    if (isDirectCheckout && cartItems.length > 0) {
+      setCheckoutStep(true);
+    }
+  }, [isDirectCheckout, cartItems.length]);
 
   const getSubtotal = () => {
     return cartItems.reduce(

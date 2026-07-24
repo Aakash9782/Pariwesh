@@ -14,6 +14,7 @@ import Login from "./pages/auth/Login.jsx";
 import Profile from "./pages/profile/Profile.jsx";
 import AdminDashboard from "./pages/admin/Dashboard.jsx";
 import { AlertProvider } from "./contexts/AlertContext.jsx";
+import ScrollToTop from "./components/common/ScrollToTop.jsx";
 import "./index.css";
 
 // Create a client for TanStack Query
@@ -45,6 +46,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <QueryClientProvider client={queryClient}>
         <AlertProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={<MainLayout />}>
                 <Route index element={<Home />} />
