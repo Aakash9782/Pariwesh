@@ -176,16 +176,11 @@ const MainLayout = () => {
           </div>
 
           {/* Navigation Action Buttons (Right) */}
-          <div className="flex items-center space-x-6 text-textPrimary">
-            {/* Mobile Search Toggle */}
-            <button className="md:hidden hover:text-accent-gold transition-colors">
-              <RiSearchLine size={22} />
-            </button>
-
-            {/* Wishlist Link */}
+          <div className="flex items-center space-x-4 md:space-x-6 text-textPrimary">
+            {/* Wishlist Link (Hidden on Mobile, now in Drawer) */}
             <Link
               to="/wishlist"
-              className="hover:text-accent-gold transition-colors relative"
+              className="hidden md:block hover:text-accent-gold transition-colors relative"
             >
               <RiHeartLine size={22} />
               {wishlistProducts.length > 0 && (
@@ -195,7 +190,7 @@ const MainLayout = () => {
               )}
             </Link>
 
-            {/* Cart Link */}
+            {/* Cart Link (Always Visible) */}
             <Link
               to="/cart"
               className="hover:text-accent-gold transition-colors relative"
@@ -208,17 +203,17 @@ const MainLayout = () => {
               )}
             </Link>
 
-            {/* Dark/Light mode toggle */}
+            {/* Dark/Light mode toggle (Hidden on Mobile) */}
             <button
               onClick={toggleDarkMode}
-              className="hover:text-accent-gold transition-colors flex items-center justify-center"
+              className="hidden md:flex hover:text-accent-gold transition-colors items-center justify-center"
               title="Toggle Dark/Light Mode"
             >
               {darkMode ? <RiSunLine size={21} /> : <RiMoonLine size={21} />}
             </button>
 
-            {/* Accent Theme palette color switcher */}
-            <div className="relative">
+            {/* Accent Theme color switcher (Hidden on Mobile) */}
+            <div className="relative hidden md:block">
               <button
                 onClick={() => setShowAccentPicker(!showAccentPicker)}
                 className="hover:text-accent-gold transition-colors flex items-center justify-center"
@@ -278,9 +273,9 @@ const MainLayout = () => {
               )}
             </div>
 
-            {/* Auth Menu */}
+            {/* Auth Menu (Hidden on Mobile) */}
             {isAuthenticated ? (
-              <div className="relative group">
+              <div className="relative group hidden md:block">
                 <Link
                   to="/profile"
                   className="hover:text-accent-gold transition-colors flex items-center space-x-1"
@@ -315,7 +310,7 @@ const MainLayout = () => {
             ) : (
               <Link
                 to="/login"
-                className="hover:text-accent-gold transition-colors"
+                className="hidden md:block hover:text-accent-gold transition-colors"
               >
                 <RiUserLine size={22} />
               </Link>
@@ -339,27 +334,185 @@ const MainLayout = () => {
         </div>
       </header>
 
-      {/* 3. MOBILE MENU BAR */}
+      {/* 3. MOBILE SIDEBAR DRAWER MENU */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="md:hidden luxury-glass border-b border-borderLight py-4 px-6 space-y-3 overflow-hidden text-left"
-          >
-            {navLinks.map((link, idx) => (
-              <Link
-                key={idx}
-                to={link.path}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block text-[12px] font-semibold text-textPrimary hover:text-accent-gold transition-colors tracking-widest uppercase"
-              >
-                {link.title}
-              </Link>
-            ))}
-          </motion.div>
+          <>
+            {/* Dim Backdrop overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 bg-black z-50 md:hidden"
+            />
+
+            {/* Sliding Drawer Container */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "tween", duration: 0.3 }}
+              className="fixed inset-y-0 left-0 w-4/5 max-w-sm bg-primary shadow-2xl z-50 flex flex-col md:hidden text-textPrimary"
+            >
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between p-4 border-b border-borderLight">
+                <span className="font-display font-medium tracking-[0.15em] text-sm uppercase">
+                  PARIWESH
+                </span>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-textPrimary hover:text-accent-gold p-1"
+                >
+                  <RiCloseLine size={24} />
+                </button>
+              </div>
+
+              {/* Drawer Body (Scrollable Nav List) */}
+              <div className="flex-grow overflow-y-auto py-6 px-4 space-y-6">
+                {/* Search bar inside drawer */}
+                <div className="flex items-center bg-bgLight border border-borderLight px-4 py-2.5 rounded-full w-full">
+                  <RiSearchLine className="text-textSecondary mr-2" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Search premium apparel..."
+                    className="bg-transparent text-xs text-textPrimary focus:outline-none w-full font-sans"
+                  />
+                </div>
+
+                <nav className="space-y-4">
+                  <div className="text-[9px] uppercase font-bold text-textSecondary tracking-wider pb-1 border-b border-borderLight/30">
+                    Collections & Categories
+                  </div>
+                  {navLinks.map((link, idx) => (
+                    <Link
+                      key={idx}
+                      to={link.path}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block text-[11px] font-bold py-1.5 text-textPrimary hover:text-accent-gold tracking-widest uppercase transition-colors"
+                    >
+                      {link.title}
+                    </Link>
+                  ))}
+                </nav>
+              </div>
+
+              {/* Drawer Footer (Drawer actions & user profile details) */}
+              <div className="p-4 border-t border-borderLight space-y-4 bg-bgLight mt-auto">
+                {/* User Info / Profile Link */}
+                {isAuthenticated ? (
+                  <div className="flex items-center justify-between">
+                    <Link
+                      to="/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center space-x-2 text-xs font-semibold text-textPrimary hover:text-accent-gold transition-colors"
+                    >
+                      <RiUserLine size={18} />
+                      <span>Account ({user?.name?.split(" ")[0]})</span>
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="text-xs text-danger font-medium hover:underline"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center space-x-3 text-xs font-semibold text-textPrimary hover:text-accent-gold transition-colors"
+                  >
+                    <RiUserLine size={18} />
+                    <span>Login & Register</span>
+                  </Link>
+                )}
+
+                {/* Wishlist Link inside Drawer */}
+                <Link
+                  to="/wishlist"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between text-xs font-semibold text-textPrimary hover:text-accent-gold transition-colors"
+                >
+                  <span className="flex items-center space-x-3">
+                    <RiHeartLine size={18} />
+                    <span>My Wishlist</span>
+                  </span>
+                  {wishlistProducts.length > 0 && (
+                    <span className="bg-accent-gold text-secondary font-bold text-[9px] px-2 py-0.5 rounded-full border border-white">
+                      {wishlistProducts.length}
+                    </span>
+                  )}
+                </Link>
+
+                {/* Dark Mode toggle & Accent picker button */}
+                <div className="pt-3 flex items-center justify-between border-t border-borderLight/40">
+                  <button
+                    onClick={toggleDarkMode}
+                    className="flex items-center space-x-2 text-xs font-semibold text-textPrimary hover:text-accent-gold transition-colors"
+                  >
+                    {darkMode ? (
+                      <RiSunLine size={18} />
+                    ) : (
+                      <RiMoonLine size={18} />
+                    )}
+                    <span>{darkMode ? "Light Mode" : "Dark Mode"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowAccentPicker(!showAccentPicker)}
+                    className="flex items-center space-x-2 text-xs font-semibold text-textPrimary hover:text-accent-gold transition-colors"
+                  >
+                    <RiPaletteLine size={18} />
+                    <span>Colors Theme</span>
+                  </button>
+                </div>
+
+                {showAccentPicker && (
+                  <div className="grid grid-cols-2 gap-1.5 p-2 bg-primary rounded border border-borderLight text-[10px]">
+                    {[
+                      { key: "gold", name: "Gold", color: "bg-[#D4AF37]" },
+                      {
+                        key: "emerald",
+                        name: "Emerald",
+                        color: "bg-[#0F5132]",
+                      },
+                      {
+                        key: "sapphire",
+                        name: "Sapphire",
+                        color: "bg-[#1E3A8A]",
+                      },
+                      { key: "rose", name: "Rose", color: "bg-[#DB2777]" },
+                      {
+                        key: "amethyst",
+                        name: "Amethyst",
+                        color: "bg-[#8A2BE2]",
+                      },
+                      { key: "teal", name: "Teal", color: "bg-[#008080]" },
+                    ].map((x) => (
+                      <button
+                        key={x.key}
+                        onClick={() => selectAccent(x.key)}
+                        className={`flex items-center space-x-1.5 p-1 rounded transition ${
+                          accentTheme === x.key
+                            ? "bg-bgLight font-bold text-accent-gold"
+                            : "text-textSecondary"
+                        }`}
+                      >
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${x.color} border border-white/20`}
+                        />
+                        <span className="truncate">{x.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
