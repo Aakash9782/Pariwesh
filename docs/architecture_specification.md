@@ -1,6 +1,6 @@
-# PRIWESH - PHASE 1: SOFTWARE ARCHITECTURE, DATABASE SCHEMAS, & SPECIFICATION
+# PARIWESH - PHASE 1: SOFTWARE ARCHITECTURE, DATABASE SCHEMAS, & SPECIFICATION
 
-This document outlines the complete Software Architecture, Database Schemas, API Planning, UI/UX Navigation Flow, State Management, and Roadmap for **PRIWESH**, a Premium E-Commerce Platform.
+This document outlines the complete Software Architecture, Database Schemas, API Planning, UI/UX Navigation Flow, State Management, and Roadmap for **PARIWESH**, a Premium E-Commerce Platform.
 
 ---
 
@@ -9,7 +9,7 @@ This document outlines the complete Software Architecture, Database Schemas, API
 The project is structured as a monorepo for clean, decoupled development of client, server, and shared validation logic.
 
 ```text
-priwesh/
+pariwesh/
 ├── docs/                             # Project specifications & API definitions
 │   └── architecture_specification.md
 ├── shared/                           # Shared utility models or validations (e.g., Zod schemas)
@@ -272,7 +272,7 @@ const WishlistSchema = new mongoose.Schema(
 // Order Schema
 const OrderSchema = new mongoose.Schema(
   {
-    orderId: { type: String, required: true, unique: true, index: true }, // Custom human-readable format e.g. PRIWESH-2026-10023
+    orderId: { type: String, required: true, unique: true, index: true }, // Custom human-readable format e.g. PARIWESH-2026-10023
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     items: [
       {
@@ -485,7 +485,7 @@ const ReviewSchema = new mongoose.Schema(
 
 // Settings Schema
 const SettingsSchema = new mongoose.Schema({
-  siteName: { type: String, default: "PRIWESH" },
+  siteName: { type: String, default: "PARIWESH" },
   companyAddress: { type: String },
   supportEmail: { type: String },
   contactPhone: { type: String },

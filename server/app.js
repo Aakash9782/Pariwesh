@@ -23,7 +23,6 @@ const corsOptions = {
   origin: (origin, callback) => {
     if (
       !origin ||
-      origin.includes("netlify.app") ||
       origin.includes("vercel.app") ||
       origin.includes("localhost") ||
       origin.includes("127.0.0.1") ||
