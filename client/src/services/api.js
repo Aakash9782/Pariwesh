@@ -6,9 +6,16 @@ import { logoutSuccess, authSuccess } from "../redux/slices/authSlice.js";
 // - Local Dev (import.meta.env.DEV is true): Automatically hits local port 5001 backend.
 // - Live Prod (import.meta.env.DEV is false): Hits VITE_API_URL env variable or live Render server URL.
 const getBaseURL = () => {
-  if (import.meta.env.DEV) {
-    const hostname =
-      typeof window !== "undefined" ? window.location.hostname : "localhost";
+  const hostname =
+    typeof window !== "undefined" ? window.location.hostname : "localhost";
+  const isLocalhost =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.startsWith("192.168.") ||
+    hostname.startsWith("10.") ||
+    hostname.endsWith(".local");
+
+  if (import.meta.env.DEV && isLocalhost) {
     return `http://${hostname}:5001/api/v1`;
   }
   let url =
