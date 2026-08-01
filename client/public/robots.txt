@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Exclude private paths
+Disallow: /admin/
+Disallow: /profile/
+Disallow: /cart/
+
+Sitemap: https://pariwesh.com/sitemap.xml
