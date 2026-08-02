@@ -5,6 +5,7 @@ import Icon from "../theme/icons.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import HeroSlider from "../components/home/HeroSlider.jsx";
 import VibeGrid from "../components/home/VibeGrid.jsx";
+import { ProductSkeleton } from "../components/common/Skeleton.jsx";
 import { addToCart } from "../redux/slices/cartSlice.js";
 import { toggleWishlistProduct } from "../redux/slices/wishlistSlice.js";
 import API from "../services/api.js";
@@ -53,7 +54,21 @@ const Home = () => {
 
   // Dynamic products catalog state
   const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(false);
+
+  // Dynamic Flash Sale Countdown State
+  const [countdownConfig, setCountdownConfig] = useState({
+    active: true,
+    endDate: "",
+    title: "Limited Collection Closes In:",
+  });
+
+  const [timeLeft, setTimeLeft] = useState({
+    hours: 12,
+    minutes: 45,
+    seconds: 30,
+  });
 
   const handleCopyCode = () => {
     if (adConfig.code) {
@@ -63,57 +78,118 @@ const Home = () => {
     }
   };
 
+  // Products load independently — never blocked by slow /settings
   useEffect(() => {
-    const fetchPageData = async () => {
-      // 1. Fetch Banner Settings from Database
+    let cancelled = false;
+
+    const fetchProducts = async () => {
+      setProductsLoading(true);
+      try {
+        const res = await API.get("/products");
+        if (cancelled) return;
+
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          const dbProducts = res.data.data
+            .filter((p) => !p.status || p.status === "active")
+            .map((p) => {
+              const images =
+                Array.isArray(p.images) && p.images.length > 0
+                  ? p.images
+                  : p.image
+                    ? [p.image]
+                    : [
+                        "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop",
+                      ];
+              return {
+                _id: p._id,
+                name: p.name,
+                slug: p.slug || p.name.toLowerCase().replace(/\s+/g, "-"),
+                sku: p.sku,
+                category: p.category || "suits",
+                mrp: p.mrp || Math.round(p.price * 1.5),
+                sellingPrice: p.price,
+                images,
+                video: p.video || "",
+                tag: p.tag || p.tags || "",
+              };
+            });
+          setProducts(dbProducts);
+        } else {
+          setProducts([]);
+        }
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        if (!cancelled) setProducts([]);
+      } finally {
+        if (!cancelled) setProductsLoading(false);
+      }
+    };
+
+    fetchProducts();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Banner + countdown settings in one request
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchSettings = async () => {
       try {
         const res = await API.get("/settings");
-        if (res.data && res.data.success && res.data.data) {
-          const settings = res.data.data;
+        if (cancelled) return;
+        if (!res.data?.success || !res.data.data) {
+          applyLocalSettingsFallback();
+          return;
+        }
 
-          let adState = {
-            active:
-              settings.festiveAdActive === "true" ||
-              settings.festiveAdActive === true,
-            title: settings.festiveAdTitle || "Diwali Festive Dhamaka!",
-            subtitle:
-              settings.festiveAdSubtitle ||
-              "Up to 50% Off on all hand-knit Zari premium anarkalis. Free delivery apply!",
-            code: settings.festiveAdCode || "FESTIVE50",
-            link: settings.festiveAdLink || "/shop",
-            theme: settings.festiveAdTheme || "royal-gold",
-          };
+        const settings = res.data.data;
 
-          if (settings.festiveBannerSettings) {
-            try {
-              const parsed = JSON.parse(settings.festiveBannerSettings);
-              const now = new Date();
-              const start = parsed.startDate
-                ? new Date(parsed.startDate)
-                : null;
-              const end = parsed.endDate ? new Date(parsed.endDate) : null;
-              const isDateValid =
-                (!start || now >= start) && (!end || now <= end);
+        let adState = {
+          active:
+            settings.festiveAdActive === "true" ||
+            settings.festiveAdActive === true,
+          title: settings.festiveAdTitle || "Diwali Festive Dhamaka!",
+          subtitle:
+            settings.festiveAdSubtitle ||
+            "Up to 50% Off on all hand-knit Zari premium anarkalis. Free delivery apply!",
+          code: settings.festiveAdCode || "FESTIVE50",
+          link: settings.festiveAdLink || "/shop",
+          theme: settings.festiveAdTheme || "royal-gold",
+        };
 
-              adState = {
-                active:
-                  (parsed.enabled === true || parsed.enabled === "true") &&
-                  isDateValid,
-                title: parsed.bannerTitle || adState.title,
-                subtitle: parsed.subtitle || adState.subtitle,
-                code: parsed.discountTag || adState.code,
-                link: parsed.link || "/shop",
-                theme: parsed.theme || "royal-gold",
-                primaryButtonText: parsed.primaryButtonText,
-                desktopImage: parsed.desktopImage || parsed.bannerImage || "",
-                tabletImage: parsed.tabletImage || "",
-                mobileImage: parsed.mobileImage || "",
-              };
-            } catch (e) {
-              console.error("Failed to parse festiveBannerSettings", e);
-            }
+        if (settings.festiveBannerSettings) {
+          try {
+            const parsed = JSON.parse(settings.festiveBannerSettings);
+            const now = new Date();
+            const start = parsed.startDate
+              ? new Date(parsed.startDate)
+              : null;
+            const end = parsed.endDate ? new Date(parsed.endDate) : null;
+            const isDateValid =
+              (!start || now >= start) && (!end || now <= end);
+
+            adState = {
+              active:
+                (parsed.enabled === true || parsed.enabled === "true") &&
+                isDateValid,
+              title: parsed.bannerTitle || adState.title,
+              subtitle: parsed.subtitle || adState.subtitle,
+              code: parsed.discountTag || adState.code,
+              link: parsed.link || "/shop",
+              theme: parsed.theme || "royal-gold",
+              primaryButtonText: parsed.primaryButtonText,
+              desktopImage: parsed.desktopImage || parsed.bannerImage || "",
+              tabletImage: parsed.tabletImage || "",
+              mobileImage: parsed.mobileImage || "",
+            };
+          } catch (e) {
+            console.error("Failed to parse festiveBannerSettings", e);
           }
+        }
 
+        if (!cancelled) {
           setAdConfig(adState);
 
           const fallbackImages = [
@@ -139,92 +215,64 @@ const Home = () => {
                   settings.slideBarActive === true,
             images: loadedImages.length > 0 ? loadedImages : fallbackImages,
           });
-        } else {
-          // Fallback to localStorage if any
-          const savedActive =
-            localStorage.getItem("festiveAdActive") === "true";
-          const savedTitle =
-            localStorage.getItem("festiveAdTitle") || "Diwali Festive Dhamaka!";
-          const savedSubtitle =
-            localStorage.getItem("festiveAdSubtitle") ||
-            "Up to 50% Off on all hand-knit Zari premium anarkalis. Free delivery apply!";
-          const savedCode =
-            localStorage.getItem("festiveAdCode") || "FESTIVE50";
-          const savedLink = localStorage.getItem("festiveAdLink") || "/shop";
-          const savedTheme =
-            localStorage.getItem("festiveAdTheme") || "royal-gold";
-          setAdConfig({
-            active: savedActive,
-            title: savedTitle,
-            subtitle: savedSubtitle,
-            code: savedCode,
-            link: savedLink,
-            theme: savedTheme,
-          });
 
-          const fallbackImages = [
-            "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1612459284970-e8f027596582?q=80&w=1200&auto=format&fit=crop",
-          ];
-          const loadedImages = [
-            localStorage.getItem("slideImg1"),
-            localStorage.getItem("slideImg2"),
-            localStorage.getItem("slideImg3"),
-            localStorage.getItem("slideImg4"),
-            localStorage.getItem("slideImg5"),
-          ].filter(Boolean);
-
-          setSliderConfig({
+          setCountdownConfig({
             active:
-              localStorage.getItem("slideBarActive") === null
+              settings.countdownActive === undefined
                 ? true
-                : localStorage.getItem("slideBarActive") === "true",
-            images: loadedImages.length > 0 ? loadedImages : fallbackImages,
+                : settings.countdownActive === "true" ||
+                  settings.countdownActive === true,
+            endDate: settings.countdownEndDate || "",
+            title: settings.countdownTitle || "Limited Collection Closes In:",
           });
         }
       } catch (err) {
         console.error("Error loaded settings:", err);
-      }
-
-      // 2. Fetch Catalog Products from Database
-      try {
-        const res = await API.get("/products");
-        if (
-          res.data &&
-          res.data.success &&
-          res.data.data &&
-          res.data.data.length > 0
-        ) {
-          // Format custom products from database
-          const dbProducts = res.data.data
-            .filter((p) => !p.status || p.status === "active")
-            .map((p) => ({
-              _id: p._id,
-              name: p.name,
-              slug: p.slug || p.name.toLowerCase().replace(/\s+/g, "-"),
-              sku: p.sku,
-              category: p.category || "suits",
-              mrp: p.mrp || Math.round(p.price * 1.5),
-              sellingPrice: p.price,
-              images: p.images || [p.image] || [
-                  "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop",
-                ],
-              video: p.video || "",
-              tag: p.tag || p.tags || "",
-            }));
-          setProducts(dbProducts);
-        } else {
-          setProducts([]);
-        }
-      } catch (err) {
-        console.error("Error fetching products:", err);
-        setProducts([]);
+        if (!cancelled) applyLocalSettingsFallback();
       }
     };
-    fetchPageData();
+
+    const applyLocalSettingsFallback = () => {
+      setAdConfig({
+        active: localStorage.getItem("festiveAdActive") === "true",
+        title:
+          localStorage.getItem("festiveAdTitle") || "Diwali Festive Dhamaka!",
+        subtitle:
+          localStorage.getItem("festiveAdSubtitle") ||
+          "Up to 50% Off on all hand-knit Zari premium anarkalis. Free delivery apply!",
+        code: localStorage.getItem("festiveAdCode") || "FESTIVE50",
+        link: localStorage.getItem("festiveAdLink") || "/shop",
+        theme: localStorage.getItem("festiveAdTheme") || "royal-gold",
+      });
+
+      const fallbackImages = [
+        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=1200&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=1200&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=1200&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1612459284970-e8f027596582?q=80&w=1200&auto=format&fit=crop",
+      ];
+      const loadedImages = [
+        localStorage.getItem("slideImg1"),
+        localStorage.getItem("slideImg2"),
+        localStorage.getItem("slideImg3"),
+        localStorage.getItem("slideImg4"),
+        localStorage.getItem("slideImg5"),
+      ].filter(Boolean);
+
+      setSliderConfig({
+        active:
+          localStorage.getItem("slideBarActive") === null
+            ? true
+            : localStorage.getItem("slideBarActive") === "true",
+        images: loadedImages.length > 0 ? loadedImages : fallbackImages,
+      });
+    };
+
+    fetchSettings();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -234,45 +282,6 @@ const Home = () => {
     }, 4500);
     return () => clearInterval(interval);
   }, [sliderConfig.active, sliderConfig.images.length]);
-
-  // 1. Dynamic Flash Sale Countdown State
-  const [countdownConfig, setCountdownConfig] = useState({
-    active: true,
-    endDate: "",
-    title: "Limited Collection Closes In:",
-  });
-
-  const [timeLeft, setTimeLeft] = useState({
-    hours: 12,
-    minutes: 45,
-    seconds: 30,
-  });
-
-  // Load countdown configuration on page load
-  useEffect(() => {
-    const loadCountdownConfig = async () => {
-      try {
-        const res = await API.get("/settings");
-        if (res.data && res.data.success && res.data.data) {
-          const s = res.data.data;
-
-          let state = {
-            active:
-              s.countdownActive === undefined
-                ? true
-                : s.countdownActive === "true" || s.countdownActive === true,
-            endDate: s.countdownEndDate || "",
-            title: s.countdownTitle || "Limited Collection Closes In:",
-          };
-
-          setCountdownConfig(state);
-        }
-      } catch (err) {
-        console.error("Failed to load countdown settings:", err);
-      }
-    };
-    loadCountdownConfig();
-  }, []);
 
   useEffect(() => {
     if (!countdownConfig.active) return;
@@ -765,15 +774,27 @@ const Home = () => {
         </div>
 
         {/* Products Grid */}
-        {products.length === 0 ? (
+        {productsLoading ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-8">
+            {[1, 2, 3, 4].map((i) => (
+              <ProductSkeleton key={i} />
+            ))}
+          </div>
+        ) : products.length === 0 ? (
           <div className="py-16 text-center border border-dashed border-accent-gold/30 rounded bg-[#FAF7F3] max-w-7xl mx-auto px-4">
             <p className="text-xs font-semibold text-textSecondary tracking-wider uppercase">
-              Our premium catalogue is currently updating
+              No products available right now
             </p>
             <p className="text-[11px] text-textSecondary/70 italic mt-1">
-              Stay tuned for our upcoming seasonal arrivals and designer
-              curations.
+              Our catalogue is empty at the moment. Please check back soon for
+              new arrivals.
             </p>
+            <Link
+              to="/shop"
+              className="inline-block mt-5 text-[10px] uppercase tracking-widest font-bold text-[#8a1c14] border-b border-[#8a1c14]/40 pb-0.5 hover:text-secondary transition-colors"
+            >
+              Browse Shop
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-8">
