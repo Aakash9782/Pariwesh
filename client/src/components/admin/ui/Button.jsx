@@ -3,8 +3,8 @@ import React from "react";
 const Button = ({
   children,
   type = "button",
-  variant = "primary", // primary (accent gold), secondary (white), dark, outline, danger, success
-  size = "md", // sm, md, lg
+  variant = "primary",
+  size = "md",
   onClick,
   disabled = false,
   loading = false,
@@ -14,16 +14,16 @@ const Button = ({
   ...props
 }) => {
   const baseStyle =
-    "inline-flex items-center justify-center font-display font-bold uppercase tracking-wider transition-all duration-200 active:scale-[0.98] outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-md";
+    "inline-flex items-center justify-center font-display font-bold uppercase tracking-wider transition-all duration-200 active:scale-[0.98] outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg";
 
   const variants = {
     primary:
       "bg-[#c5a880] hover:bg-[#a88f65] text-white shadow-xs border border-transparent",
     secondary:
-      "bg-white hover:bg-slate-50 text-slate-700 border border-slate-250 shadow-xxs",
+      "bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-xxs",
     dark: "bg-slate-900 hover:bg-slate-800 text-white shadow-xs border border-transparent",
     outline:
-      "bg-transparent hover:bg-slate-50 text-slate-700 border border-slate-250",
+      "bg-transparent hover:bg-slate-50 text-slate-700 border border-slate-200",
     danger:
       "bg-red-600 hover:bg-red-700 text-white shadow-xs border border-transparent",
     success:
@@ -31,9 +31,9 @@ const Button = ({
   };
 
   const sizes = {
-    sm: "text-[10px] px-3.5 py-2.5",
-    md: "text-[11px] px-5 py-3",
-    lg: "text-[12px] px-7 py-3.5",
+    sm: "text-[10px] px-3.5 py-2",
+    md: "text-[11px] px-5 py-2.5",
+    lg: "text-[12px] px-7 py-3",
   };
 
   return (

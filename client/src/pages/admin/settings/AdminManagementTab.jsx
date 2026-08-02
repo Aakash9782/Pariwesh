@@ -28,7 +28,7 @@ const AdminManagementTab = ({
           onClick={() => setShowAddAdmin(true)}
           variant="outline"
           size="sm"
-          className="flex items-center space-x-1 text-xs text-[#c5a880] border-slate-205"
+          className="flex items-center space-x-1 text-xs text-[#c5a880] border-slate-200"
         >
           <RiAddCircleLine size={16} />
           <span>Authorize Admin Phone</span>
@@ -59,7 +59,7 @@ const AdminManagementTab = ({
                   <p className="font-semibold text-slate-800 text-sm tracking-tight">
                     {admin.name}
                   </p>
-                  <p className="text-[10px] text-slate-450 font-mono pr-2">
+                  <p className="text-[10px] text-slate-400 font-mono pr-2">
                     {admin.email}
                   </p>
                   <p className="text-[9px] text-[#c5a880] font-mono tracking-widest font-bold uppercase">

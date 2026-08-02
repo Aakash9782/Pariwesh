@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Link,
   Outlet,
@@ -6,8 +6,7 @@ import {
   useNavigate,
   Navigate,
 } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import { logoutSuccess } from "../redux/slices/authSlice.js";
+import { useSelector } from "react-redux";
 import {
   RiDashboardLine,
   RiArchiveLine,
@@ -18,25 +17,37 @@ import {
   RiBarChart2Line,
   RiSettings4Line,
   RiNotification3Line,
-  RiHistoryLine,
   RiLogoutBoxRLine,
   RiMenuFoldLine,
   RiMenuUnfoldLine,
   RiSearchLine,
   RiUserLine,
-  RiCoupon3Line,
   RiCloseLine,
   RiExchangeBoxLine,
   RiPriceTag3Line,
+  RiMailLine,
 } from "react-icons/ri";
 import API from "../services/api.js";
 import { useAlert } from "../contexts/AlertContext.jsx";
 
+const NAV_ITEMS = [
+  { name: "Dashboard", path: "/admin/dashboard", icon: RiDashboardLine },
+  { name: "Products", path: "/admin/products", icon: RiArchiveLine },
+  { name: "Catalog", path: "/admin/catalog", icon: RiPriceTag3Line },
+  { name: "Orders", path: "/admin/orders", icon: RiShoppingBag3Line },
+  { name: "Returns", path: "/admin/returns", icon: RiExchangeBoxLine },
+  { name: "Customers", path: "/admin/customers", icon: RiGroupLine },
+  { name: "Inventory", path: "/admin/inventory", icon: RiInboxArchiveLine },
+  { name: "Marketing", path: "/admin/marketing", icon: RiMegaphoneLine },
+  { name: "Mail", path: "/admin/mail", icon: RiMailLine },
+  { name: "Analytics", path: "/admin/analytics", icon: RiBarChart2Line },
+  { name: "Settings", path: "/admin/settings", icon: RiSettings4Line },
+];
+
 const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const dispatch = useDispatch();
-  const { alert, toast } = useAlert();
+  const { toast } = useAlert();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -45,18 +56,16 @@ const AdminLayout = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
   const [globalSearchResults, setGlobalSearchResults] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
 
-  // Authenticated & Admin check
-  if (!isAuthenticated || user?.role !== "admin") {
-    return <Navigate to="/login" replace />;
-  }
+  const notifRef = useRef(null);
+  const searchTimer = useRef(null);
 
-  // Fetch Admin Notifications
   const fetchNotifications = async () => {
     try {
       const res = await API.get("/notifications");
-      if (res.data && res.data.success) {
+      if (res.data?.success) {
         setNotifications(res.data.data || []);
       }
     } catch (err) {
@@ -65,10 +74,49 @@ const AdminLayout = () => {
   };
 
   useEffect(() => {
+    if (!isAuthenticated || user?.role !== "admin") return;
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000); // refresh every minute
+    const interval = setInterval(fetchNotifications, 60000);
     return () => clearInterval(interval);
+  }, [isAuthenticated, user?.role]);
+
+  // Close panels on Esc / outside click
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        setShowNotifications(false);
+        setShowSearchModal(false);
+        setMobileSidebarOpen(false);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setShowSearchModal(true);
+      }
+    };
+    const onClick = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onClick);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onClick);
+    };
   }, []);
+
+  useEffect(() => {
+    document.body.style.overflow =
+      mobileSidebarOpen || showSearchModal ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileSidebarOpen, showSearchModal]);
+
+  if (!isAuthenticated || user?.role !== "admin") {
+    return <Navigate to="/login" replace />;
+  }
 
   const handleMarkAsRead = async (id) => {
     try {
@@ -98,15 +146,14 @@ const AdminLayout = () => {
     window.location.href = "/";
   };
 
-  // Universal Global Search
-  const handleGlobalSearch = async (val) => {
-    setGlobalSearchQuery(val);
+  const runGlobalSearch = useCallback(async (val) => {
     if (!val || val.trim().length < 2) {
       setGlobalSearchResults(null);
+      setSearchLoading(false);
       return;
     }
+    setSearchLoading(true);
     try {
-      // Execute searches concurrently across entities: products, orders, customers (users), coupons
       const [prodRes, orderRes, userRes, couponRes] = await Promise.all([
         API.get("/products"),
         API.get("/orders"),
@@ -116,111 +163,123 @@ const AdminLayout = () => {
 
       const q = val.toLowerCase();
 
-      const matchedProds = (prodRes.data?.data || []).filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q),
-      );
-
-      const matchedOrders = (orderRes.data?.data || []).filter(
-        (o) =>
-          o.orderId.toLowerCase().includes(q) ||
-          o.customer?.name?.toLowerCase().includes(q) ||
-          o.customer?.phone?.includes(q),
-      );
-
-      const matchedCustomers = (userRes.data?.data || []).filter(
-        (u) =>
-          u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q),
-      );
-
-      const matchedCoupons = (couponRes.data?.data || []).filter((c) =>
-        c.code.toLowerCase().includes(q),
-      );
-
       setGlobalSearchResults({
-        products: matchedProds,
-        orders: matchedOrders,
-        customers: matchedCustomers,
-        coupons: matchedCoupons,
+        products: (prodRes.data?.data || []).filter(
+          (p) =>
+            p.name?.toLowerCase().includes(q) ||
+            p.sku?.toLowerCase().includes(q),
+        ),
+        orders: (orderRes.data?.data || []).filter(
+          (o) =>
+            o.orderId?.toLowerCase().includes(q) ||
+            o.customer?.name?.toLowerCase().includes(q) ||
+            o.customer?.phone?.includes(q),
+        ),
+        customers: (userRes.data?.data || []).filter(
+          (u) =>
+            u.name?.toLowerCase().includes(q) ||
+            u.email?.toLowerCase().includes(q),
+        ),
+        coupons: (couponRes.data?.data || []).filter((c) =>
+          c.code?.toLowerCase().includes(q),
+        ),
       });
     } catch (err) {
       console.error("Global search failed:", err);
+    } finally {
+      setSearchLoading(false);
     }
+  }, []);
+
+  const handleGlobalSearch = (val) => {
+    setGlobalSearchQuery(val);
+    clearTimeout(searchTimer.current);
+    if (!val || val.trim().length < 2) {
+      setGlobalSearchResults(null);
+      setSearchLoading(false);
+      return;
+    }
+    setSearchLoading(true);
+    searchTimer.current = setTimeout(() => runGlobalSearch(val), 280);
   };
 
-  const navItems = [
-    {
-      name: "Dashboard",
-      path: "/admin/dashboard",
-      icon: <RiDashboardLine size={18} />,
-    },
-    {
-      name: "Products",
-      path: "/admin/products",
-      icon: <RiArchiveLine size={18} />,
-    },
-    {
-      name: "Catalog",
-      path: "/admin/catalog",
-      icon: <RiPriceTag3Line size={18} />,
-    },
-    {
-      name: "Orders",
-      path: "/admin/orders",
-      icon: <RiShoppingBag3Line size={18} />,
-    },
-    {
-      name: "Returns",
-      path: "/admin/returns",
-      icon: <RiExchangeBoxLine size={18} />,
-    },
-    {
-      name: "Customers",
-      path: "/admin/customers",
-      icon: <RiGroupLine size={18} />,
-    },
-    {
-      name: "Inventory",
-      path: "/admin/inventory",
-      icon: <RiInboxArchiveLine size={18} />,
-    },
-    {
-      name: "Marketing",
-      path: "/admin/marketing",
-      icon: <RiMegaphoneLine size={18} />,
-    },
-    {
-      name: "Analytics",
-      path: "/admin/analytics",
-      icon: <RiBarChart2Line size={18} />,
-    },
-    {
-      name: "Settings",
-      path: "/admin/settings",
-      icon: <RiSettings4Line size={18} />,
-    },
-  ];
+  const closeSearch = () => {
+    setShowSearchModal(false);
+    setGlobalSearchQuery("");
+    setGlobalSearchResults(null);
+    setSearchLoading(false);
+  };
+
+  const isNavActive = (path) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  const renderNavLinks = (mobile = false) =>
+    NAV_ITEMS.map((item) => {
+      const Icon = item.icon;
+      const active = isNavActive(item.path);
+      return (
+        <Link
+          key={item.path}
+          to={item.path}
+          title={sidebarCollapsed && !mobile ? item.name : undefined}
+          onClick={() => mobile && setMobileSidebarOpen(false)}
+          className={`group relative flex items-center gap-3.5 px-3.5 py-2.5 rounded-lg text-[11px] font-semibold uppercase tracking-wider transition-all border-l-2 ${
+            active
+              ? "border-[#c5a880] bg-[#c5a880]/10 text-[#a88f65]"
+              : "border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+          } ${sidebarCollapsed && !mobile ? "justify-center px-2" : ""}`}
+        >
+          <Icon
+            size={18}
+            className={`shrink-0 ${active ? "text-[#c5a880]" : "text-slate-400 group-hover:text-slate-600"}`}
+          />
+          {(mobile || !sidebarCollapsed) && (
+            <span className="truncate">{item.name}</span>
+          )}
+          {active && !sidebarCollapsed && !mobile && (
+            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#c5a880]" />
+          )}
+        </Link>
+      );
+    });
+
+  const hasSearchHits =
+    globalSearchResults &&
+    (globalSearchResults.products.length > 0 ||
+      globalSearchResults.orders.length > 0 ||
+      globalSearchResults.customers.length > 0 ||
+      globalSearchResults.coupons.length > 0);
+
   return (
-    <div className="flex min-h-screen bg-[#FAF9F6] text-slate-700 font-sans">
-      {/* 1. DESKTOP SIDEBAR */}
+    <div className="flex min-h-screen bg-[#FAF9F6] text-slate-700 font-sans admin-shell">
+      {/* Desktop sidebar */}
       <aside
-        className={`hidden md:flex flex-col bg-white border-r border-slate-200 transition-all duration-300 sticky top-0 h-screen shadow-md ${
-          sidebarCollapsed ? "w-20" : "w-64"
+        className={`hidden md:flex flex-col bg-white border-r border-slate-200 transition-all duration-300 sticky top-0 h-screen shadow-xs z-30 ${
+          sidebarCollapsed ? "w-[72px]" : "w-64"
         }`}
       >
-        {/* Brand/Logo Area */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-200">
+        <div
+          className={`h-16 flex items-center border-b border-slate-200 shrink-0 ${
+            sidebarCollapsed ? "justify-center px-2" : "justify-between px-5"
+          }`}
+        >
           {!sidebarCollapsed && (
-            <span className="font-display font-semibold tracking-wider text-[#c5a880] uppercase text-sm font-bold">
-              PARIWESH HUB
-            </span>
+            <div className="min-w-0">
+              <span className="font-display font-bold tracking-[0.18em] text-[#c5a880] uppercase text-sm block">
+                Pariwesh
+              </span>
+              <span className="text-[9px] uppercase tracking-[0.2em] text-slate-400 font-semibold">
+                Admin Hub
+              </span>
+            </div>
           )}
           <button
+            type="button"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="text-slate-400 hover:text-[#c5a880] transition-colors focus:outline-none"
+            className="text-slate-400 hover:text-[#c5a880] transition-colors p-1.5 rounded-md hover:bg-slate-50"
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {sidebarCollapsed ? (
               <RiMenuUnfoldLine size={20} />
@@ -230,101 +289,65 @@ const AdminLayout = () => {
           </button>
         </div>
 
-        {/* Sidebar Nav Items */}
-        <nav className="flex-grow py-5 px-3 space-y-1 overflow-y-auto">
-          {navItems.map((item, idx) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={idx}
-                to={item.path}
-                className={`flex items-center space-x-3.5 px-4 py-2.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all border-l-2 ${
-                  isActive
-                    ? "border-[#c5a880] bg-[#c5a880]/5 text-[#a88f65] font-bold"
-                    : "border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                }`}
-              >
-                <span
-                  className={isActive ? "text-[#c5a880]" : "text-slate-400"}
-                >
-                  {item.icon}
-                </span>
-                {!sidebarCollapsed && (
-                  <span className="truncate">{item.name}</span>
-                )}
-              </Link>
-            );
-          })}
+        <nav className="flex-grow py-4 px-2.5 space-y-0.5 overflow-y-auto admin-scrollbar">
+          {renderNavLinks(false)}
         </nav>
 
-        {/* Sidebar Logout Button */}
-        <div className="p-4 border-t border-slate-200">
+        <div className="p-3 border-t border-slate-200 shrink-0">
           <button
+            type="button"
             onClick={handleLogout}
-            className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-md text-xs font-semibold uppercase tracking-wider text-red-650 hover:bg-red-50 hover:text-red-750 transition-colors"
+            title="Logout"
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-[11px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors ${
+              sidebarCollapsed ? "justify-center px-2" : ""
+            }`}
           >
-            <RiLogoutBoxRLine size={20} />
+            <RiLogoutBoxRLine size={18} />
             {!sidebarCollapsed && <span>Logout</span>}
           </button>
         </div>
       </aside>
 
-      {/* 2. RESPONSIVE MOBILE DRAWER SIDEBAR */}
+      {/* Mobile drawer */}
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
-          {/* Tint Screen Overlay */}
           <div
             onClick={() => setMobileSidebarOpen(false)}
-            className="fixed inset-0 bg-neutral-950/40 backdrop-blur-xs"
+            className="fixed inset-0 bg-neutral-950/40 backdrop-blur-sm"
           />
-          {/* Drawer Menu Contents */}
-          <div className="relative flex flex-col h-[100dvh] max-h-[100dvh] w-72 max-w-xs bg-white border-r border-slate-200 animate-slide-in-left shadow-2xl">
-            <div className="h-16 flex items-center justify-between px-6 border-b border-slate-200">
-              <span className="font-display font-semibold tracking-wider text-[#c5a880] uppercase text-sm font-bold">
-                PARIWESH HUB
-              </span>
+          <div className="relative flex flex-col h-[100dvh] max-h-[100dvh] w-72 max-w-[85vw] bg-white border-r border-slate-200 animate-slide-in-left shadow-2xl">
+            <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200 shrink-0">
+              <div>
+                <span className="font-display font-bold tracking-[0.18em] text-[#c5a880] uppercase text-sm block">
+                  Pariwesh
+                </span>
+                <span className="text-[9px] uppercase tracking-[0.2em] text-slate-400 font-semibold">
+                  Admin Hub
+                </span>
+              </div>
               <button
+                type="button"
                 onClick={() => setMobileSidebarOpen(false)}
-                className="text-slate-400 hover:text-[#c5a880] p-1"
+                className="text-slate-400 hover:text-[#c5a880] p-1.5 rounded-md hover:bg-slate-50"
               >
-                <RiCloseLine size={24} />
+                <RiCloseLine size={22} />
               </button>
             </div>
 
-            <nav className="flex-grow py-5 px-3 space-y-1 overflow-y-auto">
-              {navItems.map((item, idx) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={idx}
-                    to={item.path}
-                    onClick={() => setMobileSidebarOpen(false)}
-                    className={`flex items-center space-x-3.5 px-4 py-2.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all border-l-2 ${
-                      isActive
-                        ? "border-[#c5a880] bg-[#c5a880]/5 text-[#a88f65] font-bold"
-                        : "border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                    }`}
-                  >
-                    <span
-                      className={isActive ? "text-[#c5a880]" : "text-slate-400"}
-                    >
-                      {item.icon}
-                    </span>
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
+            <nav className="flex-grow py-4 px-2.5 space-y-0.5 overflow-y-auto admin-scrollbar">
+              {renderNavLinks(true)}
             </nav>
 
-            <div className="p-4 pb-8 border-t border-slate-200 shrink-0">
+            <div className="p-3 pb-8 border-t border-slate-200 shrink-0">
               <button
+                type="button"
                 onClick={() => {
                   setMobileSidebarOpen(false);
                   handleLogout();
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-md text-xs font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50 hover:text-red-755 transition-colors"
+                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-[11px] font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
               >
-                <RiLogoutBoxRLine size={20} />
+                <RiLogoutBoxRLine size={18} />
                 <span>Logout</span>
               </button>
             </div>
@@ -332,91 +355,111 @@ const AdminLayout = () => {
         </div>
       )}
 
-      {/* 3. MAIN APP VIEW CONTAINER */}
+      {/* Main column */}
       <div className="flex-grow flex flex-col min-w-0 min-h-screen">
-        {/* Header Widget */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-40 shadow-xs">
-          <div className="flex items-center space-x-4">
+        <header className="h-16 bg-white/95 backdrop-blur-sm border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 shadow-xs">
+          <div className="flex items-center gap-3 min-w-0">
             <button
+              type="button"
               onClick={() => setMobileSidebarOpen(true)}
-              className="text-slate-500 hover:text-[#c5a880] md:hidden focus:outline-none"
+              className="text-slate-500 hover:text-[#c5a880] md:hidden p-1.5 rounded-md hover:bg-slate-50"
+              aria-label="Open menu"
             >
-              <RiMenuUnfoldLine size={24} />
+              <RiMenuUnfoldLine size={22} />
             </button>
 
-            {/* Header Universal Search Input */}
-            <div
+            <button
+              type="button"
               onClick={() => setShowSearchModal(true)}
-              className="hidden sm:flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 w-72 text-slate-450 cursor-pointer hover:border-slate-350 transition"
+              className="hidden sm:flex items-center bg-[#FAF9F6] border border-slate-200 rounded-lg px-3.5 py-2 w-64 lg:w-80 text-slate-400 hover:border-[#c5a880]/40 transition group"
             >
-              <RiSearchLine size={16} className="mr-2.5 text-slate-400" />
-              <span className="text-xs">Search everything...</span>
-            </div>
+              <RiSearchLine size={15} className="mr-2.5 shrink-0" />
+              <span className="text-xs truncate flex-grow text-left">
+                Search products, orders…
+              </span>
+              <kbd className="hidden lg:inline text-[9px] font-mono bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-400 group-hover:border-[#c5a880]/30">
+                ⌘K
+              </kbd>
+            </button>
           </div>
 
-          <div className="flex items-center space-x-5">
-            {/* Notification Bell Panel */}
-            <div className="relative">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <button
+              type="button"
+              onClick={() => setShowSearchModal(true)}
+              className="sm:hidden text-slate-500 hover:text-[#c5a880] p-1.5 rounded-md hover:bg-slate-50"
+              aria-label="Search"
+            >
+              <RiSearchLine size={20} />
+            </button>
+
+            <div className="relative" ref={notifRef}>
               <button
+                type="button"
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="text-slate-500 hover:text-[#c5a880] transition-colors relative"
+                className="text-slate-500 hover:text-[#c5a880] transition-colors relative p-1.5 rounded-md hover:bg-slate-50"
+                aria-label="Notifications"
               >
                 <RiNotification3Line size={20} />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white font-bold text-[8px] w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white">
-                    {unreadCount}
+                  <span className="absolute top-0.5 right-0.5 bg-red-500 text-white font-bold text-[8px] min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center border-2 border-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-3 w-80 bg-white border border-slate-200 rounded-lg shadow-xl z-50 p-2 text-slate-800 animate-fadeIn">
-                  <div className="flex justify-between items-center p-2 border-b border-slate-100">
+                <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white border border-slate-200 rounded-xl shadow-lg z-50 p-2 text-slate-800 animate-fade-in">
+                  <div className="flex justify-between items-center px-2.5 py-2 border-b border-slate-100">
                     <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                      Notifications ({unreadCount} new)
+                      Notifications
+                      {unreadCount > 0 ? ` · ${unreadCount} new` : ""}
                     </span>
                     <button
+                      type="button"
                       onClick={() => setShowNotifications(false)}
-                      className="text-slate-400 hover:text-slate-700 text-xs"
+                      className="text-slate-400 hover:text-slate-700 p-0.5"
                     >
                       <RiCloseLine size={16} />
                     </button>
                   </div>
 
-                  <div className="max-h-64 overflow-y-auto py-1.5 space-y-1">
+                  <div className="max-h-64 overflow-y-auto py-1.5 space-y-1 admin-scrollbar">
                     {notifications.length === 0 ? (
-                      <p className="text-center py-6 text-xs text-slate-400 italic">
-                        No new notifications
+                      <p className="text-center py-8 text-xs text-slate-400">
+                        No notifications yet
                       </p>
                     ) : (
-                      notifications.map((notif, idx) => (
+                      notifications.map((notif) => (
                         <div
-                          key={idx}
-                          className={`p-2.5 text-xs rounded transition flex flex-col space-y-1.5 border-b border-slate-50 ${
+                          key={notif._id}
+                          className={`p-2.5 text-xs rounded-lg transition flex flex-col gap-1.5 ${
                             notif.read
-                              ? "bg-slate-50/40 opacity-70"
+                              ? "bg-slate-50/60 opacity-75"
                               : "bg-[#c5a880]/5 border-l-2 border-[#c5a880]"
                           }`}
                         >
-                          <p className="font-semibold text-slate-750">
+                          <p className="font-semibold text-slate-800 leading-snug">
                             {notif.message}
                           </p>
-                          <div className="flex items-center justify-between text-[9px] text-slate-450 pt-1">
+                          <div className="flex items-center justify-between text-[9px] text-slate-400">
                             <span>
                               {new Date(notif.createdAt).toLocaleTimeString()}
                             </span>
-                            <div className="flex space-x-2">
+                            <div className="flex gap-2">
                               {!notif.read && (
                                 <button
+                                  type="button"
                                   onClick={() => handleMarkAsRead(notif._id)}
-                                  className="text-[#c5a880] hover:underline"
+                                  className="text-[#c5a880] hover:underline font-semibold"
                                 >
-                                  Mark Read
+                                  Mark read
                                 </button>
                               )}
                               <button
+                                type="button"
                                 onClick={() => handleDeleteNotif(notif._id)}
-                                className="text-red-500 hover:underline"
+                                className="text-red-500 hover:underline font-semibold"
                               >
                                 Delete
                               </button>
@@ -430,16 +473,15 @@ const AdminLayout = () => {
               )}
             </div>
 
-            {/* Admin Profile Details */}
-            <div className="flex items-center space-x-3 border-l border-slate-200 pl-4 h-9">
-              <div className="w-8 h-8 rounded-full bg-[#c5a880]/10 border border-[#c5a880]/20 flex items-center justify-center text-[#c5a880]">
-                <RiUserLine size={16} />
+            <div className="flex items-center gap-2.5 border-l border-slate-200 pl-3 sm:pl-4 h-9">
+              <div className="w-8 h-8 rounded-full bg-[#c5a880]/10 border border-[#c5a880]/25 flex items-center justify-center text-[#c5a880]">
+                <RiUserLine size={15} />
               </div>
-              <div className="hidden lg:block text-left">
-                <p className="text-xs font-semibold text-slate-800">
-                  {user?.name || "Premium Admin"}
+              <div className="hidden lg:block text-left min-w-0">
+                <p className="text-xs font-semibold text-slate-800 truncate max-w-[140px]">
+                  {user?.name || "Admin"}
                 </p>
-                <p className="text-[9px] text-slate-450 uppercase tracking-widest font-extrabold">
+                <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">
                   {user?.role}
                 </p>
               </div>
@@ -447,205 +489,115 @@ const AdminLayout = () => {
           </div>
         </header>
 
-        {/* Router View Canvas */}
-        <main className="flex-grow p-6 md:p-8 bg-[#FAF9F6] overflow-x-hidden">
+        <main className="flex-grow p-4 sm:p-6 md:p-8 bg-[#FAF9F6] overflow-x-hidden">
           <Outlet />
         </main>
       </div>
 
-      {/* 4. DYNAMIC UNIVERSAL SEARCH MODAL */}
+      {/* Global search modal */}
       {showSearchModal && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-neutral-950/40 backdrop-blur-xs">
-          <div className="w-full max-w-3xl bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xl animate-scaleDown">
-            {/* Search Input Bar */}
-            <div className="flex items-center border-b border-slate-200 p-4">
-              <RiSearchLine
-                size={20}
-                className="text-slate-400 mr-3 animate-pulse"
-              />
+        <div className="fixed inset-0 z-[999] flex items-start justify-center pt-[10vh] p-4 bg-neutral-950/40 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xl animate-scaleDown">
+            <div className="flex items-center border-b border-slate-200 px-4 py-3.5">
+              <RiSearchLine size={18} className="text-[#c5a880] mr-3 shrink-0" />
               <input
                 type="text"
                 autoFocus
-                placeholder="Search products by SKU / name, orders by ID / client, coupons, etc..."
+                placeholder="Search products, orders, customers, coupons…"
                 value={globalSearchQuery}
                 onChange={(e) => handleGlobalSearch(e.target.value)}
-                className="bg-transparent border-none text-slate-800 placeholder:text-slate-400 focus:outline-none w-full text-sm font-sans"
+                className="bg-transparent border-none text-slate-800 placeholder:text-slate-400 focus:outline-none w-full text-sm"
               />
               <button
-                onClick={() => {
-                  setShowSearchModal(false);
-                  setGlobalSearchQuery("");
-                  setGlobalSearchResults(null);
-                }}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                type="button"
+                onClick={closeSearch}
+                className="text-slate-400 hover:text-slate-600 p-1 shrink-0"
               >
-                <RiCloseLine size={22} />
+                <RiCloseLine size={20} />
               </button>
             </div>
 
-            {/* Search Result Lists */}
-            <div className="p-5 max-h-[480px] overflow-y-auto space-y-5 text-slate-800">
+            <div className="p-4 max-h-[55vh] overflow-y-auto admin-scrollbar space-y-5">
               {!globalSearchQuery || globalSearchQuery.trim().length < 2 ? (
-                <div className="text-center py-10 text-slate-400 text-xs">
-                  Type at least 2 characters to start scanning enterprise
-                  records...
-                </div>
-              ) : globalSearchResults &&
-                (globalSearchResults.products.length > 0 ||
-                  globalSearchResults.orders.length > 0 ||
-                  globalSearchResults.customers.length > 0 ||
-                  globalSearchResults.coupons.length > 0) ? (
-                <div className="space-y-5">
-                  {/* Products Matches */}
+                <p className="text-center py-10 text-slate-400 text-xs">
+                  Type at least 2 characters to search
+                </p>
+              ) : searchLoading ? (
+                <p className="text-center py-10 text-slate-400 text-xs animate-pulse">
+                  Searching…
+                </p>
+              ) : hasSearchHits ? (
+                <>
                   {globalSearchResults.products.length > 0 && (
-                    <div>
-                      <h4 className="text-[10px] uppercase font-bold tracking-widest text-[#c5a880] mb-2">
-                        Products ({globalSearchResults.products.length})
-                      </h4>
-                      <div className="space-y-1.5">
-                        {globalSearchResults.products.map((p, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() => {
-                              setShowSearchModal(false);
-                              navigate(`/admin/products?edit=${p._id}`);
-                            }}
-                            className="bg-slate-50 border border-slate-200 hover:border-slate-300 p-3 rounded-lg flex items-center justify-between cursor-pointer transition-all"
-                          >
-                            <div className="flex items-center space-x-3">
-                              {p.images && p.images[0] && (
-                                <img
-                                  src={p.images[0]}
-                                  className="w-9 h-9 object-cover rounded shadow-xxs"
-                                  alt=""
-                                />
-                              )}
-                              <div>
-                                <p className="text-xs font-semibold text-slate-800">
-                                  {p.name}
-                                </p>
-                                <p className="text-[10px] text-slate-450 font-mono">
-                                  {p.sku}
-                                </p>
-                              </div>
-                            </div>
-                            <span className="text-xs font-bold text-[#c5a880]">
-                              ₹{p.price}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <SearchGroup title="Products" count={globalSearchResults.products.length}>
+                      {globalSearchResults.products.slice(0, 8).map((p) => (
+                        <SearchRow
+                          key={p._id}
+                          onClick={() => {
+                            closeSearch();
+                            navigate(`/admin/products?edit=${p._id}`);
+                          }}
+                          title={p.name}
+                          subtitle={p.sku}
+                          meta={`₹${p.price}`}
+                          image={p.images?.[0]}
+                        />
+                      ))}
+                    </SearchGroup>
                   )}
-
-                  {/* Orders Matches */}
                   {globalSearchResults.orders.length > 0 && (
-                    <div>
-                      <h4 className="text-[10px] uppercase font-bold tracking-widest text-[#c5a880] mb-2">
-                        Orders ({globalSearchResults.orders.length})
-                      </h4>
-                      <div className="space-y-1.5">
-                        {globalSearchResults.orders.map((o, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() => {
-                              setShowSearchModal(false);
-                              navigate(`/admin/orders?view=${o._id}`);
-                            }}
-                            className="bg-slate-50 border border-slate-200 hover:border-slate-300 p-3 rounded-lg flex items-center justify-between cursor-pointer transition-all"
-                          >
-                            <div>
-                              <p className="text-xs font-semibold text-slate-850">
-                                {o.orderId}
-                              </p>
-                              <p className="text-[10px] text-slate-450">
-                                Client:{" "}
-                                <span className="font-semibold text-slate-650">
-                                  {o.customer?.name}
-                                </span>{" "}
-                                ({o.customer?.phone})
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-xs font-bold text-slate-800">
-                                ₹{o.pricing?.total || o.totalPrice}
-                              </p>
-                              <span className="text-[9px] bg-slate-100 border border-slate-200 text-[#a88f65] px-2 py-0.5 rounded uppercase tracking-wider font-extrabold">
-                                {o.orderStatus}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <SearchGroup title="Orders" count={globalSearchResults.orders.length}>
+                      {globalSearchResults.orders.slice(0, 8).map((o) => (
+                        <SearchRow
+                          key={o._id}
+                          onClick={() => {
+                            closeSearch();
+                            navigate(`/admin/orders?view=${o._id}`);
+                          }}
+                          title={o.orderId}
+                          subtitle={`${o.customer?.name || "—"} · ${o.customer?.phone || ""}`}
+                          meta={`₹${o.pricing?.grandTotal || o.pricing?.total || o.totalPrice || 0}`}
+                          badge={o.orderStatus}
+                        />
+                      ))}
+                    </SearchGroup>
                   )}
-
-                  {/* Customers Matches */}
                   {globalSearchResults.customers.length > 0 && (
-                    <div>
-                      <h4 className="text-[10px] uppercase font-bold tracking-widest text-[#c5a880] mb-2">
-                        Customers ({globalSearchResults.customers.length})
-                      </h4>
-                      <div className="space-y-1.5">
-                        {globalSearchResults.customers.map((c, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() => {
-                              setShowSearchModal(false);
-                              navigate(`/admin/customers?search=${c.email}`);
-                            }}
-                            className="bg-slate-50 border border-slate-200 hover:border-slate-300 p-3 rounded-lg flex items-center justify-between cursor-pointer transition-all5"
-                          >
-                            <div>
-                              <p className="text-xs font-semibold text-slate-800">
-                                {c.name}
-                              </p>
-                              <p className="text-[10px] text-slate-450">
-                                {c.email}
-                              </p>
-                            </div>
-                            <span className="text-[9px] border border-slate-265 text-slate-500 px-2 py-0.5 rounded font-bold uppercase">
-                              {c.role}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <SearchGroup title="Customers" count={globalSearchResults.customers.length}>
+                      {globalSearchResults.customers.slice(0, 8).map((c) => (
+                        <SearchRow
+                          key={c._id}
+                          onClick={() => {
+                            closeSearch();
+                            navigate(`/admin/customers?search=${c.email}`);
+                          }}
+                          title={c.name}
+                          subtitle={c.email}
+                          badge={c.role}
+                        />
+                      ))}
+                    </SearchGroup>
                   )}
-
-                  {/* Coupon Matches */}
                   {globalSearchResults.coupons.length > 0 && (
-                    <div>
-                      <h4 className="text-[10px] uppercase font-bold tracking-widest text-[#c5a880] mb-2">
-                        Coupons ({globalSearchResults.coupons.length})
-                      </h4>
-                      <div className="space-y-1.5">
-                        {globalSearchResults.coupons.map((cop, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() => {
-                              setShowSearchModal(false);
-                              navigate(`/admin/settings?tab=coupons`);
-                            }}
-                            className="bg-slate-50 border border-slate-200 hover:border-slate-300 p-3 rounded-lg flex items-center justify-between cursor-pointer transition-all"
-                          >
-                            <div className="font-semibold text-xs tracking-widest font-mono uppercase text-slate-800">
-                              {cop.code}
-                            </div>
-                            <span className="text-[10px] text-[#a88f65] bg-[#c5a880]/10 px-2.5 py-0.5 rounded-sm border border-[#c5a880]/15">
-                              {cop.discountType} (-{cop.value}%)
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <SearchGroup title="Coupons" count={globalSearchResults.coupons.length}>
+                      {globalSearchResults.coupons.slice(0, 8).map((cop) => (
+                        <SearchRow
+                          key={cop._id}
+                          onClick={() => {
+                            closeSearch();
+                            navigate(`/admin/marketing?tab=coupons`);
+                          }}
+                          title={cop.code}
+                          subtitle={`${cop.discountType} · ${cop.value}${cop.discountType === "Flat" ? "₹" : "%"}`}
+                        />
+                      ))}
+                    </SearchGroup>
                   )}
-                </div>
+                </>
               ) : (
-                <div className="text-center py-10 text-slate-400 text-xs">
-                  No matching files or credentials found in database
-                  directory...
-                </div>
+                <p className="text-center py-10 text-slate-400 text-xs">
+                  No matches found
+                </p>
               )}
             </div>
           </div>
@@ -654,5 +606,50 @@ const AdminLayout = () => {
     </div>
   );
 };
+
+const SearchGroup = ({ title, count, children }) => (
+  <div>
+    <h4 className="text-[10px] uppercase font-bold tracking-widest text-[#c5a880] mb-2 px-0.5">
+      {title} ({count})
+    </h4>
+    <div className="space-y-1.5">{children}</div>
+  </div>
+);
+
+const SearchRow = ({ onClick, title, subtitle, meta, badge, image }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="w-full text-left bg-[#FAF9F6] border border-slate-200 hover:border-[#c5a880]/40 hover:bg-white p-3 rounded-lg flex items-center justify-between gap-3 transition-all"
+  >
+    <div className="flex items-center gap-3 min-w-0">
+      {image && (
+        <img
+          src={image}
+          className="w-9 h-9 object-cover rounded-md border border-slate-200 shrink-0"
+          alt=""
+        />
+      )}
+      <div className="min-w-0">
+        <p className="text-xs font-semibold text-slate-800 truncate">{title}</p>
+        {subtitle && (
+          <p className="text-[10px] text-slate-400 truncate font-mono mt-0.5">
+            {subtitle}
+          </p>
+        )}
+      </div>
+    </div>
+    <div className="flex items-center gap-2 shrink-0">
+      {badge && (
+        <span className="text-[9px] bg-white border border-slate-200 text-slate-500 px-2 py-0.5 rounded uppercase tracking-wider font-bold">
+          {badge}
+        </span>
+      )}
+      {meta && (
+        <span className="text-xs font-bold text-[#c5a880] font-mono">{meta}</span>
+      )}
+    </div>
+  </button>
+);
 
 export default AdminLayout;

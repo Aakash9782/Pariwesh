@@ -39,7 +39,7 @@ const Modal = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-neutral-950/45 backdrop-blur-xs"
+            className="fixed inset-0 bg-neutral-950/45 backdrop-blur-sm"
           />
 
           {/* Modal Content Drawer */}
@@ -71,7 +71,7 @@ const Modal = ({
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-5 text-xs text-slate-655 font-sans leading-relaxed">
+            <div className="flex-1 overflow-y-auto p-5 text-xs text-slate-600 font-sans leading-relaxed">
               {children}
             </div>
 

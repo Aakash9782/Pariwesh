@@ -265,11 +265,11 @@ const InventoryPage = () => {
                         {p.images && p.images[0] ? (
                           <img
                             src={p.images[0]}
-                            className="w-9 h-11 object-cover rounded border border-slate-205"
+                            className="w-9 h-11 object-cover rounded border border-slate-200"
                             alt=""
                           />
                         ) : (
-                          <div className="w-9 h-11 bg-slate-100 rounded border border-slate-205" />
+                          <div className="w-9 h-11 bg-slate-100 rounded border border-slate-200" />
                         )}
                       </td>
                       <td className="py-4 px-5 space-y-1">

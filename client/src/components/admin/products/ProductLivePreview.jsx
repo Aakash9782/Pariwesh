@@ -50,7 +50,7 @@ const ProductLivePreview = () => {
                   alt="Preview"
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50 text-slate-350 p-4 text-center">
+                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50 text-slate-300 p-4 text-center">
                   <RiFolderImageLine
                     size={32}
                     className="text-slate-300 mb-1.5"

@@ -19,14 +19,14 @@ const SearchBar = ({
         value={value}
         onChange={(e) => onChange && onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full h-full pl-9 pr-8 bg-white border border-slate-250 rounded-md text-xs text-slate-800 transition-all placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880]"
+        className="w-full h-full pl-9 pr-8 bg-white border border-slate-200 rounded-md text-xs text-slate-800 transition-all placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880]"
         {...props}
       />
       {value && onClear && (
         <button
           type="button"
           onClick={onClear}
-          className="absolute inset-y-0 right-2.5 flex items-center text-slate-400 hover:text-slate-650"
+          className="absolute inset-y-0 right-2.5 flex items-center text-slate-400 hover:text-slate-600"
         >
           <RiCloseLine className="w-4.5 h-4.5" />
         </button>

@@ -209,7 +209,7 @@ export const ProductHierarchyTab = () => {
           <select
             value={form.brand}
             onChange={(e) => setForm({ ...form, brand: e.target.value })}
-            className="w-full bg-slate-50 border border-slate-205 border-slate-200 text-xs rounded-lg px-3.5 py-2.5 text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent-gold/20 focus:border-accent-gold transition"
+            className="w-full bg-slate-50 border border-slate-200 border-slate-200 text-xs rounded-lg px-3.5 py-2.5 text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent-gold/20 focus:border-accent-gold transition"
           >
             {brands.length === 0 && <option value="Pariwesh">Pariwesh</option>}
             {brands.map((b) => (
@@ -654,7 +654,7 @@ export const ProductMediaTab = () => {
           className={`border border-dashed p-6.5 rounded-xl text-center flex flex-col justify-center items-center space-y-3.5 transition-all ${
             dragOver
               ? "border-[#c5a880] bg-amber-50/20"
-              : "border-slate-350 relative bg-slate-50 hover:bg-slate-100/50"
+              : "border-slate-300 relative bg-slate-50 hover:bg-slate-100/50"
           }`}
         >
           <RiFolderImageLine
@@ -711,7 +711,7 @@ export const ProductMediaTab = () => {
 
       {/* Add URL field fallback */}
       <div className="space-y-2 pt-2">
-        <label className="text-xs font-semibold text-slate-705 text-slate-700 block">
+        <label className="text-xs font-semibold text-slate-700 text-slate-700 block">
           Or add Image URL directly
         </label>
         <div className="flex space-x-2">

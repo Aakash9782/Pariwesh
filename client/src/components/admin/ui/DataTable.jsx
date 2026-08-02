@@ -202,7 +202,7 @@ const DataTable = ({
                 onItemsPerPageChange &&
                 onItemsPerPageChange(Number(e.target.value))
               }
-              className="bg-white border border-slate-200 text-xs text-slate-650 h-8 px-2 rounded-md focus:outline-none focus:ring-1 focus:ring-[#c5a880]"
+              className="bg-white border border-slate-200 text-xs text-slate-600 h-8 px-2 rounded-md focus:outline-none focus:ring-1 focus:ring-[#c5a880]"
             >
               {[5, 10, 20, 50].map((v) => (
                 <option key={v} value={v}>

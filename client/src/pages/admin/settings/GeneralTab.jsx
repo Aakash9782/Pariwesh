@@ -72,7 +72,7 @@ const GeneralTab = ({
               />
             </div>
           ) : (
-            <div className="w-20 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-[10px] text-slate-450 italic font-medium">
+            <div className="w-20 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-[10px] text-slate-400 italic font-medium">
               No Logo
             </div>
           )}
@@ -132,7 +132,7 @@ const GeneralTab = ({
                   countdownActive: e.target.value,
                 })
               }
-              className="w-full h-10 px-3 bg-white border border-slate-250 rounded-md text-xs text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880]"
+              className="w-full h-10 px-3 bg-white border border-slate-200 rounded-md text-xs text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880]"
             >
               <option value="true">ON (Show Live Offer & Countdown)</option>
               <option value="false">OFF (Hide completely)</option>

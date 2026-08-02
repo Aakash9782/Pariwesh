@@ -27,7 +27,7 @@ const StatusPill = ({ status, className = "" }) => {
     },
     delivered: {
       dot: "bg-emerald-500",
-      bg: "bg-emerald-50 text-emerald-700 border-emerald-250",
+      bg: "bg-emerald-50 text-emerald-700 border-emerald-200",
     },
     cancelled: {
       dot: "bg-red-500",

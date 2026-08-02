@@ -14,7 +14,7 @@ const ShippingTab = ({ shippingForm, setShippingForm, handleSaveShipping }) => {
             Enable Cash On Delivery (COD)
           </label>
           <select
-            className="w-full h-10 px-3 bg-white border border-slate-250 rounded-md text-xs text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880]"
+            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-md text-xs text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880]"
             value={shippingForm.codEnabled}
             onChange={(e) =>
               setShippingForm({

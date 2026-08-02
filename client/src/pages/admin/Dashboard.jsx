@@ -46,8 +46,11 @@ const DashboardModule = () => {
     lowStock: 0,
     outOfStock: 0,
     aov: 0,
-    conversionRate: 0,
-    visitorsToday: 0,
+    fulfillmentRate: 0,
+    newCustomersToday: 0,
+    revenueByDay: [],
+    categorySales: [],
+    momPct: 0,
   });
 
   const fetchData = async () => {
@@ -116,7 +119,8 @@ const DashboardModule = () => {
 
       oList.forEach((ord) => {
         const ordDate = new Date(ord.createdAt);
-        const amt = ord.pricing?.total || ord.totalPrice || 0;
+        const amt =
+          ord.pricing?.grandTotal || ord.pricing?.total || ord.totalPrice || 0;
         totalRev += amt;
 
         if (ordDate >= today) {
@@ -162,9 +166,97 @@ const DashboardModule = () => {
       const totalOrdersCount = oList.length || 1;
       const computedAov = Math.round(totalRev / totalOrdersCount);
 
-      // Simulated analytics conversions
-      const visToday = Math.floor(450 + Math.random() * 125);
-      const conversion = ((oList.length / (visToday * 5)) * 100).toFixed(2);
+      // Real metrics (no simulated visitors/conversion)
+      const newCustomersToday = cList.filter((u) => {
+        const d = new Date(u.createdAt);
+        return d >= today;
+      }).length;
+
+      const actionableOrders = oList.filter((ord) => {
+        const s = (ord.orderStatus || "").toLowerCase();
+        return s !== "cancelled";
+      }).length;
+      const fulfillmentRate =
+        actionableOrders > 0
+          ? ((deliveredCount / actionableOrders) * 100).toFixed(1)
+          : "0.0";
+
+      // Last 14 days revenue series
+      const dayMs = 24 * 60 * 60 * 1000;
+      const revenueByDay = [];
+      for (let i = 13; i >= 0; i--) {
+        const dayStart = new Date(today.getTime() - i * dayMs);
+        const dayEnd = new Date(dayStart.getTime() + dayMs);
+        let sum = 0;
+        let count = 0;
+        oList.forEach((ord) => {
+          const d = new Date(ord.createdAt);
+          if (d >= dayStart && d < dayEnd) {
+            sum += ord.pricing?.grandTotal || ord.pricing?.total || ord.totalPrice || 0;
+            count++;
+          }
+        });
+        revenueByDay.push({
+          label: dayStart.toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+          }),
+          revenue: sum,
+          orders: count,
+        });
+      }
+
+      // Category revenue from order line items ↔ product catalog
+      const productById = new Map();
+      pList.forEach((p) => {
+        if (p._id) productById.set(String(p._id), p);
+        if (p.sku) productById.set(String(p.sku).toLowerCase(), p);
+      });
+
+      const catTotals = {};
+      oList.forEach((ord) => {
+        (ord.items || []).forEach((item) => {
+          const prod =
+            productById.get(String(item.productId || "")) ||
+            productById.get(String(item.sku || "").toLowerCase());
+          const cat = (prod?.category || "Uncategorized").toString();
+          const line = (item.price || 0) * (item.quantity || 1);
+          catTotals[cat] = (catTotals[cat] || 0) + line;
+        });
+      });
+      const catTotalSum = Object.values(catTotals).reduce((a, b) => a + b, 0) || 1;
+      const categorySales = Object.entries(catTotals)
+        .map(([cat, rev]) => ({
+          cat,
+          rev,
+          pct: Math.round((rev / catTotalSum) * 100),
+        }))
+        .sort((a, b) => b.rev - a.rev)
+        .slice(0, 6);
+
+      // MoM revenue change from last 2 calendar months
+      const thisMonthStart = firstOfMonth;
+      const lastMonthStart = new Date(
+        today.getFullYear(),
+        today.getMonth() - 1,
+        1,
+      );
+      let lastMonthRev = 0;
+      oList.forEach((ord) => {
+        const d = new Date(ord.createdAt);
+        const amt =
+          ord.pricing?.grandTotal || ord.pricing?.total || ord.totalPrice || 0;
+        if (d >= lastMonthStart && d < thisMonthStart) lastMonthRev += amt;
+      });
+      const momPct =
+        lastMonthRev > 0
+          ? (
+              ((monthlyRevenueSum - lastMonthRev) / lastMonthRev) *
+              100
+            ).toFixed(1)
+          : monthlyRevenueSum > 0
+            ? "100.0"
+            : "0.0";
 
       setStats({
         todayOrders: todayOrdersCount,
@@ -183,8 +275,11 @@ const DashboardModule = () => {
         lowStock: lowCount,
         outOfStock: outCount,
         aov: computedAov,
-        conversionRate: conversion,
-        visitorsToday: visToday,
+        fulfillmentRate,
+        newCustomersToday,
+        revenueByDay,
+        categorySales,
+        momPct,
       });
 
       toast.success("Dashboard metrics synced successfully");
@@ -288,7 +383,7 @@ const DashboardModule = () => {
     {
       label: "Delivered Orders",
       val: stats.delivered,
-      icon: <RiShoppingBag3Line className="text-emerald-505" />,
+      icon: <RiShoppingBag3Line className="text-emerald-500" />,
       path: "/admin/orders?status=Delivered",
     },
     {
@@ -346,24 +441,24 @@ const DashboardModule = () => {
       path: "/admin/analytics",
     },
     {
-      label: "Conversion Rate",
-      val: `${stats.conversionRate}%`,
+      label: "Fulfillment Rate",
+      val: `${stats.fulfillmentRate}%`,
       icon: <RiPercentLine />,
-      path: "/admin/analytics",
+      path: "/admin/orders?status=Delivered",
     },
     {
-      label: "Visitors Today",
-      val: stats.visitorsToday,
-      icon: <RiCompass3Line />,
-      path: "/admin/analytics",
+      label: "New Customers Today",
+      val: stats.newCustomersToday,
+      icon: <RiGroupLine className="text-sky-500" />,
+      path: "/admin/customers",
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <PageHeader
-        title="Enterprise Overview"
-        subtitle="Real-time parameters syncing with localized stores database"
+        title="Overview"
+        subtitle="Live store metrics from orders, catalog, and customers"
         breadcrumbs={[{ label: "Admin" }, { label: "Dashboard" }]}
         actions={
           <Button variant="primary" size="sm" onClick={fetchData}>
@@ -373,12 +468,12 @@ const DashboardModule = () => {
       />
 
       {/* Grid count cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {statCardsData.map((card, idx) => (
           <div
             key={idx}
             onClick={() => navigate(card.path)}
-            className="bg-white border border-slate-200 p-4.5 rounded-lg flex flex-col justify-between space-y-4 hover:border-[#c5a880] cursor-pointer transition-all duration-300 shadow-xxs hover:shadow-md group"
+            className="admin-stat-card flex flex-col justify-between space-y-3 cursor-pointer group p-4"
           >
             <div className="flex justify-between items-start text-slate-400">
               <span className="text-[9px] uppercase font-bold tracking-wider leading-relaxed text-slate-500 font-display">
@@ -395,103 +490,116 @@ const DashboardModule = () => {
         ))}
       </div>
 
-      {/* Modern SVG custom line/bar charts */}
+      {/* Live charts from orders */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Chart 1: Revenue Line Graph */}
+        {/* Chart 1: Last 14 days revenue bars */}
         <Card className="flex flex-col">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-600 font-display">
-              Revenue Curve
+              Revenue — Last 14 Days
             </h3>
-            <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded flex items-center border border-emerald-100 font-mono">
-              <RiArrowUpSLine className="mr-0.5" /> +14.2% MoM
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded flex items-center border font-mono ${
+                Number(stats.momPct) >= 0
+                  ? "text-emerald-700 bg-emerald-50 border-emerald-100"
+                  : "text-red-700 bg-red-50 border-red-100"
+              }`}
+            >
+              <RiArrowUpSLine
+                className={`mr-0.5 ${Number(stats.momPct) < 0 ? "rotate-180" : ""}`}
+              />{" "}
+              {Number(stats.momPct) >= 0 ? "+" : ""}
+              {stats.momPct}% MoM
             </span>
           </div>
-          <div className="h-64 flex items-end justify-between relative px-2 pt-8">
-            {/* Horizontal Grid lines */}
-            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20 py-8">
-              <div className="border-t border-slate-200" />
-              <div className="border-t border-slate-200" />
-              <div className="border-t border-slate-200" />
-              <div className="border-t border-slate-200" />
+          {(!stats.revenueByDay || stats.revenueByDay.length === 0) &&
+          !orders.length ? (
+            <p className="text-xs text-slate-400 italic py-16 text-center">
+              No order revenue yet
+            </p>
+          ) : (
+            <div className="h-64 flex items-end gap-1.5 px-1 pt-6 relative">
+              {(() => {
+                const maxRev = Math.max(
+                  ...stats.revenueByDay.map((d) => d.revenue),
+                  1,
+                );
+                return stats.revenueByDay.map((d, idx) => {
+                  const h = Math.max(4, Math.round((d.revenue / maxRev) * 100));
+                  return (
+                    <div
+                      key={idx}
+                      className="flex-1 flex flex-col items-center justify-end h-full group relative"
+                      title={`₹${d.revenue.toLocaleString("en-IN")} · ${d.orders} orders`}
+                    >
+                      <span className="absolute -top-5 text-[8px] font-mono text-slate-500 opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
+                        ₹{d.revenue >= 1000 ? `${(d.revenue / 1000).toFixed(1)}k` : d.revenue}
+                      </span>
+                      <div
+                        className="w-full rounded-t bg-[#c5a880]/80 group-hover:bg-[#c5a880] transition-all min-h-[4px]"
+                        style={{ height: `${h}%` }}
+                      />
+                      {(idx === 0 ||
+                        idx === stats.revenueByDay.length - 1 ||
+                        idx % 3 === 0) && (
+                        <span className="text-[8px] text-slate-400 font-mono mt-1 truncate w-full text-center">
+                          {d.label.split(" ")[0]}
+                        </span>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
             </div>
-
-            {/* Line graph design using absolute SVG overlay */}
-            <svg
-              className="absolute inset-0 h-full w-full px-8 py-8"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-            >
-              <defs>
-                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#c5a880" stopOpacity="0.2" />
-                  <stop offset="100%" stopColor="#c5a880" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-              {/* Chart line shadow gradient area */}
-              <path
-                d="M 0 100 Q 15 65 30 50 T 60 25 T 90 10 L 100 10 L 100 100 Z"
-                fill="url(#chartGrad)"
-              />
-              {/* Pure Stroke Curve */}
-              <path
-                d="M 0 100 Q 15 65 30 50 T 60 25 T 90 10 L 100 10"
-                fill="none"
-                stroke="#c5a880"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
-
-            <div className="text-[9px] text-slate-500 w-full flex justify-between absolute bottom-1 px-4 font-mono">
-              <span>May 2026</span>
-              <span>June 2026</span>
-              <span>July 2026</span>
-            </div>
-          </div>
+          )}
         </Card>
 
-        {/* Chart 2: Category distribution bar chart */}
+        {/* Chart 2: Category sales from live orders */}
         <Card className="flex flex-col">
           <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-600 mb-6 font-display">
-            Popular Sales Categories
+            Sales by Category
           </h3>
           <div className="space-y-4 flex-grow flex flex-col justify-center">
-            {[
-              {
-                cat: "Suits & Suit Sets",
-                pct: 54,
-                rev: "₹2.45L",
-                color: "bg-[#c5a880]",
-              },
-              {
-                cat: "Kurtis & Short Tops",
-                pct: 31,
-                rev: "₹1.40L",
-                color: "bg-[#a88f65]",
-              },
-              {
-                cat: "Premium Ethnic Wear",
-                pct: 15,
-                rev: "₹68k",
-                color: "bg-slate-400",
-              },
-            ].map((row, idx) => (
-              <div key={idx} className="space-y-1.5">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-700 font-medium">{row.cat}</span>
-                  <span className="text-slate-500 font-semibold font-mono">
-                    {row.rev} ({row.pct}%)
-                  </span>
-                </div>
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${row.color} rounded-full`}
-                    style={{ width: `${row.pct}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+            {(!stats.categorySales || stats.categorySales.length === 0) ? (
+              <p className="text-xs text-slate-400 italic py-8 text-center">
+                No category sales data yet — place orders to populate
+              </p>
+            ) : (
+              stats.categorySales.map((row, idx) => {
+                const colors = [
+                  "bg-[#c5a880]",
+                  "bg-[#a88f65]",
+                  "bg-slate-400",
+                  "bg-slate-500",
+                  "bg-amber-400",
+                  "bg-stone-400",
+                ];
+                const formatRev =
+                  row.rev >= 100000
+                    ? `₹${(row.rev / 100000).toFixed(2)}L`
+                    : row.rev >= 1000
+                      ? `₹${(row.rev / 1000).toFixed(1)}k`
+                      : `₹${Math.round(row.rev)}`;
+                return (
+                  <div key={idx} className="space-y-1.5">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-700 font-medium capitalize">
+                        {row.cat}
+                      </span>
+                      <span className="text-slate-500 font-semibold font-mono">
+                        {formatRev} ({row.pct}%)
+                      </span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${colors[idx % colors.length]} rounded-full`}
+                        style={{ width: `${Math.max(row.pct, 2)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </Card>
       </div>
@@ -501,7 +609,7 @@ const DashboardModule = () => {
         {/* Left Side: Recent Activity Logs */}
         <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col shadow-xs">
           <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
-            <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-750 font-display">
+            <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-700 font-display">
               Security & Activity Logs
             </h3>
             <span className="text-[10px] text-[#c5a880] font-semibold font-mono">
@@ -546,7 +654,7 @@ const DashboardModule = () => {
         {/* Right Side: Low Stock Products Grid Widget */}
         <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col shadow-xs">
           <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
-            <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-750 font-display">
+            <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-700 font-display">
               Inventory Shortage Alerts
             </h3>
             <span className="text-[9px] bg-red-50 border border-red-200 text-red-700 font-bold px-2 py-0.5 rounded">
@@ -613,7 +721,7 @@ const DashboardModule = () => {
                             ? "Out of Stock"
                             : `${total} Units Remaining`}
                         </span>
-                        <div className="text-[9px] text-slate-450 mt-1 uppercase tracking-wider font-mono">
+                        <div className="text-[9px] text-slate-400 mt-1 uppercase tracking-wider font-mono">
                           {Object.entries(prod.sizesStock || {})
                             .map(([sz, stock]) => `${sz}:${stock}`)
                             .join(" | ")}

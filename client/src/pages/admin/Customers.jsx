@@ -358,7 +358,7 @@ const CustomersPage = () => {
 
       {/* Inspect Customer order logs modal */}
       {inspectUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[82vh] animate-zoom-in">
             <div className="flex justify-between items-center bg-[#FAF9F6] border-b border-slate-200 p-5 shrink-0">
               <div className="flex items-center space-x-3.5">
@@ -376,7 +376,7 @@ const CustomersPage = () => {
               </div>
               <button
                 onClick={() => setInspectUser(null)}
-                className="text-slate-450 hover:text-[#c5a880] p-1.5 hover:bg-slate-50 rounded-full transition"
+                className="text-slate-400 hover:text-[#c5a880] p-1.5 hover:bg-slate-50 rounded-full transition"
               >
                 <RiCloseLine size={20} />
               </button>
@@ -448,7 +448,7 @@ const CustomersPage = () => {
               <Button
                 variant="outline"
                 onClick={() => setInspectUser(null)}
-                className="border-slate-250 text-slate-700"
+                className="border-slate-200 text-slate-700"
               >
                 Close History Logs
               </Button>

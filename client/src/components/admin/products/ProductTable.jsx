@@ -137,7 +137,7 @@ const ProductTable = ({
               <span>Export CSV</span>
             </Button>
 
-            <label className="flex items-center justify-center space-x-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold py-2 px-4.5 rounded-lg border border-slate-205 cursor-pointer transition shadow-xxs hover:shadow-xs w-full sm:w-auto">
+            <label className="flex items-center justify-center space-x-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold py-2 px-4.5 rounded-lg border border-slate-200 cursor-pointer transition shadow-xxs hover:shadow-xs w-full sm:w-auto">
               <RiFileUploadLine size={15} />
               <span>Import CSV</span>
               <input
@@ -324,7 +324,7 @@ const ProductTable = ({
                       )
                     }
                     onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="cursor-pointer rounded text-accent-gold focus:ring-accent-gold/30 border-slate-350"
+                    className="cursor-pointer rounded text-accent-gold focus:ring-accent-gold/30 border-slate-300"
                   />
                 </th>
                 <th className="py-4.5 px-5">Preview</th>
@@ -380,7 +380,7 @@ const ProductTable = ({
                       <p className="font-semibold text-slate-800 text-sm tracking-tight">
                         {p.name}
                       </p>
-                      <p className="text-[10px] text-slate-450 font-mono tracking-wider">
+                      <p className="text-[10px] text-slate-400 font-mono tracking-wider">
                         {p.sku}
                       </p>
                     </td>
@@ -415,7 +415,7 @@ const ProductTable = ({
                             ? "bg-slate-50 text-slate-500 border-slate-200"
                             : p.status === "archived"
                               ? "bg-purple-50 text-purple-700 border-purple-200"
-                              : "bg-emerald-50 text-emerald-700 border border-emerald-250 border-emerald-200"
+                              : "bg-emerald-50 text-emerald-700 border border-emerald-200 border-emerald-200"
                         }`}
                       >
                         {p.status || "active"}

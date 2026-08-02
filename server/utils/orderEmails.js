@@ -16,21 +16,39 @@ export const emailOrderPlaced = async (order) => {
     return;
   }
   const { subject, html } = buildOrderPlacedEmail(order);
-  await sendMail({ to, subject, html });
+  await sendMail({
+    to,
+    subject,
+    html,
+    type: "order_placed",
+    meta: { orderId: order?.orderId },
+  });
 };
 
 export const emailPaymentSuccess = async (order) => {
   const to = recipientFor(order);
   if (!to) return;
   const { subject, html } = buildPaymentSuccessEmail(order);
-  await sendMail({ to, subject, html });
+  await sendMail({
+    to,
+    subject,
+    html,
+    type: "payment_success",
+    meta: { orderId: order?.orderId },
+  });
 };
 
 export const emailPaymentFailed = async (order, reason) => {
   const to = recipientFor(order);
   if (!to) return;
   const { subject, html } = buildPaymentFailedEmail(order, reason);
-  await sendMail({ to, subject, html });
+  await sendMail({
+    to,
+    subject,
+    html,
+    type: "payment_failed",
+    meta: { orderId: order?.orderId, reason },
+  });
 };
 
 export const emailOrderShipped = async (order) => {
@@ -40,5 +58,11 @@ export const emailOrderShipped = async (order) => {
     return;
   }
   const { subject, html } = buildOrderShippedEmail(order);
-  await sendMail({ to, subject, html });
+  await sendMail({
+    to,
+    subject,
+    html,
+    type: "order_shipped",
+    meta: { orderId: order?.orderId },
+  });
 };

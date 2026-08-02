@@ -38,7 +38,7 @@ const Drawer = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-neutral-950/40 backdrop-blur-xs"
+            className="fixed inset-0 bg-neutral-950/40 backdrop-blur-sm"
           />
 
           {/* Drawer Box */}

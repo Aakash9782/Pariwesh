@@ -96,6 +96,8 @@ const deliverOtpEmail = async ({ name, email, otp }) => {
     subject,
     html,
     text: `PARIWESH verification code: ${otp}. Valid for 10 minutes.`,
+    type: "otp",
+    meta: { name },
   });
 
   if (mailResult.ok) {

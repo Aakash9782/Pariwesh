@@ -97,7 +97,7 @@ const ProductWizardModal = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
       <div className="w-full max-w-7xl h-[92vh] bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[92vh] text-slate-800 animate-slide-up">
         {/* Modal Title Banner */}
         <div className="flex justify-between items-center bg-[#FAF9F6] border-b border-slate-200 p-5 shrink-0">
@@ -258,7 +258,7 @@ const ProductWizardModal = ({
                       className={`flex items-center justify-between text-left w-full px-3 py-2.5 rounded-lg text-xs transition duration-200 border ${
                         isActive
                           ? "bg-amber-50/70 border-amber-200/50 text-[#c5a880] font-semibold shadow-xxs"
-                          : "text-slate-650 hover:bg-slate-100 hover:text-slate-900 border-transparent"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 border-transparent"
                       }`}
                       title={tab.label}
                     >

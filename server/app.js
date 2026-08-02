@@ -22,6 +22,7 @@ import cartRouter from "./routes/cartRoutes.js";
 import wishlistRouter from "./routes/wishlistRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
 import brandRouter from "./routes/brandRoutes.js";
+import emailRouter from "./routes/emailRoutes.js";
 
 const app = express();
 
@@ -151,6 +152,7 @@ app.use("/api/v1/cart", cartRouter);
 app.use("/api/v1/wishlist", wishlistRouter);
 app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/brands", brandRouter);
+app.use("/api/v1/emails", emailRouter);
 
 // 7. 404 HANDLER
 app.use("*", (req, res, next) => {

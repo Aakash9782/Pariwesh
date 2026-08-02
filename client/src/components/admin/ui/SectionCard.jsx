@@ -20,7 +20,7 @@ const SectionCard = ({
               </h3>
             )}
             {subtitle && (
-              <p className="text-[11px] text-slate-450 mt-0.5 font-sans leading-relaxed">
+              <p className="text-[11px] text-slate-400 mt-0.5 font-sans leading-relaxed">
                 {subtitle}
               </p>
             )}

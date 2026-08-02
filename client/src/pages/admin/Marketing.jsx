@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
 import PageHeader from "../../components/admin/ui/PageHeader.jsx";
@@ -19,11 +20,14 @@ import {
 
 const MarketingPage = () => {
   const { showAlert: alert, showConfirm } = useAlert();
+  const [searchParams] = useSearchParams();
+  const couponsSectionRef = useRef(null);
 
   // Coupons states
   const [coupons, setCoupons] = useState([]);
   const [couponsLoading, setCouponsLoading] = useState(true);
   const [showCouponModal, setShowCouponModal] = useState(false);
+  const [highlightCoupons, setHighlightCoupons] = useState(false);
   const [newCoupon, setNewCoupon] = useState({
     code: "",
     discountType: "Percentage",
@@ -98,6 +102,19 @@ const MarketingPage = () => {
     fetchCoupons();
     fetchBannerSettings();
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("tab") !== "coupons") return;
+    const t = setTimeout(() => {
+      couponsSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      setHighlightCoupons(true);
+      setTimeout(() => setHighlightCoupons(false), 2500);
+    }, 150);
+    return () => clearTimeout(t);
+  }, [searchParams]);
 
   // Creation of coupon code
   const handleCreateCoupon = async (e) => {
@@ -240,7 +257,7 @@ const MarketingPage = () => {
                 }
                 className="rounded text-[#c5a880] focus:ring-[#c5a880] border-slate-200"
               />
-              <span className="text-xs font-bold text-slate-650">
+              <span className="text-xs font-bold text-slate-600">
                 Live Campaign Status
               </span>
             </label>
@@ -539,6 +556,13 @@ const MarketingPage = () => {
         </Card>
 
         {/* Coupons Directory Manager */}
+        <div
+          id="coupons-section"
+          ref={couponsSectionRef}
+          className={`rounded-lg transition-shadow duration-500 ${
+            highlightCoupons ? "ring-2 ring-[#c5a880] shadow-lg" : ""
+          }`}
+        >
         <Card className="p-6 space-y-5 bg-[#FAF9F6] border-slate-200 h-fit">
           <div className="flex justify-between items-center border-b border-slate-200 pb-3">
             <h3 className="text-sm font-semibold tracking-wide uppercase text-[#c5a880] flex items-center">
@@ -601,7 +625,7 @@ const MarketingPage = () => {
                         {cop.status === "Active" ? "Live" : "Inactive"}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-650">
+                    <p className="text-[11px] text-slate-600">
                       Discount:{" "}
                       <span className="font-semibold text-slate-900">
                         {cop.discountType === "Flat"
@@ -631,6 +655,7 @@ const MarketingPage = () => {
             )}
           </div>
         </Card>
+        </div>
       </div>
 
       {/* Create Coupon Modal Form */}

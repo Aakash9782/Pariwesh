@@ -294,49 +294,50 @@ const SettingsPage = () => {
   return (
     <div className="space-y-6 text-slate-700 animate-fade-in font-sans">
       <PageHeader
-        title="System Configuration"
+        title="Settings"
         breadcrumbs={[
           { label: "Dashboard", link: "/admin" },
           { label: "Settings" },
         ]}
-        subtitle="Configure platform parameters, delegate administrative rights, and inspect logs ledger"
+        subtitle="Brand, shipping, slideshow, admin access, and activity logs"
       />
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 bg-white p-2 rounded-t-xl shrink-0 overflow-x-auto space-x-2 shadow-sm">
+      <div className="flex border border-slate-200 bg-white p-1.5 rounded-xl shrink-0 overflow-x-auto gap-1 shadow-xs admin-scrollbar">
         {[
           {
             id: "general",
-            label: "General Settings",
-            icon: <RiSettings4Line size={16} />,
+            label: "General",
+            icon: <RiSettings4Line size={15} />,
           },
           {
             id: "slides",
-            label: "Homepage Slideshow",
-            icon: <RiFolderImageLine size={16} />,
+            label: "Slideshow",
+            icon: <RiFolderImageLine size={15} />,
           },
           {
             id: "shipping",
-            label: "Shipping & Taxes",
-            icon: <RiShipLine size={16} />,
+            label: "Shipping",
+            icon: <RiShipLine size={15} />,
           },
           {
             id: "admins",
-            label: "Admin Access",
-            icon: <RiShieldUserLine size={16} />,
+            label: "Admins",
+            icon: <RiShieldUserLine size={15} />,
           },
           {
             id: "logs",
-            label: "Security Logs",
-            icon: <RiHistoryLine size={16} />,
+            label: "Logs",
+            icon: <RiHistoryLine size={15} />,
           },
-        ].map((tab, idx) => (
+        ].map((tab) => (
           <button
-            key={idx}
+            key={tab.id}
+            type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center space-x-2 text-xs font-semibold py-2.5 px-4.5 rounded-lg transition duration-200 ${
+            className={`flex items-center gap-2 text-[11px] font-semibold py-2.5 px-4 rounded-lg transition duration-200 whitespace-nowrap ${
               activeTab === tab.id
-                ? "bg-[#c5a880] text-white font-bold shadow-sm"
+                ? "bg-[#c5a880] text-white shadow-sm"
                 : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
             }`}
           >
@@ -347,7 +348,7 @@ const SettingsPage = () => {
       </div>
 
       {/* TABS CANVAS */}
-      <Card className="rounded-t-none border-t-0 p-6 min-h-[400px]">
+      <Card className="p-5 sm:p-6 min-h-[400px]" hover={false}>
         {settingsLoading && activeTab !== "admins" && activeTab !== "logs" ? (
           <div className="space-y-6 max-w-2xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5.5">
@@ -427,7 +428,7 @@ const SettingsPage = () => {
             {activeTab === "logs" && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-                  <h3 className="text-xs uppercase font-extrabold text-slate-805 tracking-wider">
+                  <h3 className="text-xs uppercase font-extrabold text-slate-800 tracking-wider">
                     Security Activity Audit Trail
                   </h3>
                   <Button

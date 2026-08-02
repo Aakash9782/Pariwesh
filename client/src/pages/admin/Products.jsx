@@ -776,7 +776,7 @@ const ProductsPage = () => {
   };
 
   return (
-    <div className="space-y-6 p-6 bg-slate-50 min-h-screen text-slate-800 font-sans">
+    <div className="space-y-6 text-slate-800 font-sans animate-fade-in">
       <ProductTable
         products={products}
         isLoading={isLoading}

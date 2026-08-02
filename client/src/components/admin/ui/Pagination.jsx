@@ -26,7 +26,7 @@ const Pagination = ({ currentPage = 1, totalPages = 1, onPageChange }) => {
               className={`min-w-[28px] h-7 text-xs font-semibold rounded-md border flex items-center justify-center transition-all ${
                 isActive
                   ? "bg-[#c5a880] border-[#c5a880] text-white shadow-xxs"
-                  : "bg-white border-transparent text-slate-655 hover:bg-slate-50 hover:border-slate-205"
+                  : "bg-white border-transparent text-slate-600 hover:bg-slate-50 hover:border-slate-200"
               }`}
             >
               {page}

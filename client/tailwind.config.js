@@ -56,10 +56,15 @@ export default {
         16: "var(--spacing-16)",
       },
       boxShadow: {
+        xs: "0 1px 2px 0 rgba(0, 0, 0, 0.04)",
+        xxs: "0 1px 1px 0 rgba(0, 0, 0, 0.03)",
         sm: "var(--shadow-sm)",
         md: "var(--shadow-md)",
         lg: "var(--shadow-lg)",
         premium: "var(--shadow-premium)",
+      },
+      backdropBlur: {
+        xs: "2px",
       },
       transitionDuration: {
         fast: "var(--duration-fast)",
@@ -78,9 +83,47 @@ export default {
           "0%": { transform: "translateX(0%)" },
           "100%": { transform: "translateX(-50%)" },
         },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        "slide-in-left": {
+          "0%": { opacity: "0", transform: "translateX(-12px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+        "slide-in-right": {
+          "0%": { opacity: "0", transform: "translateX(12px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+        "slide-up": {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-down": {
+          "0%": { opacity: "0", transform: "translateY(-8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "scale-down": {
+          "0%": { opacity: "0", transform: "scale(0.96)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        "zoom-in": {
+          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
       },
       animation: {
         marquee: "marquee 25s linear infinite",
+        "fade-in": "fade-in 0.25s ease-out",
+        fadeIn: "fade-in 0.25s ease-out",
+        "slide-in-left": "slide-in-left 0.28s ease-out",
+        "slide-in-right": "slide-in-right 0.28s ease-out",
+        "slide-up": "slide-up 0.28s ease-out",
+        "slide-down": "slide-down 0.22s ease-out",
+        "slide-in": "slide-up 0.28s ease-out",
+        scaleDown: "scale-down 0.22s ease-out",
+        "zoom-in": "zoom-in 0.22s ease-out",
+        "pulse-subtle": "pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       },
     },
   },

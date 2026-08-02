@@ -374,3 +374,70 @@ textarea {
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+/* ── Admin Hub surface helpers ── */
+.admin-shell {
+  background: var(--bg-light);
+}
+
+.admin-panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+}
+
+.admin-filter-input {
+  width: 100%;
+  background: #faf9f6;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  color: #1e293b;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.admin-filter-input::placeholder {
+  color: #94a3b8;
+}
+.admin-filter-input:focus {
+  outline: none;
+  border-color: #c5a880;
+  box-shadow: 0 0 0 1px #c5a880;
+}
+
+.admin-table-head {
+  background: #faf9f6;
+  border-bottom: 1px solid #e2e8f0;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 10px;
+}
+
+.admin-stat-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.admin-stat-card:hover {
+  border-color: rgba(197, 168, 128, 0.5);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.admin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.admin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(197, 168, 128, 0.45);
+  border-radius: 9999px;
+}
+.admin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}

@@ -571,7 +571,7 @@ const OrdersPage = () => {
                         {ord.customer?.phone} | {ord.paymentMethod}
                       </p>
                     </td>
-                    <td className="py-4 px-5 text-slate-650 font-mono text-[10px]">
+                    <td className="py-4 px-5 text-slate-600 font-mono text-[10px]">
                       {new Date(ord.createdAt).toLocaleDateString()}
                     </td>
                     <td className="py-4 px-5 text-slate-600 font-mono text-center border-none">
@@ -629,7 +629,7 @@ const OrdersPage = () => {
 
       {/* Side Inspect Overlay (Refactored to gorgeous light drawer/modal) */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end bg-slate-900/40 backdrop-blur-xs p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-end bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in">
           <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-xl shadow-xl h-[92vh] overflow-y-auto p-6 space-y-6 flex flex-col justify-between animate-slide-up">
             {/* Header */}
             <div className="flex justify-between items-center border-b border-slate-100 pb-4 shrink-0">
@@ -678,19 +678,19 @@ const OrdersPage = () => {
                   <h4 className="text-[10px] uppercase font-bold text-[#c5a880] tracking-wider mb-2.5 flex items-center">
                     <RiCarLine className="mr-1.5" size={14} /> Shipment Courier
                   </h4>
-                  <p className="text-slate-655 text-xs flex justify-between">
+                  <p className="text-slate-600 text-xs flex justify-between">
                     <span>Courier:</span>
                     <span className="text-slate-800 font-semibold">
                       {selectedOrder.shippingProvider || "Unallocated"}
                     </span>
                   </p>
-                  <p className="text-slate-655 text-xs mt-1 font-mono flex justify-between">
+                  <p className="text-slate-600 text-xs mt-1 font-mono flex justify-between">
                     <span>AWB Code:</span>
                     <span className="text-slate-800 font-semibold">
                       {selectedOrder.trackingId || "AWB-Pending"}
                     </span>
                   </p>
-                  <p className="text-slate-655 text-xs mt-1 flex justify-between items-center">
+                  <p className="text-slate-600 text-xs mt-1 flex justify-between items-center">
                     <span>Payment Method:</span>
                     <span className="text-[#c5a880] text-[10px] font-bold uppercase bg-amber-50 px-2 py-0.5 rounded">
                       {selectedOrder.paymentMethod}
@@ -845,7 +845,7 @@ const OrdersPage = () => {
                         <span className="italic text-slate-400">None</span>
                       )}
                     </div>
-                    <div className="bg-white p-3 rounded border border-slate-100 text-slate-655 text-slate-600">
+                    <div className="bg-white p-3 rounded border border-slate-100 text-slate-600 text-slate-600">
                       <strong className="block text-[8px] uppercase tracking-wider text-slate-400 font-bold mb-1">
                         Customer:
                       </strong>{" "}
@@ -916,7 +916,7 @@ const OrdersPage = () => {
 
       {/* Ship Form Modal */}
       {showShipForm && selectedOrder && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-fade-in">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in">
           <div className="w-full max-w-md bg-white border border-slate-200 rounded-xl p-5 space-y-4 shadow-xl animate-zoom-in">
             <div className="flex items-start justify-between">
               <div>
@@ -985,7 +985,7 @@ const OrdersPage = () => {
                 variant="outline"
                 disabled={shipSaving}
                 onClick={handleSaveShipmentOnly}
-                className="border-slate-250"
+                className="border-slate-200"
               >
                 Save AWB Only
               </Button>

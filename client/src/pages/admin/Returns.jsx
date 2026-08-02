@@ -316,11 +316,11 @@ const ReturnsPage = () => {
                           <span className="font-bold">
                             {ret.customerId?.name || "Member Client"}
                           </span>
-                          <span className="text-slate-350">|</span>
+                          <span className="text-slate-300">|</span>
                           <span>{isCOD ? "COD" : "Prepaid"}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 font-semibold text-slate-650">
+                      <td className="px-6 py-4 font-semibold text-slate-600">
                         {itemsCount} {itemsCount > 1 ? "items" : "item"}
                       </td>
                       <td className="px-6 py-4 font-bold text-[#c5a880]">
