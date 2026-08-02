@@ -1,5 +1,6 @@
 import React from "react";
 import { RiFolderImageLine, RiDeleteBinLine } from "react-icons/ri";
+import Button from "../../../components/admin/ui/Button.jsx";
 
 const SlideshowTab = ({
   slideBarActive,
@@ -18,20 +19,23 @@ const SlideshowTab = ({
   handleSlideFileChange,
 }) => {
   return (
-    <form onSubmit={handleSaveSlideshow} className="space-y-6">
+    <form
+      onSubmit={handleSaveSlideshow}
+      className="space-y-6 text-slate-700 font-sans"
+    >
       <div>
-        <h3 className="text-sm font-semibold tracking-wide uppercase text-accent-gold flex items-center">
+        <h3 className="text-xs font-bold tracking-widest uppercase text-[#c5a880] flex items-center">
           <RiFolderImageLine className="mr-2" /> Homepage Spotlight Slideshow
         </h3>
-        <p className="text-slate-400 text-xs mt-1">
+        <p className="text-slate-500 text-xs mt-1">
           Upload up to 5 featured images to rotate on the homepage luxury hero
           carousel.
         </p>
       </div>
 
-      <div className="pt-4 border-t border-slate-900 flex justify-between items-center bg-slate-900/40 p-4 rounded border border-slate-900">
+      <div className="pt-4 border-t border-slate-200 flex justify-between items-center bg-[#FAF9F6] p-4 rounded-xl border border-slate-200/80">
         <div>
-          <h4 className="text-xs font-semibold text-white">
+          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
             Carousel Slider Active Status
           </h4>
           <p className="text-[10px] text-slate-500 mt-1">
@@ -42,7 +46,7 @@ const SlideshowTab = ({
         <select
           value={String(slideBarActive)}
           onChange={(e) => setSlideBarActive(e.target.value === "true")}
-          className="bg-slate-950 border border-slate-800 text-xs rounded p-2 text-slate-200 focus:outline-none"
+          className="bg-white border border-slate-200 text-xs rounded-lg p-2 text-slate-700 outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880] font-semibold"
         >
           <option value="true">Active (Show Slideshow)</option>
           <option value="false">Inactive (Hide Slideshow)</option>
@@ -79,15 +83,15 @@ const SlideshowTab = ({
         ].map((slide, index) => (
           <div
             key={index}
-            className="bg-slate-900 border border-slate-850 p-4 rounded-lg flex flex-col justify-between space-y-4"
+            className="bg-white border border-slate-200 p-4 rounded-xl flex flex-col justify-between space-y-4 shadow-sm"
           >
             <div>
-              <h4 className="text-xs font-semibold text-slate-350">
+              <h4 className="text-xs font-bold text-slate-700">
                 {slide.label}
               </h4>
             </div>
 
-            <div className="relative w-full aspect-video rounded overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center">
+            <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-50 border border-slate-200 flex items-center justify-center">
               {slide.img ? (
                 <img
                   src={slide.img}
@@ -95,7 +99,7 @@ const SlideshowTab = ({
                   alt={`Slide Preview ${index + 1}`}
                 />
               ) : (
-                <div className="text-[10px] text-slate-600 italic">
+                <div className="text-[10px] text-slate-400 italic">
                   Empty Slot (Fallback Used)
                 </div>
               )}
@@ -103,7 +107,7 @@ const SlideshowTab = ({
                 <button
                   type="button"
                   onClick={() => slide.setImg("")}
-                  className="absolute top-1 right-1 bg-red-950/80 border border-red-500/35 text-red-450 p-1 rounded-full hover:bg-red-900 transition-colors"
+                  className="absolute top-1 right-1 bg-rose-50 border border-rose-200 text-rose-600 p-1 rounded-full hover:bg-rose-100 transition-colors"
                   title="Clear Image Slot"
                 >
                   <RiDeleteBinLine size={12} />
@@ -112,7 +116,7 @@ const SlideshowTab = ({
             </div>
 
             <div className="space-y-1">
-              <label className="w-full text-center block bg-slate-950 hover:bg-slate-800 border border-slate-800 text-[10px] uppercase font-extrabold tracking-widest text-accent-gold py-1.5 rounded cursor-pointer transition">
+              <label className="w-full text-center block bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[10px] uppercase font-bold tracking-widest text-[#c5a880] py-1.5 rounded-lg cursor-pointer transition">
                 Choose Image
                 <input
                   type="file"
@@ -126,13 +130,14 @@ const SlideshowTab = ({
         ))}
       </div>
 
-      <div className="flex justify-end pt-4 border-t border-slate-900">
-        <button
+      <div className="flex justify-end pt-4 border-t border-slate-200">
+        <Button
           type="submit"
-          className="bg-accent-gold text-slate-950 text-xs font-bold py-2.5 px-6.5 rounded-lg transition hover:bg-yellow-500"
+          variant="primary"
+          className="px-6 py-2.5 text-xs uppercase tracking-wider font-bold"
         >
           Save Slideshow Assets
-        </button>
+        </Button>
       </div>
     </form>
   );

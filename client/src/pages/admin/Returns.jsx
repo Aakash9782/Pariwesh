@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
-import Skeleton from "../../components/common/Skeleton.jsx";
+import PageHeader from "../../components/admin/ui/PageHeader.jsx";
+import Card from "../../components/admin/ui/Card.jsx";
+import Button from "../../components/admin/ui/Button.jsx";
+import Input from "../../components/admin/ui/Input.jsx";
+import Select from "../../components/admin/ui/Select.jsx";
+import SkeletonLoader from "../../components/admin/ui/SkeletonLoader.jsx";
 import {
   RiSearchLine,
   RiFileList3Line,
@@ -161,31 +166,27 @@ const ReturnsPage = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in text-slate-700">
       {/* 1. Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-xl font-display font-medium text-slate-100 flex items-center gap-2">
-            <RiExchangeBoxLine className="text-accent-gold" size={24} />
-            Reverse Logistics & Returns
-          </h1>
-          <p className="text-xs text-slate-400">
-            Verify refund claims, audit QC grades, track warehouse entry and
-            process settlements.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Reverse Logistics & Returns"
+        breadcrumbs={[
+          { label: "Dashboard", link: "/admin" },
+          { label: "Returns" },
+        ]}
+        subtitle="Verify refund claims, audit QC grades, track warehouse entry and process settlements."
+      />
 
       {/* 2. Search & Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-950 p-4 rounded-lg border border-slate-800">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-[#FAF9F6] p-4 rounded-lg border border-slate-200">
         <div className="relative">
           <RiSearchLine
-            className="absolute left-3 top-3 text-slate-500"
+            className="absolute left-3 top-3 text-slate-400"
             size={17}
           />
           <input
             type="text"
-            className="w-full bg-slate-900 border border-slate-800 text-slate-100 rounded-lg pl-9 pr-4 py-2 text-xs focus:border-accent-gold outline-none"
+            className="w-full bg-white border border-slate-200 text-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs focus:border-[#c5a880] focus:ring-1 focus:ring-[#c5a880] outline-none"
             placeholder="Search Return ID, Order ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -194,7 +195,7 @@ const ReturnsPage = () => {
 
         <div>
           <select
-            className="w-full bg-slate-900 border border-slate-800 text-slate-300 rounded-lg px-3 py-2 text-xs focus:border-accent-gold outline-none"
+            className="w-full bg-white border border-slate-200 text-slate-800 rounded-lg px-3 py-2 text-xs focus:border-[#c5a880] focus:ring-1 focus:ring-[#c5a880] outline-none"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -211,7 +212,7 @@ const ReturnsPage = () => {
 
         <div>
           <select
-            className="w-full bg-slate-900 border border-slate-800 text-slate-300 rounded-lg px-3 py-2 text-xs focus:border-accent-gold outline-none"
+            className="w-full bg-white border border-slate-200 text-slate-800 rounded-lg px-3 py-2 text-xs focus:border-[#c5a880] focus:ring-1 focus:ring-[#c5a880] outline-none"
             value={gradeFilter}
             onChange={(e) => setGradeFilter(e.target.value)}
           >
@@ -224,25 +225,27 @@ const ReturnsPage = () => {
           </select>
         </div>
 
-        <div className="flex gap-2">
-          <button
+        <div>
+          <Button
             onClick={() => {
               setSearchTerm("");
               setStatusFilter("");
               setGradeFilter("");
             }}
-            className="w-full bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-slate-100 py-2 rounded-lg text-xs font-semibold"
+            variant="outline"
+            size="sm"
+            className="w-full h-full text-slate-700 hover:text-slate-900 border-slate-200"
           >
             Reset Filters
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* 3. Main Data Roster Table */}
-      <div className="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900 border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-[#FAF9F6] border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
               <tr>
                 <th className="px-6 py-4">Return ID</th>
                 <th className="px-6 py-4">Order ID / Customer</th>
@@ -253,30 +256,30 @@ const ReturnsPage = () => {
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-850">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-28" />
+                      <SkeletonLoader className="h-4 w-28 rounded animate-pulse" />
                     </td>
                     <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-40" />
+                      <SkeletonLoader className="h-4 w-40 rounded animate-pulse" />
                     </td>
                     <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-16" />
+                      <SkeletonLoader className="h-4 w-16 rounded animate-pulse" />
                     </td>
                     <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-20" />
+                      <SkeletonLoader className="h-4 w-20 rounded animate-pulse" />
                     </td>
                     <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-24" />
+                      <SkeletonLoader className="h-4 w-24 rounded animate-pulse" />
                     </td>
                     <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-24" />
+                      <SkeletonLoader className="h-4 w-24 rounded animate-pulse" />
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Skeleton className="h-8 w-20 ml-auto" />
+                      <SkeletonLoader className="h-8 w-20 ml-auto rounded animate-pulse" />
                     </td>
                   </tr>
                 ))
@@ -300,39 +303,39 @@ const ReturnsPage = () => {
                   return (
                     <tr
                       key={idx}
-                      className="hover:bg-slate-900/60 transition-colors"
+                      className="hover:bg-slate-50/50 transition-colors text-slate-700"
                     >
-                      <td className="px-6 py-4 font-mono font-bold text-slate-100">
+                      <td className="px-6 py-4 font-mono font-bold text-slate-800">
                         {ret.returnId}
                       </td>
                       <td className="px-6 py-4 space-y-1">
-                        <div className="font-mono text-slate-300">
+                        <div className="font-mono text-slate-800 font-medium">
                           {ret.orderId?.orderId || "Order details deleted"}
                         </div>
                         <div className="text-[10px] text-slate-500 flex items-center gap-1.5">
                           <span className="font-bold">
                             {ret.customerId?.name || "Member Client"}
                           </span>
-                          <span className="text-slate-600">|</span>
+                          <span className="text-slate-350">|</span>
                           <span>{isCOD ? "COD" : "Prepaid"}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 font-semibold text-slate-300">
+                      <td className="px-6 py-4 font-semibold text-slate-650">
                         {itemsCount} {itemsCount > 1 ? "items" : "item"}
                       </td>
-                      <td className="px-6 py-4 font-bold text-accent-gold">
+                      <td className="px-6 py-4 font-bold text-[#c5a880]">
                         ₹{ret.refundDetails?.amount || 0}
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`font-semibold inline-block px-2.5 py-0.5 rounded-full text-[9px] ${
+                          className={`font-semibold inline-block px-2.5 py-0.5 rounded-full text-[9px] uppercase border ${
                             ret.status === "Return_Completed"
-                              ? "bg-green-500/10 text-green-400 border border-green-500/25"
+                              ? "bg-emerald-55 text-emerald-700 border-emerald-100"
                               : ret.status === "Return_Rejected"
-                                ? "bg-red-500/10 text-red-400 border border-red-500/25"
+                                ? "bg-rose-50 text-rose-700 border-rose-100"
                                 : ret.status === "Return_Disputed"
-                                  ? "bg-orange-500/10 text-orange-400 border border-orange-500/25"
-                                  : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/25"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-100"
+                                  : "bg-slate-100 text-slate-605 border border-slate-200"
                           }`}
                         >
                           {ret.status.replace("_", " ")}
@@ -342,22 +345,24 @@ const ReturnsPage = () => {
                         <span
                           className={`font-semibold text-[9px] uppercase ${
                             ret.qcGrading?.grade === "A_GRADE"
-                              ? "text-green-500"
+                              ? "text-emerald-600"
                               : ret.qcGrading?.grade === "PENDING"
-                                ? "text-yellow-500"
-                                : "text-amber-500"
+                                ? "text-amber-550"
+                                : "text-rose-500"
                           }`}
                         >
                           {ret.qcGrading?.grade.replace("_", " ")}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button
+                        <Button
                           onClick={() => setSelectedReturn(ret)}
-                          className="bg-slate-900 hover:bg-slate-800 hover:text-accent-gold text-slate-300 transition-all font-semibold px-3 py-1.5 rounded text-[10px] uppercase tracking-wider"
+                          variant="outline"
+                          size="sm"
+                          className="text-[10px] py-1.5 px-3 h-auto text-[#c5a880] border-[#c5a880]/30 hover:bg-[#c5a880]/10"
                         >
                           Inspect Ticket
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   );
@@ -366,32 +371,32 @@ const ReturnsPage = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
       {/* 4. Inspection & Operations Details Modal */}
       {selectedReturn && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-slate-950 border border-slate-800 rounded-lg max-w-4xl w-full p-6 space-y-6 shadow-2xl relative animate-fade-in my-8 text-xs text-slate-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-4xl w-full p-6 space-y-6 shadow-2xl relative animate-fade-in my-8 text-xs text-slate-700">
             {/* Modal Exit */}
             <button
               onClick={() => {
                 setSelectedReturn(null);
                 setViewingPhoto(null);
               }}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-100 focus:outline-none"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 focus:outline-none"
             >
               <RiCloseLine size={22} />
             </button>
 
             {/* Header info */}
-            <div className="flex flex-col md:flex-row justify-between gap-4 border-b border-slate-800 pb-4">
+            <div className="flex flex-col md:flex-row justify-between gap-4 border-b border-slate-200 pb-4">
               <div>
-                <h3 className="text-sm font-display font-bold uppercase tracking-wider text-slate-100">
+                <h3 className="text-sm font-display font-bold uppercase tracking-wider text-slate-800">
                   Return Ticket Audit: {selectedReturn.returnId}
                 </h3>
-                <p className="text-[10px] text-slate-500 uppercase mt-0.5">
+                <p className="text-[10px] text-slate-500 uppercase mt-0.5 font-bold tracking-wide">
                   Order reference: {selectedReturn.orderId?.orderId} | Status:{" "}
-                  <span className="text-accent-gold">
+                  <span className="text-[#c5a880]">
                     {selectedReturn.status.replace("_", " ")}
                   </span>
                 </p>
@@ -401,16 +406,18 @@ const ReturnsPage = () => {
               <div className="flex items-center gap-2">
                 {selectedReturn.status === "Return_Requested" && (
                   <>
-                    <button
+                    <Button
                       onClick={() =>
                         handleUpdateStatus({ status: "Return_Approved" })
                       }
-                      disabled={actionLoading}
-                      className="bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1.5 rounded flex items-center gap-1 hover:opacity-90 disabled:opacity-50"
+                      loading={actionLoading}
+                      variant="primary"
+                      size="sm"
+                      className="bg-emerald-605 hover:bg-emerald-700 border-none flex items-center gap-1"
                     >
                       <RiCheckboxCircleLine size={14} /> Approve Request
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => {
                         const reason = prompt(
                           "Enter Rejection Reason:",
@@ -423,36 +430,42 @@ const ReturnsPage = () => {
                           });
                         }
                       }}
-                      disabled={actionLoading}
-                      className="bg-red-900 hover:bg-red-850 text-white font-bold px-3 py-1.5 rounded flex items-center gap-1 hover:opacity-90 disabled:opacity-50"
+                      loading={actionLoading}
+                      variant="outline"
+                      size="sm"
+                      className="text-rose-600 hover:bg-rose-50 border-rose-200 flex items-center gap-1"
                     >
                       <RiCloseCircleLine size={14} /> Reject Request
-                    </button>
+                    </Button>
                   </>
                 )}
 
                 {selectedReturn.status === "Return_Approved" && (
-                  <button
+                  <Button
                     onClick={() =>
                       handleUpdateStatus({ status: "Return_In_Transit" })
                     }
-                    disabled={actionLoading}
-                    className="bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 font-bold px-3.5 py-1.5 rounded flex items-center gap-1.5 disabled:opacity-50"
+                    loading={actionLoading}
+                    variant="outline"
+                    size="sm"
+                    className="text-slate-700 border-slate-200 flex items-center gap-1.5"
                   >
                     <RiCarLine size={14} /> Mark Picked (In Transit)
-                  </button>
+                  </Button>
                 )}
 
                 {selectedReturn.status === "Return_In_Transit" && (
-                  <button
+                  <Button
                     onClick={() =>
                       handleUpdateStatus({ status: "Return_Received" })
                     }
-                    disabled={actionLoading}
-                    className="bg-slate-905 hover:bg-slate-850 border border-slate-800 text-slate-300 font-bold px-3.5 py-1.5 rounded flex items-center gap-1.5 disabled:opacity-50"
+                    loading={actionLoading}
+                    variant="outline"
+                    size="sm"
+                    className="text-slate-700 border-slate-200 flex items-center gap-1.5"
                   >
                     <RiExchangeLine size={14} /> Mark Warehouse Received
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -462,24 +475,24 @@ const ReturnsPage = () => {
               {/* Left Column: Return Claims data */}
               <div className="space-y-6">
                 <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-900 pb-1 mb-2">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-1 mb-2">
                     Claimed Items
                   </h4>
-                  <div className="space-y-3 bg-slate-900/30 border border-slate-900 p-3 rounded">
+                  <div className="space-y-3 bg-slate-50 border border-slate-200 p-3 rounded">
                     {selectedReturn.items.map((it, idx) => (
                       <div
                         key={idx}
                         className="flex justify-between items-center text-xs"
                       >
                         <div>
-                          <div className="font-bold text-slate-200">
+                          <div className="font-bold text-slate-800">
                             {it.name}
                           </div>
-                          <div className="text-[10px] text-slate-500 uppercase">
+                          <div className="text-[10px] text-slate-505 uppercase">
                             SKU: {it.sku} | Size: {it.size} | Qty: {it.quantity}
                           </div>
                         </div>
-                        <span className="font-bold text-slate-400">
+                        <span className="font-bold text-slate-600">
                           ₹{it.price * it.quantity}
                         </span>
                       </div>
@@ -488,20 +501,20 @@ const ReturnsPage = () => {
                 </div>
 
                 <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-900 pb-1 mb-2">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-1 mb-2">
                     Return Details & Reason
                   </h4>
-                  <div className="space-y-2 bg-slate-900/10 border border-slate-900 p-3 rounded">
+                  <div className="space-y-2 bg-slate-50 border border-slate-200 p-3 rounded">
                     <div className="flex justify-between">
                       <span className="text-slate-500 font-semibold">
                         User Reason:
                       </span>
-                      <span className="font-bold text-slate-200">
+                      <span className="font-bold text-slate-800">
                         {selectedReturn.reason}
                       </span>
                     </div>
                     {selectedReturn.rejectionReason && (
-                      <div className="flex justify-between text-red-400">
+                      <div className="flex justify-between text-rose-600">
                         <span className="font-semibold">Rejection Reason:</span>
                         <span className="font-bold">
                           {selectedReturn.rejectionReason}
@@ -512,12 +525,12 @@ const ReturnsPage = () => {
                 </div>
 
                 <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-900 pb-1 mb-2">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-1 mb-2">
                     Claim Evidence Uploads
                   </h4>
                   {selectedReturn.evidenceTrail?.customerUploads?.length ===
                   0 ? (
-                    <p className="text-[10px] text-slate-600">
+                    <p className="text-[10px] text-slate-500 italic">
                       No photos/videos uploaded by customer.
                     </p>
                   ) : (
@@ -527,7 +540,7 @@ const ReturnsPage = () => {
                           <div
                             key={index}
                             onClick={() => setViewingPhoto(href)}
-                            className="relative w-16 h-20 bg-slate-900 border border-slate-800 rounded overflow-hidden cursor-pointer hover:border-accent-gold transition-all"
+                            className="relative w-16 h-20 bg-slate-100 border border-slate-200 rounded overflow-hidden cursor-pointer hover:border-[#c5a880] transition-all"
                           >
                             <img
                               src={href}
@@ -543,13 +556,13 @@ const ReturnsPage = () => {
 
                 {/* Audit Trail Timeline */}
                 <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-800 pb-1 mb-2">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-1 mb-2">
                     Reverse Logistics Timeline TAT
                   </h4>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] text-slate-400">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] text-slate-500">
                     <div className="flex justify-between">
                       <span>Requested at:</span>
-                      <span className="text-slate-200">
+                      <span className="text-slate-800 font-semibold">
                         {new Date(
                           selectedReturn.timeline.requestedAt,
                         ).toLocaleDateString()}
@@ -558,7 +571,7 @@ const ReturnsPage = () => {
                     {selectedReturn.timeline.reviewedAt && (
                       <div className="flex justify-between">
                         <span>Reviewed:</span>
-                        <span className="text-slate-200">
+                        <span className="text-slate-800 font-semibold">
                           {new Date(
                             selectedReturn.timeline.reviewedAt,
                           ).toLocaleDateString()}
@@ -568,7 +581,7 @@ const ReturnsPage = () => {
                     {selectedReturn.timeline.pickedAt && (
                       <div className="flex justify-between">
                         <span>Picked:</span>
-                        <span className="text-slate-200">
+                        <span className="text-slate-800 font-semibold">
                           {new Date(
                             selectedReturn.timeline.pickedAt,
                           ).toLocaleDateString()}
@@ -578,7 +591,7 @@ const ReturnsPage = () => {
                     {selectedReturn.timeline.receivedAt && (
                       <div className="flex justify-between">
                         <span>Received Whse:</span>
-                        <span className="text-slate-200">
+                        <span className="text-slate-800 font-semibold">
                           {new Date(
                             selectedReturn.timeline.receivedAt,
                           ).toLocaleDateString()}
@@ -588,7 +601,7 @@ const ReturnsPage = () => {
                     {selectedReturn.timeline.qcCompletedAt && (
                       <div className="flex justify-between">
                         <span>QC Done:</span>
-                        <span className="text-slate-200">
+                        <span className="text-slate-800 font-semibold">
                           {new Date(
                             selectedReturn.timeline.qcCompletedAt,
                           ).toLocaleDateString()}
@@ -600,9 +613,9 @@ const ReturnsPage = () => {
               </div>
 
               {/* Right Column: QC Audit Form + Financial Settlement */}
-              <div className="bg-slate-900/40 border border-slate-900 p-5 rounded-lg space-y-6">
+              <div className="bg-[#FAF9F6] border border-slate-200 p-5 rounded-lg space-y-6">
                 <div>
-                  <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">
                     Action Dashboard Zone
                   </h4>
                   {selectedReturn.status !== "Return_Completed" &&
@@ -610,13 +623,13 @@ const ReturnsPage = () => {
                     <form onSubmit={handleQCComplete} className="space-y-4">
                       {/* QC Grading Options */}
                       <div className="space-y-1">
-                        <label className="block text-slate-400 font-semibold">
+                        <label className="block text-slate-500 font-bold uppercase tracking-wider text-[9px]">
                           Quality (QC) Grading
                         </label>
                         <select
                           value={qcGrade}
                           onChange={(e) => setQcGrade(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded p-2 outline-none focus:border-accent-gold"
+                          className="w-full bg-white border border-slate-200 text-slate-800 rounded p-2 outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880] text-xs"
                         >
                           <option value="A_GRADE">
                             A Grade (Pass & Auto-Restock)
@@ -636,13 +649,13 @@ const ReturnsPage = () => {
                       {/* Loss Category Dropdown (Conditional on B, C, Scrap) */}
                       {qcGrade !== "A_GRADE" && (
                         <div className="space-y-1">
-                          <label className="block text-slate-400 font-semibold">
+                          <label className="block text-slate-500 font-bold uppercase tracking-wider text-[9px]">
                             Financial Loss Category *
                           </label>
                           <select
                             value={lossCategory}
                             onChange={(e) => setLossCategory(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded p-2 outline-none focus:border-accent-gold"
+                            className="w-full bg-white border border-slate-200 text-slate-800 rounded p-2 outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880] text-xs"
                             required
                           >
                             <option value="NA">-- Select Category --</option>
@@ -662,73 +675,63 @@ const ReturnsPage = () => {
 
                       {/* QC Remarks */}
                       <div className="space-y-1">
-                        <label className="block text-slate-400 font-semibold">
+                        <label className="block text-slate-505 font-bold uppercase tracking-wider text-[9px]">
                           QC Remarks / Observation
                         </label>
                         <textarea
                           value={qcRemarks}
                           onChange={(e) => setQcRemarks(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded p-2 outline-none focus:border-accent-gold h-16 resize-none"
+                          className="w-full bg-white border border-slate-200 text-slate-800 rounded p-2 outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880] text-xs h-16 resize-none"
                           placeholder="Write feedback remarks..."
                         />
                       </div>
 
                       {/* Refund UPI ID (Modify check for COD order) */}
                       {selectedReturn.orderId?.paymentMethod === "COD" && (
-                        <div className="space-y-1">
-                          <label className="block text-slate-400 font-semibold">
-                            Refund GPay/UPI ID Address
-                          </label>
-                          <input
-                            type="text"
-                            value={upiId}
-                            onChange={(e) => setUpiId(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded p-2 outline-none focus:border-accent-gold"
-                            placeholder="customer@upi"
-                          />
-                        </div>
+                        <Input
+                          label="Refund GPay/UPI ID Address"
+                          value={upiId}
+                          onChange={(e) => setUpiId(e.target.value)}
+                          placeholder="customer@upi"
+                        />
                       )}
 
                       {/* Refund Transaction UTR ID */}
-                      <div className="space-y-1">
-                        <label className="block text-slate-400 font-semibold">
-                          Gateway Transaction UTR / Ref ID
-                        </label>
-                        <input
-                          type="text"
-                          value={transactionId}
-                          onChange={(e) => setTransactionId(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded p-2 outline-none focus:border-accent-gold"
-                          placeholder="e.g. UTR-129381..."
-                        />
-                      </div>
+                      <Input
+                        label="Gateway Transaction UTR / Ref ID"
+                        value={transactionId}
+                        onChange={(e) => setTransactionId(e.target.value)}
+                        placeholder="e.g. UTR-129381..."
+                      />
 
                       <div className="flex gap-2 pt-2">
-                        <button
+                        <Button
                           type="submit"
                           disabled={actionLoading}
-                          className="bg-accent-gold hover:opacity-90 text-slate-950 flex-grow font-bold py-2 rounded text-xs uppercase tracking-wider disabled:opacity-50"
+                          variant="primary"
+                          className="flex-grow font-bold py-2 text-xs uppercase tracking-wider"
                         >
-                          Complete QC & Transfer Refund
-                        </button>
-                        <button
+                          Complete QC & Refund
+                        </Button>
+                        <Button
                           type="button"
                           onClick={handleMarkDisputed}
                           disabled={actionLoading}
-                          className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-3 rounded text-xs uppercase tracking-wider disabled:opacity-50"
+                          variant="outline"
+                          className="text-amber-600 border-amber-200 hover:bg-amber-50 font-bold py-2 px-3 text-xs uppercase tracking-wider"
                         >
-                          Dispute Ticket
-                        </button>
+                          Dispute
+                        </Button>
                       </div>
                     </form>
                   ) : (
                     // Closed State info sheet
-                    <div className="space-y-3 bg-slate-950 border border-slate-850 p-4 rounded text-xs">
+                    <div className="space-y-3 bg-white border border-slate-200 p-4 rounded text-xs">
                       <div className="flex justify-between">
                         <span className="text-slate-500 font-semibold">
                           Ticket Status:
                         </span>
-                        <span className="font-bold text-slate-100 uppercase">
+                        <span className="font-bold text-slate-800 uppercase">
                           {selectedReturn.status.replace("_", " ")}
                         </span>
                       </div>
@@ -736,7 +739,7 @@ const ReturnsPage = () => {
                         <span className="text-slate-500 font-semibold">
                           QC Grade Result:
                         </span>
-                        <span className="font-bold text-green-400 uppercase">
+                        <span className="font-bold text-emerald-600 uppercase">
                           {selectedReturn.qcGrading?.grade.replace("_", " ")}
                         </span>
                       </div>
@@ -745,13 +748,13 @@ const ReturnsPage = () => {
                           <span className="text-slate-500 font-semibold">
                             QC Remarks:
                           </span>
-                          <span className="text-slate-300 font-semibold">
+                          <span className="text-slate-700 font-semibold">
                             {selectedReturn.qcGrading.remarks}
                           </span>
                         </div>
                       )}
                       {selectedReturn.lossCategory !== "NA" && (
-                        <div className="flex justify-between text-yellow-405">
+                        <div className="flex justify-between text-rose-600">
                           <span className="text-slate-500 font-semibold">
                             Loss Reason Category:
                           </span>
@@ -760,7 +763,7 @@ const ReturnsPage = () => {
                           </span>
                         </div>
                       )}
-                      <div className="flex justify-between border-t border-slate-800 pt-2 text-accent-gold">
+                      <div className="flex justify-between border-t border-slate-100 pt-2 text-[#c5a880]">
                         <span className="font-bold">Refund Amount:</span>
                         <span className="font-bold">
                           ₹{selectedReturn.refundDetails?.amount}
@@ -768,20 +771,20 @@ const ReturnsPage = () => {
                       </div>
                       {selectedReturn.refundDetails?.upiId && (
                         <div className="flex justify-between text-[11px]">
-                          <span className="text-slate-550 font-semibold">
+                          <span className="text-slate-500 font-semibold">
                             UPI ID Refunded:
                           </span>
-                          <span className="font-bold">
+                          <span className="font-bold text-slate-800">
                             {selectedReturn.refundDetails.upiId}
                           </span>
                         </div>
                       )}
                       {selectedReturn.refundDetails?.transactionId && (
                         <div className="flex justify-between text-[11px]">
-                          <span className="text-slate-550 font-semibold">
+                          <span className="text-slate-500 font-semibold">
                             Trans Ref ID (UTR):
                           </span>
-                          <span className="font-mono text-slate-200">
+                          <span className="font-mono text-slate-800 font-semibold">
                             {selectedReturn.refundDetails.transactionId}
                           </span>
                         </div>
@@ -796,7 +799,7 @@ const ReturnsPage = () => {
             {viewingPhoto && (
               <div
                 onClick={() => setViewingPhoto(null)}
-                className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center p-4 cursor-pointer"
+                className="absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 cursor-pointer"
               >
                 <img
                   src={viewingPhoto}

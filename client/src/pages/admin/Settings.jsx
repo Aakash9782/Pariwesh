@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from "react";
 import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
-import Skeleton from "../../components/common/Skeleton.jsx";
+import PageHeader from "../../components/admin/ui/PageHeader.jsx";
+import Card from "../../components/admin/ui/Card.jsx";
+import Button from "../../components/admin/ui/Button.jsx";
+import SkeletonLoader from "../../components/admin/ui/SkeletonLoader.jsx";
 import {
   RiSettings4Line,
   RiShieldUserLine,
   RiShipLine,
   RiHistoryLine,
-  RiSaveLine,
-  RiAddCircleLine,
-  RiDeleteBinLine,
   RiFolderImageLine,
-  RiFileTextLine,
 } from "react-icons/ri";
 import GeneralTab from "./settings/GeneralTab.jsx";
 import ShippingTab from "./settings/ShippingTab.jsx";
@@ -116,7 +115,6 @@ const SettingsPage = () => {
       setAdminsLoading(true);
       const res = await API.get("/users");
       if (res.data?.success) {
-        // filter roles admin
         const filtered = (res.data.data || []).filter(
           (u) => u.role === "admin",
         );
@@ -207,7 +205,6 @@ const SettingsPage = () => {
     }
   };
 
-  // Add / promote Admin profile
   const handleAddAdminSubmit = async (e) => {
     e.preventDefault();
     if (!newAdminPhone || !newAdminName || !newAdminEmail) {
@@ -215,10 +212,6 @@ const SettingsPage = () => {
       return;
     }
     try {
-      // Create user with admin privilege using regular user create method mapped
-      // Or conceptually, let's promote if the account exists, or create new one:
-      // Let's call a post request which will simulate backend account creation. User details endpoint:
-      // Let's create an admin account by calling user profile updates or registering
       const cleanPhone = newAdminPhone.replace(/\D/g, "");
       const res = await API.post("/users/login", {
         phone: cleanPhone,
@@ -228,7 +221,6 @@ const SettingsPage = () => {
 
       if (res.data?.success) {
         const registered = res.data.data.user;
-        // Promote role to admin via PUT API `/users/:id`
         await API.put(`/users/${registered._id}`, { role: "admin" });
         alert(`Admin privileges delegated to ${newAdminName}!`);
         setShowAddAdmin(false);
@@ -256,7 +248,6 @@ const SettingsPage = () => {
     );
     if (!confirmed) return;
     try {
-      // Modify role to customer
       await API.put(`/users/${adminId}`, { role: "customer" });
       alert("Admin privileges revoked successfully");
       fetchAdmins();
@@ -301,20 +292,18 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="space-y-6 font-sans">
-      {/* Title */}
-      <div>
-        <h2 className="text-2xl font-semibold tracking-wide text-white">
-          System Configuration
-        </h2>
-        <p className="text-slate-400 text-xs mt-1 font-sans">
-          Configure platform parameters, delegate administrative rights, and
-          inspect logs ledger
-        </p>
-      </div>
+    <div className="space-y-6 text-slate-700 animate-fade-in font-sans">
+      <PageHeader
+        title="System Configuration"
+        breadcrumbs={[
+          { label: "Dashboard", link: "/admin" },
+          { label: "Settings" },
+        ]}
+        subtitle="Configure platform parameters, delegate administrative rights, and inspect logs ledger"
+      />
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-800 bg-slate-950 p-2 rounded-t-lg shrink-0 overflow-x-auto space-x-2">
+      <div className="flex border-b border-slate-200 bg-white p-2 rounded-t-xl shrink-0 overflow-x-auto space-x-2 shadow-sm">
         {[
           {
             id: "general",
@@ -345,10 +334,10 @@ const SettingsPage = () => {
           <button
             key={idx}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center space-x-2 text-xs font-semibold py-2.5 px-4.5 rounded transition ${
+            className={`flex items-center space-x-2 text-xs font-semibold py-2.5 px-4.5 rounded-lg transition duration-200 ${
               activeTab === tab.id
-                ? "bg-accent-gold text-slate-950 font-bold"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-[#c5a880] text-white font-bold shadow-sm"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
             }`}
           >
             {tab.icon}
@@ -358,22 +347,22 @@ const SettingsPage = () => {
       </div>
 
       {/* TABS CANVAS */}
-      <div className="bg-slate-950 border border-slate-800 rounded-b-lg p-6 min-h-[400px]">
+      <Card className="rounded-t-none border-t-0 p-6 min-h-[400px]">
         {settingsLoading && activeTab !== "admins" && activeTab !== "logs" ? (
           <div className="space-y-6 max-w-2xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5.5">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="space-y-2">
-                  <Skeleton className="h-3 w-32" />
-                  <Skeleton className="h-10 w-full" />
+                  <SkeletonLoader className="h-3 w-32 rounded animate-pulse" />
+                  <SkeletonLoader className="h-10 w-full rounded animate-pulse" />
                 </div>
               ))}
             </div>
             <div className="space-y-2">
-              <Skeleton className="h-3 w-40" />
-              <Skeleton className="h-12 w-full" />
+              <SkeletonLoader className="h-3 w-40 rounded animate-pulse" />
+              <SkeletonLoader className="h-12 w-full rounded animate-pulse" />
             </div>
-            <Skeleton className="h-10 w-32" />
+            <SkeletonLoader className="h-10 w-32 rounded animate-pulse" />
           </div>
         ) : (
           <>
@@ -437,22 +426,24 @@ const SettingsPage = () => {
             {/* SECURITY LOGS AUDIT */}
             {activeTab === "logs" && (
               <div className="space-y-4">
-                <div className="flex justify-between items-center border-b border-slate-850 pb-3">
-                  <h3 className="text-xs uppercase font-extrabold text-slate-200">
+                <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+                  <h3 className="text-xs uppercase font-extrabold text-slate-805 tracking-wider">
                     Security Activity Audit Trail
                   </h3>
-                  <button
+                  <Button
                     onClick={fetchActivityLogs}
-                    className="text-xs text-accent-gold font-bold hover:underline"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs text-[#c5a880] border-slate-200"
                   >
                     Sync Audit Logs
-                  </button>
+                  </Button>
                 </div>
 
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto w-full">
                   {logsLoading ? (
-                    <table className="w-full text-left text-xs font-sans">
-                      <thead className="bg-slate-900 text-slate-405 font-bold uppercase tracking-widest text-[9px] border border-slate-850">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#FAF9F6] text-slate-500 font-bold uppercase tracking-widest text-[9px] border-b border-slate-200">
                         <tr>
                           <th className="p-3">Admin Clerk</th>
                           <th className="p-3">Action Description</th>
@@ -461,23 +452,23 @@ const SettingsPage = () => {
                           <th className="p-3">Logged Date Time</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-850 border border-slate-850">
+                      <tbody className="divide-y divide-slate-100 border border-slate-200 text-slate-700">
                         {Array.from({ length: 6 }).map((_, i) => (
-                          <tr key={i} className="border-b border-slate-850/40">
+                          <tr key={i} className="border-b border-slate-200/40">
                             <td className="p-3">
-                              <Skeleton className="h-4 w-24" />
+                              <SkeletonLoader className="h-4 w-24 rounded animate-pulse" />
                             </td>
                             <td className="p-3">
-                              <Skeleton className="h-4 w-48" />
+                              <SkeletonLoader className="h-4 w-48 rounded animate-pulse" />
                             </td>
                             <td className="p-3">
-                              <Skeleton className="h-3.5 w-20" />
+                              <SkeletonLoader className="h-3.5 w-20 rounded animate-pulse" />
                             </td>
                             <td className="p-3">
-                              <Skeleton className="h-3 w-16" />
+                              <SkeletonLoader className="h-3 w-16 rounded animate-pulse" />
                             </td>
                             <td className="p-3">
-                              <Skeleton className="h-3.5 w-28" />
+                              <SkeletonLoader className="h-3.5 w-28 rounded animate-pulse" />
                             </td>
                           </tr>
                         ))}
@@ -488,8 +479,8 @@ const SettingsPage = () => {
                       No logs generated yet
                     </p>
                   ) : (
-                    <table className="w-full text-left text-xs font-sans">
-                      <thead className="bg-slate-900 text-slate-405 font-bold uppercase tracking-widest text-[9px] border border-slate-850">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#FAF9F6] text-slate-500 font-bold uppercase tracking-widest text-[9px] border-b border-slate-200">
                         <tr>
                           <th className="p-3">Admin Clerk</th>
                           <th className="p-3">Action Description</th>
@@ -498,23 +489,23 @@ const SettingsPage = () => {
                           <th className="p-3">Logged Date Time</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-850 border border-slate-850">
+                      <tbody className="divide-y divide-slate-100 border border-slate-200">
                         {logs.slice(0, 50).map((log, idx) => (
                           <tr
                             key={idx}
-                            className="hover:bg-slate-900/50 transition"
+                            className="hover:bg-slate-50 transition duration-150 text-slate-700"
                           >
-                            <td className="p-3 font-semibold text-slate-200">
+                            <td className="p-3 font-semibold text-slate-800">
                               {log.adminName}
                             </td>
-                            <td className="p-3 text-slate-350">{log.action}</td>
-                            <td className="p-3 font-mono text-[11px] text-slate-450">
+                            <td className="p-3 text-slate-600">{log.action}</td>
+                            <td className="p-3 font-mono text-[11px] text-slate-500">
                               {log.ipAddress}
                             </td>
-                            <td className="p-3 text-slate-550 font-mono text-[9px] uppercase">
+                            <td className="p-3 text-slate-400 font-mono text-[9px] uppercase">
                               {log.device}
                             </td>
-                            <td className="p-3 text-slate-400 font-mono text-[10px]">
+                            <td className="p-3 text-slate-500 font-mono text-[10px]">
                               {new Date(log.createdAt).toLocaleString()}
                             </td>
                           </tr>
@@ -527,7 +518,7 @@ const SettingsPage = () => {
             )}
           </>
         )}
-      </div>
+      </Card>
     </div>
   );
 };

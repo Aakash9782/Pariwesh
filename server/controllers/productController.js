@@ -1,4 +1,5 @@
 import Product from "../models/Product.js";
+import Setting from "../models/Setting.js";
 import { sendSuccess, sendError } from "../utils/responseFormatter.js";
 import {
   uploadBase64Image,
@@ -122,8 +123,12 @@ export const getProducts = async (req, res, next) => {
 
     // Auto-seeding check: If database collection is empty, load mock catalog
     if (products.length === 0) {
-      await Product.insertMany(SEED_PRODUCTS);
-      products = await Product.find({}).sort({ createdAt: -1 });
+      const seeded = await Setting.findOne({ key: "seeded_products" });
+      if (!seeded) {
+        await Product.insertMany(SEED_PRODUCTS);
+        await Setting.create({ key: "seeded_products", value: "true" });
+        products = await Product.find({}).sort({ createdAt: -1 });
+      }
     }
 
     return sendSuccess(res, "Products retrieved successfully", products);
@@ -193,6 +198,7 @@ export const createProduct = async (req, res, next) => {
       metaKeywords,
       canonicalUrl,
       ogImage,
+      status,
     } = req.body;
 
     if (!name || !sku || !mrp || !price) {
@@ -271,6 +277,7 @@ export const createProduct = async (req, res, next) => {
       metaKeywords: metaKeywords || "",
       canonicalUrl: canonicalUrl || "",
       ogImage: ogImage || "",
+      status: status || "active",
     });
 
     await logActivity(
@@ -364,6 +371,7 @@ export const updateProduct = async (req, res, next) => {
       metaKeywords,
       canonicalUrl,
       ogImage,
+      status,
     } = req.body;
 
     const product = await Product.findById(id);
@@ -452,6 +460,7 @@ export const updateProduct = async (req, res, next) => {
     if (metaKeywords !== undefined) product.metaKeywords = metaKeywords;
     if (canonicalUrl !== undefined) product.canonicalUrl = canonicalUrl;
     if (ogImage !== undefined) product.ogImage = ogImage;
+    if (status !== undefined) product.status = status;
 
     if (name) {
       product.slug = name

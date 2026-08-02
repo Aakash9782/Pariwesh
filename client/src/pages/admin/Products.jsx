@@ -3,6 +3,8 @@ import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
 import Skeleton from "../../components/common/Skeleton.jsx";
 import { useSearchParams } from "react-router-dom";
+import ProductTable from "../../components/admin/products/ProductTable.jsx";
+import ProductWizardModal from "../../components/admin/products/ProductWizardModal.jsx";
 import {
   RiAddCircleLine,
   RiDeleteBinLine,
@@ -15,6 +17,20 @@ import {
   RiFolderImageLine,
   RiArrowUpDownLine,
   RiCloseLine,
+  RiShoppingBagLine,
+  RiHeartLine,
+  RiHeartFill,
+  RiFileTextLine,
+  RiMoneyDollarCircleLine,
+  RiLayoutGridLine,
+  RiTShirtLine,
+  RiCheckboxCircleLine,
+  RiCheckboxCircleFill,
+  RiAlertLine,
+  RiMenuFoldLine,
+  RiMenuUnfoldLine,
+  RiUploadLine,
+  RiRefreshLine,
 } from "react-icons/ri";
 
 const ProductsPage = () => {
@@ -24,6 +40,7 @@ const ProductsPage = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -31,6 +48,19 @@ const ProductsPage = () => {
   const [showFormModal, setShowFormModal] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
   const [editProduct, setEditProduct] = useState(null);
+
+  // Refined Wizard Fields & Protections
+  const [previewDevice, setPreviewDevice] = useState("desktop");
+  const [isDirty, setIsDirty] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [manualSlug, setManualSlug] = useState(false);
+  const formRef = React.useRef(null);
+
+  // Enterprise additions: validation tracking + progress + layout collapse
+  const [validationErrors, setValidationErrors] = useState([]);
+  const [showValidationSummary, setShowValidationSummary] = useState(false);
+  const [uploadingProgress, setUploadingProgress] = useState(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Form Fields State
   const initialFormState = {
@@ -69,8 +99,202 @@ const ProductsPage = () => {
     video: "",
     tag: "Regular",
     description: "",
+    status: "active",
+    slug: "",
   };
   const [form, setForm] = useState(initialFormState);
+
+  // Validation rules engine
+  const getValidationErrors = (fields) => {
+    const errs = [];
+    if (!fields.name || !fields.name.trim()) {
+      errs.push({
+        field: "name",
+        message: "Brand Label Name is required",
+        tab: "basic",
+      });
+    }
+    if (!fields.sku || !fields.sku.trim()) {
+      errs.push({
+        field: "sku",
+        message: "Unique Item SKU is required",
+        tab: "basic",
+      });
+    }
+    if (!fields.slug || !fields.slug.trim()) {
+      errs.push({
+        field: "slug",
+        message: "SEO URL Slug is required",
+        tab: "basic",
+      });
+    }
+    if (fields.mrp === "" || fields.mrp === undefined || fields.mrp === null) {
+      errs.push({
+        field: "mrp",
+        message: "Maximum Retail Price (MRP) is required",
+        tab: "pricing",
+      });
+    } else if (Number(fields.mrp) <= 0) {
+      errs.push({
+        field: "mrp",
+        message: "MRP must be a valid positive number",
+        tab: "pricing",
+      });
+    }
+    if (
+      fields.price === "" ||
+      fields.price === undefined ||
+      fields.price === null
+    ) {
+      errs.push({
+        field: "price",
+        message: "Calculated Selling Price is required",
+        tab: "pricing",
+      });
+    } else if (Number(fields.price) <= 0) {
+      errs.push({
+        field: "price",
+        message: "Selling Price must be a valid positive number",
+        tab: "pricing",
+      });
+    } else if (Number(fields.price) > Number(fields.mrp)) {
+      errs.push({
+        field: "price",
+        message: "Selling Price cannot exceed MRP",
+        tab: "pricing",
+      });
+    }
+    if (!fields.images || fields.images.length === 0) {
+      errs.push({
+        field: "images",
+        message: "At least one product image is required in Media Assets",
+        tab: "media",
+      });
+    }
+    if (!fields.category) {
+      errs.push({
+        field: "category",
+        message: "Primary Catalog Group is required",
+        tab: "category",
+      });
+    }
+    return errs;
+  };
+
+  // Auto validation runner
+  useEffect(() => {
+    if (showFormModal) {
+      setValidationErrors(getValidationErrors(form));
+    } else {
+      setValidationErrors([]);
+      setShowValidationSummary(false);
+    }
+  }, [form, showFormModal]);
+
+  // LocalStorage Auto-Save & Recovery
+  const SAVE_DRAFT_KEY = "pariwesh_draft_product";
+
+  useEffect(() => {
+    if (!showFormModal || !isDirty) return;
+    const saveTimeout = setTimeout(() => {
+      localStorage.setItem(
+        SAVE_DRAFT_KEY,
+        JSON.stringify({
+          editProductId: editProduct ? editProduct._id : null,
+          form,
+        }),
+      );
+    }, 2000);
+    return () => clearTimeout(saveTimeout);
+  }, [form, showFormModal, isDirty, editProduct]);
+
+  useEffect(() => {
+    if (showFormModal) {
+      const saved = localStorage.getItem(SAVE_DRAFT_KEY);
+      if (saved) {
+        try {
+          const { editProductId, form: savedForm } = JSON.parse(saved);
+          const currentEditId = editProduct ? editProduct._id : null;
+          if (editProductId === currentEditId) {
+            showConfirm(
+              "An unsaved local draft was detected. Restore this draft?",
+              "Restore Draft",
+            ).then((confirmed) => {
+              if (confirmed) {
+                setForm(savedForm);
+                setIsDirty(true);
+              } else {
+                localStorage.removeItem(SAVE_DRAFT_KEY);
+              }
+            });
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, [showFormModal]);
+
+  // Keyboard Shortcuts (Ctrl + S -> Save Draft, Ctrl + Shift + S -> Publish, Esc -> Confirm Close)
+  useEffect(() => {
+    if (!showFormModal) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        attemptCloseModal();
+      }
+      if (e.ctrlKey && !e.shiftKey && e.key?.toLowerCase() === "s") {
+        e.preventDefault();
+        handleFormAction("draft");
+      }
+      if (e.ctrlKey && e.shiftKey && e.key?.toLowerCase() === "s") {
+        e.preventDefault();
+        handleFormAction(editProduct ? form.status : "active");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showFormModal, form, editProduct, isDirty]);
+
+  // Auto-dirty tracking effect
+  useEffect(() => {
+    if (!showFormModal) {
+      setIsDirty(false);
+      formRef.current = null;
+    } else {
+      if (!formRef.current) {
+        formRef.current = JSON.stringify(form);
+      } else if (JSON.stringify(form) !== formRef.current) {
+        setIsDirty(true);
+      }
+    }
+  }, [form, showFormModal]);
+
+  // Tab Exit warning hooks
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes. Leave this page?";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
+  // Auto-slug generator hooks
+  useEffect(() => {
+    if (!manualSlug && !editProduct && form.name) {
+      setForm((prev) => ({
+        ...prev,
+        slug: prev.name
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)+/g, ""),
+      }));
+    }
+  }, [form.name, manualSlug, editProduct]);
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState("");
@@ -96,12 +320,14 @@ const ProductsPage = () => {
 
   const fetchCatalogMeta = async () => {
     try {
-      const [cRes, bRes] = await Promise.all([
+      const [cRes, bRes, colRes] = await Promise.all([
         API.get("/categories?active=true"),
         API.get("/brands?active=true"),
+        API.get("/collections"),
       ]);
       if (cRes.data?.success) setCategories(cRes.data.data || []);
       if (bRes.data?.success) setBrands(bRes.data.data || []);
+      if (colRes.data?.success) setCollections(colRes.data.data || []);
     } catch (err) {
       console.error("Catalog meta load failed", err);
     }
@@ -132,10 +358,33 @@ const ProductsPage = () => {
     }));
   };
 
-  // Base64 file selector helper
+  // Image input client validations
+  const validateImageFile = (file) => {
+    const allowedFormats = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+    ];
+    if (!allowedFormats.includes(file.type)) {
+      alert(
+        `Invalid image format: ${file.name}. Only JPG, JPEG, PNG, WEBP are allowed.`,
+      );
+      return false;
+    }
+    const maxSizeBytes = 2 * 1024 * 1024; // 2MB limit
+    if (file.size > maxSizeBytes) {
+      alert(`File ${file.name} exceeds the 2MB size limit.`);
+      return false;
+    }
+    return true;
+  };
+
+  // Base64 file selector helper with validation filter
   const handleImageFileChange = (e) => {
     const files = Array.from(e.target.files);
-    files.forEach((file) => {
+    const validFiles = files.filter(validateImageFile);
+    validFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setForm((prev) => ({
@@ -151,6 +400,12 @@ const ProductsPage = () => {
   const handleVideoFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Basic vertical reel verification tip
+      const maxSizeBytes = 10 * 1024 * 1024; // 10MB vertical video recommendation
+      if (file.size > maxSizeBytes) {
+        alert("Video exceeds recommended 10MB limit.");
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setForm((prev) => ({
@@ -162,45 +417,117 @@ const ProductsPage = () => {
     }
   };
 
-  // MRP and discount pricing synchronization
+  // MRP and discount pricing synchronization (bi-directional check)
   const syncPrice = (type, val) => {
-    const mrpValue = type === "mrp" ? Number(val) : Number(form.mrp);
-    const discountPct =
-      type === "discount" ? Number(val) : Number(form.discount);
-    if (mrpValue) {
+    const numericVal = Number(val) || 0;
+    if (type === "mrp") {
+      const discountPct = Number(form.discount) || 0;
       const calculatedSelling = Math.round(
-        mrpValue - mrpValue * (discountPct / 100),
+        numericVal - (numericVal * discountPct) / 100,
       );
       setForm((prev) => ({
         ...prev,
-        [type]: val,
+        mrp: val,
         price: calculatedSelling,
       }));
-    } else {
-      setForm((prev) => ({ ...prev, [type]: val }));
+    } else if (type === "discount") {
+      const mrpValue = Number(form.mrp) || 0;
+      const calculatedSelling = Math.round(
+        mrpValue - (mrpValue * numericVal) / 100,
+      );
+      setForm((prev) => ({
+        ...prev,
+        discount: val,
+        price: calculatedSelling,
+      }));
+    } else if (type === "price") {
+      // recalculate discount backward
+      const mrpValue = Number(form.mrp) || 0;
+      if (mrpValue > 0) {
+        const calculatedDiscount = Math.round(
+          ((mrpValue - numericVal) / mrpValue) * 100,
+        );
+        setForm((prev) => ({
+          ...prev,
+          price: val,
+          discount: Math.max(0, calculatedDiscount),
+        }));
+      } else {
+        setForm((prev) => ({ ...prev, price: val }));
+      }
     }
   };
 
-  // Form Submit Add / Edit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.name || !form.sku || !form.mrp || !form.price) {
+  // SKU Automated generation
+  const generateSKU = () => {
+    const catPrefix = (form.category || "SUIT").substring(0, 4).toUpperCase();
+    let uniqueSku = "";
+    let isDuplicate = true;
+    let attempts = 0;
+    while (isDuplicate && attempts < 100) {
+      const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+      uniqueSku = `PAR-${catPrefix}-${rand}`;
+      isDuplicate = products.some((p) => p.sku === uniqueSku);
+      attempts++;
+    }
+    setForm((prev) => ({ ...prev, sku: uniqueSku }));
+  };
+
+  // Status Action Submissions
+  const handleFormAction = async (actionType) => {
+    const errors = getValidationErrors(form);
+
+    // For draft, only name & SKU are blocking; for active/archived list, everything is blocking.
+    const criticalFailed =
+      actionType === "draft"
+        ? errors.filter((e) => e.field === "name" || e.field === "sku")
+        : errors;
+
+    if (criticalFailed.length > 0) {
+      setValidationErrors(errors);
+      setShowValidationSummary(true);
+      alert(`Validation failed: ${criticalFailed[0].message}`);
+      setActiveTab(criticalFailed[0].tab);
+      setTimeout(() => {
+        document.getElementById(`input-${criticalFailed[0].field}`)?.focus();
+      }, 150);
+      return;
+    }
+
+    // Verify SKU duplicate validation (client-side prevention)
+    const isSkuDuplicate = products.some(
+      (p) => p.sku === form.sku && (!editProduct || p._id !== editProduct._id),
+    );
+    if (isSkuDuplicate) {
       alert(
-        "Mandatory basic fields (Name, SKU, MRP, Selling Price) must be compiled!",
+        `Duplicate SKU Detected: The SKU '${form.sku}' already exists. Please assign a unique SKU!`,
       );
       return;
     }
 
+    let payload = { ...form };
+    if (actionType === "draft") {
+      payload.status = "draft";
+    } else if (actionType === "active") {
+      payload.status = "active";
+    } else if (actionType === "archived") {
+      payload.status = "archived";
+    }
+
     try {
       if (editProduct) {
-        // Update product route in backend
-        await API.put(`/products/id/${editProduct._id}`, form);
-        alert("Product updated in catalog successfully");
+        await API.put(`/products/id/${editProduct._id}`, payload);
+        alert(
+          `Product ${actionType === "archived" ? "archived" : "updated"} in catalog successfully.`,
+        );
       } else {
-        // Create product route in backend
-        await API.post("/products", form);
-        alert("New product registered successfully!");
+        await API.post("/products", payload);
+        alert(
+          `New product registered ${actionType === "draft" ? "as Draft " : ""}successfully!`,
+        );
       }
+      localStorage.removeItem(SAVE_DRAFT_KEY);
+      setIsDirty(false);
       setShowFormModal(false);
       setForm(initialFormState);
       setEditProduct(null);
@@ -211,9 +538,13 @@ const ProductsPage = () => {
     }
   };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    handleFormAction(form.status || "active");
+  };
+
   const handleEditClick = (prod) => {
     setEditProduct(prod);
-    // Fill form states from existing fields. Add default fallbacks for new enterprise variables.
     setForm({
       name: prod.name || "",
       sku: prod.sku || "",
@@ -250,9 +581,33 @@ const ProductsPage = () => {
       video: prod.video || "",
       tag: prod.tag || "Regular",
       description: prod.description || "",
+      status: prod.status || "active",
+      slug: prod.slug || "",
     });
     setActiveTab("basic");
     setShowFormModal(true);
+  };
+
+  const attemptCloseModal = () => {
+    if (isDirty) {
+      showConfirm(
+        "You have unsaved changes. Are you sure you want to discard your updates?",
+        "Discard Changes",
+      ).then((confirmed) => {
+        if (confirmed) {
+          localStorage.removeItem(SAVE_DRAFT_KEY);
+          setShowFormModal(false);
+          setEditProduct(null);
+          setForm(initialFormState);
+          setIsDirty(false);
+        }
+      });
+    } else {
+      localStorage.removeItem(SAVE_DRAFT_KEY);
+      setShowFormModal(false);
+      setEditProduct(null);
+      setForm(initialFormState);
+    }
   };
 
   const handleDelete = async (id, name) => {
@@ -420,1039 +775,61 @@ const ProductsPage = () => {
     reader.readAsText(file);
   };
 
-  // FILTER LOGIC
-  const filteredProducts = products.filter((p) => {
-    const matchSearch =
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchCat = catFilter ? p.category === catFilter : true;
-
-    // Price checks
-    let matchPrice = true;
-    if (priceFilter === "low") matchPrice = p.price < 1500;
-    else if (priceFilter === "mid")
-      matchPrice = p.price >= 1500 && p.price <= 3000;
-    else if (priceFilter === "high") matchPrice = p.price > 3000;
-
-    // Stock checks
-    const totalStock = Object.values(p.sizesStock || {}).reduce(
-      (acc, c) => acc + c,
-      0,
-    );
-    let matchStock = true;
-    if (stockFilter === "low") matchStock = totalStock <= 5 && totalStock > 0;
-    else if (stockFilter === "out") matchStock = totalStock === 0;
-    else if (stockFilter === "ok") matchStock = totalStock > 5;
-
-    // Status / tags checks
-    let matchStatus = true;
-    if (statusFilter === "trending")
-      matchStatus = p.tag === "Trending" || p.trending;
-    else if (statusFilter === "featured")
-      matchStatus = p.tag === "Best Seller" || p.featured;
-
-    return matchSearch && matchCat && matchPrice && matchStock && matchStatus;
-  });
-
   return (
-    <div className="space-y-6">
-      {/* Page Title Row */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
-        <div>
-          <h2 className="text-2xl font-semibold text-white tracking-wide">
-            Enterprise Catalogue
-          </h2>
-          <p className="text-slate-400 text-xs mt-1">
-            Real-time control center for inventory models and marketing tags
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-          {/* CSV Operations */}
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center justify-center space-x-2 bg-slate-950 hover:bg-slate-800 text-slate-200 text-xs font-semibold py-2.5 px-4.5 rounded-lg border border-slate-800 transition w-full sm:w-auto"
-          >
-            <RiFileDownloadLine size={15} />
-            <span>Export CSV</span>
-          </button>
+    <div className="space-y-6 p-6 bg-slate-50 min-h-screen text-slate-800 font-sans">
+      <ProductTable
+        products={products}
+        isLoading={isLoading}
+        categories={categories}
+        selectedIds={selectedIds}
+        setSelectedIds={setSelectedIds}
+        handleExportCSV={handleExportCSV}
+        handleImportCSVChange={handleImportCSVChange}
+        handleEditClick={handleEditClick}
+        handleDuplicate={handleDuplicate}
+        handleDelete={handleDelete}
+        executeBulkPublish={executeBulkPublish}
+        executeBulkDelete={executeBulkDelete}
+        initialFormState={initialFormState}
+        setForm={setForm}
+        setActiveTab={setActiveTab}
+        setShowFormModal={setShowFormModal}
+        setEditProduct={setEditProduct}
+      />
 
-          <label className="flex items-center justify-center space-x-2 bg-slate-950 hover:bg-slate-800 text-slate-200 text-xs font-semibold py-2.5 px-4.5 rounded-lg border border-slate-800 cursor-pointer transition w-full sm:w-auto">
-            <RiFileUploadLine size={15} />
-            <span>Import CSV</span>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleImportCSVChange}
-              className="hidden"
-            />
-          </label>
-
-          <button
-            onClick={() => {
-              setEditProduct(null);
-              setForm(initialFormState);
-              setActiveTab("basic");
-              setShowFormModal(true);
-            }}
-            className="flex items-center justify-center space-x-2 bg-accent-gold text-slate-950 text-xs font-bold py-2.5 px-5 rounded-lg transition hover:bg-yellow-500 shadow-md shadow-accent-gold/5 w-full sm:w-auto"
-          >
-            <RiAddCircleLine size={17} />
-            <span>Create SKU</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Advanced Filter Box */}
-      <div className="bg-slate-950 border border-slate-800 rounded-lg p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4">
-        {/* Search */}
-        <div className="md:col-span-2 relative">
-          <RiSearchLine
-            className="absolute left-3.5 top-3 text-slate-500"
-            size={17}
-          />
-          <input
-            type="text"
-            placeholder="Search by product name or stock SKU..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-10 pr-4 py-2 text-xs text-slate-100 focus:outline-none focus:border-slate-700 font-sans"
-          />
-        </div>
-
-        {/* Category Filter */}
-        <select
-          value={catFilter}
-          onChange={(e) => setCatFilter(e.target.value)}
-          className="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg p-2.5 focus:outline-none focus:border-slate-700"
-        >
-          <option value="">All Categories</option>
-          {categories.map((c) => (
-            <option key={c._id} value={c.slug}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-
-        {/* Price filter */}
-        <select
-          value={priceFilter}
-          onChange={(e) => setPriceFilter(e.target.value)}
-          className="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg p-2.5 focus:outline-none focus:border-slate-700"
-        >
-          <option value="all">All Prices</option>
-          <option value="low">Under ₹1,500</option>
-          <option value="mid">₹1,500 - ₹3,000</option>
-          <option value="high">Above ₹3,000</option>
-        </select>
-
-        {/* Stock Filter */}
-        <select
-          value={stockFilter}
-          onChange={(e) => setStockFilter(e.target.value)}
-          className="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg p-2.5 focus:outline-none focus:border-slate-700"
-        >
-          <option value="all">Stock Levels</option>
-          <option value="low">Low Stock (≤ 5)</option>
-          <option value="out">Out of Stock</option>
-          <option value="ok">Healthy Store</option>
-        </select>
-
-        {/* Status tag filter */}
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg p-2.5 focus:outline-none focus:border-slate-700"
-        >
-          <option value="all">All Visibility</option>
-          <option value="featured">Best Seller</option>
-          <option value="trending">Trending</option>
-        </select>
-      </div>
-
-      {/* Bulk actions bar if selected */}
-      {selectedIds.length > 0 && (
-        <div className="bg-slate-950 border border-accent-gold/25 p-4 rounded-lg flex items-center justify-between animate-fade-in">
-          <span className="text-xs text-slate-400 font-semibold font-sans">
-            Selected{" "}
-            <strong className="text-accent-gold font-bold">
-              {selectedIds.length}
-            </strong>{" "}
-            items in database index
-          </span>
-          <div className="flex space-x-3.5">
-            <button
-              onClick={executeBulkPublish}
-              className="bg-slate-900 border border-slate-800 text-accent-gold text-[10px] font-bold tracking-wider uppercase py-1.5 px-3 rounded hover:bg-slate-800 transition"
-            >
-              Tag as Featured
-            </button>
-            <button
-              onClick={executeBulkDelete}
-              className="bg-rose-950/20 border border-rose-900/60 text-red-400 text-[10px] font-bold tracking-wider uppercase py-1.5 px-3 rounded hover:bg-rose-900/30 transition"
-            >
-              Bulk Delete
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Catalog Table */}
-      <div className="bg-slate-950 border border-slate-800 rounded-lg overflow-x-auto shadow-2xl">
-        {isLoading ? (
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-950 border-b border-slate-800 text-slate-400 font-extrabold uppercase tracking-widest text-[9px]">
-              <tr>
-                <th className="py-4.5 px-5 text-left">
-                  <Skeleton className="h-4 w-4" />
-                </th>
-                <th className="py-4.5 px-5">Preview</th>
-                <th className="py-4.5 px-5">Product SKU Details</th>
-                <th className="py-4.5 px-5">Category</th>
-                <th className="py-4.5 px-5 text-right">MRP (Base)</th>
-                <th className="py-4.5 px-5 text-right">Sell Price</th>
-                <th className="py-4.5 px-5 text-center">Remaining Stock</th>
-                <th className="py-4.5 px-5 text-center">Featured Status</th>
-                <th className="py-4.5 px-5 text-center font-mono">
-                  Operations
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <tr key={i} className="border-b border-slate-800/40">
-                  <td className="py-4.5 px-5 text-left">
-                    <Skeleton className="h-4 w-4" />
-                  </td>
-                  <td className="py-4.5 px-5">
-                    <Skeleton className="w-10 h-12 rounded" />
-                  </td>
-                  <td className="py-4.5 px-5 space-y-1.5">
-                    <Skeleton className="h-4.5 w-32" />
-                    <Skeleton className="h-3 w-20" />
-                  </td>
-                  <td className="py-4.5 px-5">
-                    <Skeleton className="h-4 w-12" />
-                  </td>
-                  <td className="py-4.5 px-5 text-right">
-                    <Skeleton className="h-4 w-12 ml-auto" />
-                  </td>
-                  <td className="py-4.5 px-5 text-right">
-                    <Skeleton className="h-4 w-12 ml-auto" />
-                  </td>
-                  <td className="py-4.5 px-5 text-center">
-                    <Skeleton className="h-4 w-14 mx-auto" />
-                  </td>
-                  <td className="py-4.5 px-5 text-center">
-                    <Skeleton className="h-4 w-16 mx-auto" />
-                  </td>
-                  <td className="py-4.5 px-5 text-center">
-                    <div className="flex justify-center space-x-2">
-                      <Skeleton className="h-6.5 w-8" />
-                      <Skeleton className="h-6.5 w-8" />
-                      <Skeleton className="h-6.5 w-8" />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : filteredProducts.length === 0 ? (
-          <div className="py-20 text-center text-slate-500 italic text-xs">
-            No matching products found matching criteria
-          </div>
-        ) : (
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950 border-b border-slate-800 text-slate-400 font-extrabold uppercase tracking-widest text-[9px]">
-              <tr>
-                <th className="py-4.5 px-5">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.length === filteredProducts.length}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="cursor-pointer"
-                  />
-                </th>
-                <th className="py-4.5 px-5">Preview</th>
-                <th className="py-4.5 px-5">Product SKU Details</th>
-                <th className="py-4.5 px-5">Category</th>
-                <th className="py-4.5 px-5">Fabric Info</th>
-                <th className="py-4.5 text-right px-5">Pricing</th>
-                <th className="py-4.5 text-center px-5">Stock Levels</th>
-                <th className="py-4.5 text-center px-5 flex items-center space-x-1.5">
-                  Action Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {filteredProducts.map((p, idx) => {
-                const totalStock = Object.values(p.sizesStock || {}).reduce(
-                  (acc, val) => acc + val,
-                  0,
-                );
-                const isSelected = selectedIds.includes(p._id);
-                return (
-                  <tr
-                    key={idx}
-                    className={`hover:bg-slate-900/40 transition-colors ${isSelected ? "bg-slate-900/20" : ""}`}
-                  >
-                    <td className="py-4 px-5">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={(e) =>
-                          handleSelectOne(p._id, e.target.checked)
-                        }
-                        className="cursor-pointer"
-                      />
-                    </td>
-                    <td className="py-4 px-5">
-                      {p.images && p.images[0] ? (
-                        <div className="relative group cursor-zoom-in">
-                          <img
-                            src={p.images[0]}
-                            className="w-12 h-14 object-cover rounded border border-slate-850 group-hover:scale-110 transition"
-                            alt=""
-                          />
-                          <div className="absolute inset-x-0 bottom-0 bg-slate-950/80 text-[6px] text-center hidden group-hover:block uppercase text-accent-gold">
-                            zoom
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="w-12 h-14 bg-slate-900 rounded border flex items-center justify-center text-slate-600">
-                          <RiFolderImageLine size={16} />
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-4 px-5 space-y-1">
-                      <p className="font-semibold text-slate-200 text-sm tracking-tight">
-                        {p.name}
-                      </p>
-                      <p className="text-[10px] text-slate-500 font-mono tracking-wider">
-                        {p.sku}
-                      </p>
-                    </td>
-                    <td className="py-4 px-5 font-medium text-slate-350 capitalize font-mono text-[11px]">
-                      {p.category}
-                    </td>
-                    <td className="py-4 px-5 font-mono text-slate-400 text-[10px]">
-                      {p.fabric || "Cotton"}
-                    </td>
-                    <td className="py-4 text-right px-5 font-bold space-y-0.5 font-sans">
-                      <p className="text-slate-200">₹{p.price}</p>
-                      <p className="text-[10px] text-slate-500 line-through">
-                        ₹{p.mrp}
-                      </p>
-                    </td>
-                    <td className="py-4 text-center px-5 font-mono">
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          totalStock === 0
-                            ? "bg-red-500/10 text-red-400"
-                            : totalStock <= 5
-                              ? "bg-yellow-500/10 text-yellow-400"
-                              : "bg-green-500/10 text-green-400"
-                        }`}
-                      >
-                        {totalStock} Units
-                      </span>
-                    </td>
-                    <td className="py-4 px-5">
-                      <div className="flex items-center space-x-1 justify-center">
-                        <button
-                          onClick={() => handleEditClick(p)}
-                          className="p-2 text-slate-400 hover:text-accent-gold transition-colors"
-                        >
-                          <RiEditLine size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDuplicate(p)}
-                          className="p-2 text-slate-400 hover:text-accent-gold transition-colors"
-                          title="Duplicate Product"
-                        >
-                          <RiFileCopyLine size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(p._id, p.name)}
-                          className="p-2 text-slate-400 hover:text-red-400 transition-colors"
-                        >
-                          <RiDeleteBinLine size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* Advanced Enterprise Product Form Modal */}
-      {showFormModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-4xl bg-slate-950 border border-slate-800 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-            {/* Modal Title Banner */}
-            <div className="flex justify-between items-center bg-slate-950 border-b border-slate-800 p-5 shrink-0">
-              <div>
-                <h3 className="font-display font-medium text-lg text-white">
-                  {editProduct
-                    ? `Refining SKU Details: ${editProduct.sku}`
-                    : "Enterprises Catalogue Enrollment"}
-                </h3>
-                <p className="text-slate-500 text-xs mt-1">
-                  Specify detailed properties layout mapping directly into the
-                  search indexes
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setShowFormModal(false);
-                  setEditProduct(null);
-                  setForm(initialFormState);
-                }}
-                className="text-slate-400 hover:text-accent-gold p-1"
-              >
-                <RiCloseLine size={24} />
-              </button>
-            </div>
-
-            {/* Modal Tabs Navigation */}
-            <div className="flex overflow-x-auto bg-slate-950/40 border-b border-slate-850 px-4 shrink-0">
-              {[
-                { id: "basic", label: "Basic Info" },
-                { id: "category", label: "Hierarchy & Tags" },
-                { id: "pricing", label: "Pricing & Tax" },
-                { id: "details", label: "Clothing Spec Sheet" },
-                { id: "visibility", label: "Search tags Visibility" },
-                { id: "seo", label: "Meta SEO configs" },
-                { id: "media", label: "Media Assets" },
-              ].map((tab, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`text-xs font-semibold py-3.5 px-4 uppercase tracking-wider relative border-b-2 whitespace-nowrap transition ${
-                    activeTab === tab.id
-                      ? "border-accent-gold text-accent-gold font-bold"
-                      : "border-transparent text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Modal Form Content Canvas */}
-            <form
-              onSubmit={handleSubmit}
-              className="flex-grow overflow-y-auto p-6 space-y-6"
-            >
-              {/* TAB 1: BASIC INFO */}
-              {activeTab === "basic" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5.5">
-                  <div className="space-y-1.5Col">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Brand Label Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Elysian Gold Chanderi Suit"
-                      value={form.name}
-                      onChange={(e) =>
-                        setForm({ ...form, name: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-slate-700"
-                    />
-                  </div>
-                  <div className="space-y-1.5 flex flex-col">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Unique Item SKU *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. PAR-CHN-001"
-                      value={form.sku}
-                      onChange={(e) =>
-                        setForm({ ...form, sku: e.target.value.toUpperCase() })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-slate-700 font-mono uppercase"
-                    />
-                  </div>
-                  <div className="md:col-span-2 space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Short Sub-heading Description
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Catchy sentence summing up key features..."
-                      value={form.description}
-                      onChange={(e) =>
-                        setForm({ ...form, description: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-slate-700"
-                    />
-                  </div>
-                  <div className="md:col-span-2 space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Long Form Details (Fabric Details & Sizing Advice)
-                    </label>
-                    <textarea
-                      rows={3}
-                      placeholder="Long catalog text displaying fabric linings, custom work stitching details, trousers details, wedding festive instructions..."
-                      value={form.fabric}
-                      onChange={(e) =>
-                        setForm({ ...form, fabric: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-slate-700"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2: HIERARCHY & TAGS */}
-              {activeTab === "category" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5.5">
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold font-sans">
-                      Primary Catalog Group *
-                    </label>
-                    <select
-                      value={form.category}
-                      onChange={(e) =>
-                        setForm({ ...form, category: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 text-xs rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-slate-750"
-                    >
-                      {categories.length === 0 && (
-                        <option value="suits">Suits</option>
-                      )}
-                      {categories.map((c) => (
-                        <option key={c._id} value={c.slug}>
-                          {c.name}
-                          {c.description ? ` — ${c.description}` : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Sub-Category Tag
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Anarkali Suit Set, A-Line Kurta"
-                      value={form.subCategory}
-                      onChange={(e) =>
-                        setForm({ ...form, subCategory: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-slate-700"
-                    />
-                  </div>
-                  <div className="space-y-1.5 font-sans">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Brand Designation
-                    </label>
-                    <select
-                      value={form.brand}
-                      onChange={(e) =>
-                        setForm({ ...form, brand: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-slate-700"
-                    >
-                      {brands.length === 0 && (
-                        <option value="Pariwesh">Pariwesh</option>
-                      )}
-                      {brands.map((b) => (
-                        <option key={b._id} value={b.name}>
-                          {b.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Search Keywords / Tags
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="comma block e.g. handblock, indigo, wedding, rayon"
-                      value={form.tag}
-                      onChange={(e) =>
-                        setForm({ ...form, tag: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 3: PRICING & TAX */}
-              {activeTab === "pricing" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5.5">
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Maximum Retail Price (MRP) *
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      placeholder="4999"
-                      value={form.mrp}
-                      onChange={(e) => syncPrice("mrp", e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Discount Percent (%)
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="15"
-                      value={form.discount}
-                      onChange={(e) => syncPrice("discount", e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Calculated Selling Price (Calculated automatically)
-                    </label>
-                    <input
-                      type="number"
-                      readOnly
-                      placeholder="Price in INR text"
-                      value={form.price}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-accent-gold font-bold focus:outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold font-sans">
-                      GST Rate Applicable (%)
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="12"
-                      value={form.gst}
-                      onChange={(e) =>
-                        setForm({ ...form, gst: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      HSN Export Custom Code
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 62044220"
-                      value={form.hsnCode}
-                      onChange={(e) =>
-                        setForm({ ...form, hsnCode: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 4: SPEC SHEET */}
-              {activeTab === "details" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5.5">
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Fabric Weight
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 380 grams/sqm"
-                      value={form.weight}
-                      onChange={(e) =>
-                        setForm({ ...form, weight: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold font-sans">
-                      Wash Care instructions
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Cold dry clean preferred, low steam iron"
-                      value={form.washCare}
-                      onChange={(e) =>
-                        setForm({ ...form, washCare: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Material composition
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 80% linen, 20% threads cotton"
-                      value={form.material}
-                      onChange={(e) =>
-                        setForm({ ...form, material: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white"
-                    />
-                  </div>
-                  <div className="space-y-1.5 font-sans">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Shipping Weight
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 480g"
-                      value={form.shippingWeight}
-                      onChange={(e) =>
-                        setForm({ ...form, shippingWeight: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Country of Origin
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="India"
-                      value={form.countryOfOrigin}
-                      onChange={(e) =>
-                        setForm({ ...form, countryOfOrigin: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Return Allowance Period (Days)
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="7"
-                      value={form.returnDays}
-                      onChange={(e) =>
-                        setForm({ ...form, returnDays: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 5: VISIBILITY CHECKMARKS */}
-              {activeTab === "visibility" && (
-                <div className="bg-slate-900/40 p-6 border border-slate-850 rounded-lg space-y-6">
-                  <h4 className="text-xs uppercase font-extrabold tracking-widest text-slate-400 border-b border-slate-800 pb-3">
-                    Homepage section filters placement
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                      {
-                        id: "featured",
-                        label: "Place inside Hero Showcase (Featured)",
-                        desc: "Highlight prominently inside website's primary layout slider",
-                      },
-                      {
-                        id: "trending",
-                        label: "Vibe matches Trending Styles",
-                        desc: "Inject inside the curated split timers promotion screens",
-                      },
-                      {
-                        id: "bestSeller",
-                        label: "Folk choice Best Seller badge",
-                        desc: "Attaches a 'Best Seller' discount tag badge over card UI preview",
-                      },
-                      {
-                        id: "newArrival",
-                        label: "Include in New Arrivals scroll",
-                        desc: "Shows item above recent design logs for customer collection grid",
-                      },
-                      {
-                        id: "recommended",
-                        label: "Recommend for matches suits suggestion",
-                        desc: "Show below product item detail pages suggestions drawer block",
-                      },
-                    ].map((badge, idx) => (
-                      <label
-                        key={idx}
-                        className="flex items-start space-x-3.5 bg-slate-950 p-4 rounded-lg border border-slate-850 cursor-pointer hover:border-slate-700 transition"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={form[badge.id]}
-                          onChange={(e) =>
-                            setForm({ ...form, [badge.id]: e.target.checked })
-                          }
-                          className="mt-1 shrink-0 rounded text-accent-gold focus:ring-accent-gold"
-                        />
-                        <div>
-                          <p className="text-xs font-bold text-slate-200">
-                            {badge.label}
-                          </p>
-                          <p className="text-[10px] text-slate-500 mt-1">
-                            {badge.desc}
-                          </p>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-
-                  {/* Size Stock Management inside Visibility tab */}
-                  <div className="space-y-4 pt-4 border-t border-slate-800">
-                    <h4 className="text-xs uppercase font-extrabold tracking-widest text-slate-400">
-                      Available size stocks
-                    </h4>
-                    <div className="grid grid-cols-5 gap-3.5">
-                      {["S", "M", "L", "XL", "XXL"].map((sz, idx) => (
-                        <div key={idx} className="space-y-1.5 font-sans">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                            Size {sz} Items
-                          </label>
-                          <input
-                            type="number"
-                            value={form.sizesStock[sz] || 0}
-                            onChange={(e) =>
-                              setForm({
-                                ...form,
-                                sizesStock: {
-                                  ...form.sizesStock,
-                                  [sz]: Number(e.target.value),
-                                },
-                              })
-                            }
-                            className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-center text-white"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 6: META SEO */}
-              {activeTab === "seo" && (
-                <div className="grid grid-cols-1 gap-5.5">
-                  <div className="space-y-1.5 flex flex-col">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Meta SEO Title
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Elysian Gold Suit Set - Shop Online | Pariwesh Boutique"
-                      value={form.seoTitle}
-                      onChange={(e) =>
-                        setForm({ ...form, seoTitle: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Meta SEO details description
-                    </label>
-                    <textarea
-                      rows={2.5}
-                      placeholder="Bespoke linen garments designed for weddings..."
-                      value={form.seoDescription}
-                      onChange={(e) =>
-                        setForm({ ...form, seoDescription: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Meta keywords (Comma grouped)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. chanderi, suit set, luxury apparel, ethnic gown"
-                      value={form.metaKeywords}
-                      onChange={(e) =>
-                        setForm({ ...form, metaKeywords: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 text-xs font-semibold font-sans">
-                      Canonical URL
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="https://pariwesh.co/product/elysian-gold-chanderi"
-                      value={form.canonicalUrl}
-                      onChange={(e) =>
-                        setForm({ ...form, canonicalUrl: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 7: MEDIA ASSETS */}
-              {activeTab === "media" && (
-                <div className="space-y-6">
-                  {/* File Selector slots */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="border border-dashed border-slate-800 p-5 rounded-lg text-center flex flex-col justify-center items-center space-y-3 bg-slate-950">
-                      <RiFolderImageLine className="text-slate-500" size={32} />
-                      <div>
-                        <p className="text-xs font-bold text-slate-300">
-                          Drag & Drop product pictures
-                        </p>
-                        <p className="text-[10px] text-slate-500 mt-1">
-                          Accepts multiple PNG, JPG, or base64 structures
-                        </p>
-                      </div>
-                      <label className="bg-slate-900 hover:bg-slate-800 text-[10px] uppercase tracking-wider font-extrabold text-accent-gold py-2 px-4 rounded border border-slate-750 cursor-pointer">
-                        Select files
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/*"
-                          onChange={handleImageFileChange}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-
-                    {/* Media Video upload */}
-                    <div className="border border-dashed border-slate-800 p-5 rounded-lg text-center flex flex-col justify-center items-center space-y-3 bg-slate-950">
-                      <RiFolderImageLine className="text-slate-500" size={32} />
-                      <div>
-                        <p className="text-xs font-bold text-slate-300">
-                          Upload Short Reel Promo Video
-                        </p>
-                        <p className="text-[10px] text-slate-500 mt-1">
-                          Max 15 seconds short vertical video
-                        </p>
-                      </div>
-                      <label className="bg-slate-900 hover:bg-slate-800 text-[10px] uppercase tracking-wider font-extrabold text-accent-gold py-2 px-4 rounded border border-slate-750 cursor-pointer">
-                        Upload Video
-                        <input
-                          type="file"
-                          accept="video/*"
-                          onChange={handleVideoFileChange}
-                          className="hidden"
-                        />
-                      </label>
-                      {form.video && (
-                        <p className="text-[9px] text-emerald-400 font-mono font-semibold">
-                          Video Attached (Ready to save)
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Add URL field fallback */}
-                  <div className="space-y-2">
-                    <label className="text-slate-400 text-xs font-semibold">
-                      Or add Image URL directly
-                    </label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        placeholder="https://images.unsplash.com/your-image-address"
-                        id="direct-image-url"
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const el =
-                            document.getElementById("direct-image-url");
-                          if (el) {
-                            handleUrlImageAdd(el.value);
-                            el.value = "";
-                          }
-                        }}
-                        className="bg-accent-gold text-slate-950 text-xs font-bold px-4 rounded hover:bg-yellow-500"
-                      >
-                        Add
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Uploaded Images slots list preview */}
-                  {form.images.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold text-slate-400">
-                        Enrolled pictures ({form.images.length})
-                      </p>
-                      <div className="grid grid-cols-5 gap-3.5">
-                        {form.images.map((img, idx) => (
-                          <div
-                            key={idx}
-                            className="relative group rounded-lg overflow-hidden border border-slate-800 bg-slate-900 aspect-[3/4]"
-                          >
-                            <img
-                              src={img}
-                              className="w-full h-full object-cover"
-                              alt=""
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setForm((prev) => ({
-                                  ...prev,
-                                  images: prev.images.filter(
-                                    (_, i) => i !== idx,
-                                  ),
-                                }));
-                              }}
-                              className="absolute top-1.5 right-1.5 p-1 bg-red-600 hover:bg-red-700 text-white rounded-full opacity-0 group-hover:opacity-100 transition"
-                            >
-                              <RiCloseLine size={12} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </form>
-
-            {/* Modal Bottom Save button Bar */}
-            <div className="flex justify-between items-center bg-slate-950 border-t border-slate-800 p-5 shrink-0">
-              <span className="text-[10px] text-slate-500 font-mono">
-                Changes sync automatically with indexing engines
-              </span>
-              <div className="flex space-x-3.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowFormModal(false);
-                    setEditProduct(null);
-                    setForm(initialFormState);
-                  }}
-                  className="bg-slate-900 hover:bg-slate-800 text-slate-350 text-xs font-semibold py-2 px-5.5 rounded-lg border border-slate-800 transition"
-                >
-                  Discard
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  className="bg-accent-gold text-slate-950 text-xs font-bold py-2.5 px-6.5 rounded-lg transition hover:bg-yellow-500 shadow-md shadow-accent-gold/5"
-                >
-                  Commit Changes
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProductWizardModal
+        showFormModal={showFormModal}
+        editProduct={editProduct}
+        setEditProduct={setEditProduct}
+        form={form}
+        setForm={setForm}
+        categories={categories}
+        brands={brands}
+        collections={collections}
+        validationErrors={validationErrors}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        previewDevice={previewDevice}
+        setPreviewDevice={setPreviewDevice}
+        manualSlug={manualSlug}
+        setManualSlug={setManualSlug}
+        generateSKU={generateSKU}
+        syncPrice={syncPrice}
+        attemptCloseModal={attemptCloseModal}
+        handleFormAction={handleFormAction}
+        handleSubmit={handleSubmit}
+        setIsDirty={setIsDirty}
+        validateImageFile={validateImageFile}
+        handleImageFileChange={handleImageFileChange}
+        handleVideoFileChange={handleVideoFileChange}
+        handleUrlImageAdd={handleUrlImageAdd}
+        dragOver={dragOver}
+        setDragOver={setDragOver}
+        showValidationSummary={showValidationSummary}
+        setShowValidationSummary={setShowValidationSummary}
+        sidebarCollapsed={sidebarCollapsed}
+        setSidebarCollapsed={setSidebarCollapsed}
+      />
     </div>
   );
 };

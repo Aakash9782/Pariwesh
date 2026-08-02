@@ -1,4 +1,5 @@
 import Coupon from "../models/Coupon.js";
+import Setting from "../models/Setting.js";
 import { sendSuccess, sendError } from "../utils/responseFormatter.js";
 import { logActivity } from "../utils/logger.js";
 
@@ -27,8 +28,12 @@ export const getCoupons = async (req, res, next) => {
     let coupons = await Coupon.find({}).sort({ createdAt: -1 });
 
     if (coupons.length === 0) {
-      await Coupon.insertMany(SEED_COUPONS);
-      coupons = await Coupon.find({}).sort({ createdAt: -1 });
+      const seeded = await Setting.findOne({ key: "seeded_coupons" });
+      if (!seeded) {
+        await Coupon.insertMany(SEED_COUPONS);
+        await Setting.create({ key: "seeded_coupons", value: "true" });
+        coupons = await Coupon.find({}).sort({ createdAt: -1 });
+      }
     }
 
     return sendSuccess(res, "Coupons retrieved successfully", coupons);

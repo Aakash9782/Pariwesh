@@ -1,4 +1,6 @@
 import React from "react";
+import Button from "../../../components/admin/ui/Button.jsx";
+import Input from "../../../components/admin/ui/Input.jsx";
 
 const GeneralTab = ({
   generalForm,
@@ -7,82 +9,62 @@ const GeneralTab = ({
   handleLogoFileChange,
 }) => {
   return (
-    <form onSubmit={handleSaveGeneral} className="space-y-6 max-w-2xl">
+    <form
+      onSubmit={handleSaveGeneral}
+      className="space-y-6 max-w-2xl text-slate-700 font-sans"
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5.5">
-        <div className="space-y-1.5 flex flex-col font-sans">
-          <label className="text-slate-450 text-xs font-semibold">
-            Store Brand Name
-          </label>
-          <input
-            type="text"
-            className="w-full bg-slate-900 border border-slate-800 rounded p-2.5 text-xs text-white"
-            value={generalForm.brandName}
-            onChange={(e) =>
-              setGeneralForm({
-                ...generalForm,
-                brandName: e.target.value,
-              })
-            }
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-slate-450 text-xs font-semibold">
-            Registered Company GSTIN
-          </label>
-          <input
-            type="text"
-            className="w-full bg-slate-900 border border-slate-800 rounded p-2.5 text-xs text-white"
-            value={generalForm.gstinNumber}
-            onChange={(e) =>
-              setGeneralForm({
-                ...generalForm,
-                gstinNumber: e.target.value,
-              })
-            }
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-slate-450 text-xs font-semibold">
-            Help-Desk Support Mobile Phone
-          </label>
-          <input
-            type="text"
-            className="w-full bg-slate-900 border border-slate-800 rounded p-2.5 text-xs text-white"
-            value={generalForm.supportPhone}
-            onChange={(e) =>
-              setGeneralForm({
-                ...generalForm,
-                supportPhone: e.target.value,
-              })
-            }
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-slate-450 text-xs font-semibold">
-            Help-Desk support Email
-          </label>
-          <input
-            type="email"
-            className="w-full bg-slate-900 border border-slate-800 rounded p-2.5 text-xs text-white"
-            value={generalForm.supportEmail}
-            onChange={(e) =>
-              setGeneralForm({
-                ...generalForm,
-                supportEmail: e.target.value,
-              })
-            }
-          />
-        </div>
+        <Input
+          label="Store Brand Name"
+          value={generalForm.brandName}
+          onChange={(e) =>
+            setGeneralForm({
+              ...generalForm,
+              brandName: e.target.value,
+            })
+          }
+        />
+        <Input
+          label="Registered Company GSTIN"
+          value={generalForm.gstinNumber}
+          onChange={(e) =>
+            setGeneralForm({
+              ...generalForm,
+              gstinNumber: e.target.value,
+            })
+          }
+        />
+        <Input
+          label="Help-Desk Support Mobile Phone"
+          value={generalForm.supportPhone}
+          onChange={(e) =>
+            setGeneralForm({
+              ...generalForm,
+              supportPhone: e.target.value,
+            })
+          }
+        />
+        <Input
+          type="email"
+          label="Help-Desk Support Email"
+          value={generalForm.supportEmail}
+          onChange={(e) =>
+            setGeneralForm({
+              ...generalForm,
+              supportEmail: e.target.value,
+            })
+          }
+        />
       </div>
 
       {/* Logo Section */}
-      <div className="space-y-3.5 pt-4 border-t border-slate-900">
-        <label className="text-slate-450 text-xs font-semibold block">
+      <div className="space-y-3 pt-6 border-t border-slate-200">
+        <label className="text-slate-500 text-xs font-bold uppercase tracking-wider block">
           Store Brand Header Logo Image
         </label>
         <div className="flex items-center space-x-5">
           {generalForm.brandLogoUrl ? (
-            <div className="bg-slate-900 border border-slate-800 p-2.5 rounded">
+            <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg shadow-sm">
               <img
                 src={generalForm.brandLogoUrl}
                 className="max-h-11 max-w-xs object-contain"
@@ -90,11 +72,11 @@ const GeneralTab = ({
               />
             </div>
           ) : (
-            <div className="w-20 h-10 bg-slate-900 border border-slate-800 rounded flex items-center justify-center text-[10px] text-slate-500 italic">
+            <div className="w-20 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-[10px] text-slate-450 italic font-medium">
               No Logo
             </div>
           )}
-          <label className="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] uppercase font-extrabold tracking-widest text-accent-gold py-2 px-4.5 rounded cursor-pointer transition">
+          <label className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[10px] uppercase font-bold tracking-widest text-[#c5a880] py-2 px-4.5 rounded-lg cursor-pointer transition">
             Upload Logo
             <input
               type="file"
@@ -107,13 +89,14 @@ const GeneralTab = ({
       </div>
 
       {/* Maintenance switch */}
-      <div className="pt-4 border-t border-slate-900 flex justify-between items-center bg-slate-900/40 p-4 rounded border border-slate-900">
+      <div className="pt-6 border-t border-slate-200 flex justify-between items-center bg-[#FAF9F6] p-4 rounded-xl border border-slate-200/80">
         <div>
-          <h4 className="text-xs font-semibold text-white">
+          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
             Under Maintenance Lock
           </h4>
           <p className="text-[10px] text-slate-500 mt-1">
-            If enabled, public users will encounter a brief offline page
+            If enabled, public users will encounter a brief offline maintenance
+            page
           </p>
         </div>
         <select
@@ -124,7 +107,7 @@ const GeneralTab = ({
               maintenanceMode: e.target.value,
             })
           }
-          className="bg-slate-950 border border-slate-800 text-xs rounded p-2 text-slate-200 focus:outline-none"
+          className="bg-white border border-slate-200 text-xs rounded-lg p-2 text-slate-700 outline-none focus:border-[#c5a880] focus:ring-1 focus:ring-[#c5a880] font-semibold"
         >
           <option value="false">Off (Online Store Active)</option>
           <option value="true">On (Lock Public Store)</option>
@@ -132,13 +115,13 @@ const GeneralTab = ({
       </div>
 
       {/* Live Offer / Special Launch Countdown Toggle Section */}
-      <div className="pt-6 border-t border-slate-900 space-y-4">
-        <h3 className="text-sm font-semibold tracking-wide uppercase text-accent-gold flex items-center">
+      <div className="pt-6 border-t border-slate-200 space-y-4">
+        <h3 className="text-xs font-bold tracking-widest uppercase text-[#c5a880] flex items-center">
           Special Launch Countdown Settings
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1.5 flex flex-col font-sans">
-            <label className="text-slate-400 text-xs font-semibold">
+          <div className="space-y-1">
+            <label className="block text-xs font-semibold text-slate-700">
               Countdown Status (ON/OFF)
             </label>
             <select
@@ -149,54 +132,47 @@ const GeneralTab = ({
                   countdownActive: e.target.value,
                 })
               }
-              className="w-full bg-slate-900 border border-slate-800 rounded p-2.5 text-xs text-slate-205 focus:outline-none"
+              className="w-full h-10 px-3 bg-white border border-slate-250 rounded-md text-xs text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880]"
             >
               <option value="true">ON (Show Live Offer & Countdown)</option>
               <option value="false">OFF (Hide completely)</option>
             </select>
           </div>
-          <div className="space-y-1.5 flex flex-col font-sans">
-            <label className="text-slate-400 text-xs font-semibold">
-              Countdown End Date & Time *
-            </label>
-            <input
-              type="datetime-local"
-              className="w-full bg-slate-900 border border-slate-800 rounded p-2.5 text-xs text-white"
-              value={generalForm.countdownEndDate}
-              onChange={(e) =>
-                setGeneralForm({
-                  ...generalForm,
-                  countdownEndDate: e.target.value,
-                })
-              }
-            />
-          </div>
-          <div className="space-y-1.5 flex flex-col font-sans md:col-span-2">
-            <label className="text-slate-400 text-xs font-semibold">
-              Countdown Bar Title (Message)
-            </label>
-            <input
-              type="text"
-              className="w-full bg-slate-900 border border-slate-800 rounded p-2.5 text-xs text-white"
-              value={generalForm.countdownTitle}
-              onChange={(e) =>
-                setGeneralForm({
-                  ...generalForm,
-                  countdownTitle: e.target.value,
-                })
-              }
-              placeholder="e.g. Special Launch ends in"
-            />
-          </div>
+          <Input
+            type="datetime-local"
+            label="Countdown End Date & Time"
+            value={generalForm.countdownEndDate}
+            onChange={(e) =>
+              setGeneralForm({
+                ...generalForm,
+                countdownEndDate: e.target.value,
+              })
+            }
+          />
+          <Input
+            className="md:col-span-2"
+            label="Countdown Bar Title (Message)"
+            value={generalForm.countdownTitle}
+            onChange={(e) =>
+              setGeneralForm({
+                ...generalForm,
+                countdownTitle: e.target.value,
+              })
+            }
+            placeholder="e.g. Special Launch ends in"
+          />
         </div>
       </div>
 
-      <button
-        type="submit"
-        className="bg-accent-gold text-slate-950 text-xs font-bold py-2.5 px-6.5 rounded-lg transition hover:bg-yellow-500"
-      >
-        Save Parameters settings
-      </button>
+      <div className="pt-2">
+        <Button
+          type="submit"
+          variant="primary"
+          className="px-6 py-2.5 text-xs uppercase tracking-wider font-bold"
+        >
+          Save Parameters Settings
+        </Button>
+      </div>
     </form>
   );
 };

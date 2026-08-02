@@ -172,6 +172,11 @@ const ProductSchema = new mongoose.Schema(
       default:
         "Premium ethnic wear ensemble designed for high quality luxury styles.",
     },
+    status: {
+      type: String,
+      enum: ["draft", "active", "archived"],
+      default: "active",
+    },
   },
   { timestamps: true },
 );

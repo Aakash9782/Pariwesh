@@ -151,25 +151,9 @@ const seedDatabase = async () => {
     console.log("👥 Seeding Admins...");
     const admins = [
       {
-        name: "Pariwesh Admin Desk",
-        email: "admin@pariwesh.com",
+        name: "Aakash Saini",
+        email: "sainiaakash177@gmail.com",
         phone: "9782681155",
-        role: "admin",
-        status: "active",
-        addresses: [],
-      },
-      {
-        name: "Pariwesh Test Admin",
-        email: "testadmin@pariwesh.com",
-        phone: "9876543210",
-        role: "admin",
-        status: "active",
-        addresses: [],
-      },
-      {
-        name: "Pariwesh Super Admin",
-        email: "superadmin@pariwesh.com",
-        phone: "9999999999",
         role: "admin",
         status: "active",
         addresses: [],

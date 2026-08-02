@@ -35,3 +35,10 @@ lerna-debug.log*
 
 # Documentation
 /startTo25july.md
+
+# Pre-launch Backups and Logs
+server/backups/
+server/*.txt
+server/products_backup.json
+client/*.txt
+

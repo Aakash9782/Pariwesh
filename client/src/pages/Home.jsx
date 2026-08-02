@@ -87,14 +87,27 @@ const Home = () => {
           if (settings.festiveBannerSettings) {
             try {
               const parsed = JSON.parse(settings.festiveBannerSettings);
+              const now = new Date();
+              const start = parsed.startDate
+                ? new Date(parsed.startDate)
+                : null;
+              const end = parsed.endDate ? new Date(parsed.endDate) : null;
+              const isDateValid =
+                (!start || now >= start) && (!end || now <= end);
+
               adState = {
-                active: parsed.enabled === true || parsed.enabled === "true",
+                active:
+                  (parsed.enabled === true || parsed.enabled === "true") &&
+                  isDateValid,
                 title: parsed.bannerTitle || adState.title,
                 subtitle: parsed.subtitle || adState.subtitle,
                 code: parsed.discountTag || adState.code,
                 link: parsed.link || "/shop",
                 theme: parsed.theme || "royal-gold",
                 primaryButtonText: parsed.primaryButtonText,
+                desktopImage: parsed.desktopImage || parsed.bannerImage || "",
+                tabletImage: parsed.tabletImage || "",
+                mobileImage: parsed.mobileImage || "",
               };
             } catch (e) {
               console.error("Failed to parse festiveBannerSettings", e);
@@ -186,20 +199,22 @@ const Home = () => {
           res.data.data.length > 0
         ) {
           // Format custom products from database
-          const dbProducts = res.data.data.map((p) => ({
-            _id: p._id,
-            name: p.name,
-            slug: p.slug || p.name.toLowerCase().replace(/\s+/g, "-"),
-            sku: p.sku,
-            category: p.category || "suits",
-            mrp: p.mrp || Math.round(p.price * 1.5),
-            sellingPrice: p.price,
-            images: p.images || [p.image] || [
-                "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop",
-              ],
-            video: p.video || "",
-            tag: p.tag || p.tags || "",
-          }));
+          const dbProducts = res.data.data
+            .filter((p) => !p.status || p.status === "active")
+            .map((p) => ({
+              _id: p._id,
+              name: p.name,
+              slug: p.slug || p.name.toLowerCase().replace(/\s+/g, "-"),
+              sku: p.sku,
+              category: p.category || "suits",
+              mrp: p.mrp || Math.round(p.price * 1.5),
+              sellingPrice: p.price,
+              images: p.images || [p.image] || [
+                  "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop",
+                ],
+              video: p.video || "",
+              tag: p.tag || p.tags || "",
+            }));
           setProducts(dbProducts);
         } else {
           setProducts([]);
@@ -397,114 +412,97 @@ const Home = () => {
 
           const theme = getBannerTheme();
 
+          const optimizeCloudinaryUrl = (url) => {
+            if (!url || typeof url !== "string") return url;
+            if (url.includes("res.cloudinary.com")) {
+              return url.replace("/upload/", "/upload/f_auto,q_auto/");
+            }
+            return url;
+          };
+
+          const desktopSrc = optimizeCloudinaryUrl(adConfig.desktopImage);
+          const tabletSrc =
+            optimizeCloudinaryUrl(adConfig.tabletImage) || desktopSrc;
+          const mobileSrc =
+            optimizeCloudinaryUrl(adConfig.mobileImage) || tabletSrc;
+
+          if (!desktopSrc) {
+            return null;
+          }
+
           return (
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 animate-fade-in relative z-10">
-              <div
-                className={`relative overflow-hidden rounded-sm border p-6 md:p-10 shadow-2xl transition-all duration-500 festive-gradient-flow ${theme.wrapper}`}
-              >
-                {/* Radial Backdrop Glow */}
-                <div
-                  className={`absolute inset-0 bg-gradient-radial ${theme.glow} animate-radial-pulse pointer-events-none opacity-40`}
-                ></div>
+            <section className="w-full animate-fade-in relative z-10">
+              <div className="relative min-h-[300px] md:min-h-[450px] overflow-hidden rounded-none border-x-0 border-y border-slate-800 shadow-2xl flex items-center">
+                {/* Media Responsive Picture element */}
+                <picture className="absolute inset-0 w-full h-full">
+                  {mobileSrc && (
+                    <source media="(max-width: 639px)" srcSet={mobileSrc} />
+                  )}
+                  {tabletSrc && (
+                    <source media="(max-width: 1023px)" srcSet={tabletSrc} />
+                  )}
+                  <img
+                    src={desktopSrc}
+                    alt={adConfig.title || "Promotional Campaign"}
+                    className="w-full h-full object-cover select-none"
+                    loading="eager"
+                  />
+                </picture>
 
-                {/* Gold Shimmering Sparkles */}
-                <div
-                  className={`absolute top-4 left-[20%] animate-pulse pointer-events-none ${theme.sparkle} opacity-60 text-sm hidden md:block`}
-                >
-                  ✦
-                </div>
-                <div
-                  className={`absolute bottom-4 left-[40%] animate-ping pointer-events-none ${theme.sparkle} opacity-40 text-xs hidden md:block`}
-                >
-                  ✦
-                </div>
-                <div
-                  className={`absolute top-6 right-[35%] animate-pulse pointer-events-none ${theme.sparkle} opacity-60 text-lg hidden md:block`}
-                >
-                  ✨
-                </div>
+                {/* Dark Shimmer overlay to protect text contrast */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/35 md:from-black/80 md:via-black/45 md:to-transparent z-1 pointer-events-none"></div>
 
-                {/* Background Slowly Rotating Mandala Design */}
-                <div
-                  className={`absolute -right-16 -bottom-16 md:-right-8 md:-bottom-8 opacity-10 pointer-events-none select-none flex items-center justify-end animate-slow-spin ${theme.mandala}`}
-                >
-                  <svg
-                    width="220"
-                    height="220"
-                    viewBox="0 0 100 100"
-                    fill="currentColor"
-                  >
-                    <path d="M50,0 C52,15 48,15 50,30 C45,35 35,35 30,30 C35,25 35,15 50,0 Z" />
-                    <path d="M50,100 C48,85 52,85 50,70 C55,65 65,65 70,70 C65,75 65,85 50,100 Z" />
-                    <path d="M0,50 C15,48 15,52 30,50 C35,55 35,65 30,70 C25,65 15,65 0,50 Z" />
-                    <path d="M100,50 C85,52 85,48 70,50 C65,45 65,35 70,30 C75,35 85,35 100,50 Z" />
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="15"
-                      stroke="currentColor"
-                      strokeWidth="1"
-                      fill="none"
-                    />
-                    <path
-                      d="M50,5 L58,35 L88,27 L65,48 L88,68 L58,60 L50,90 L42,60 L12,68 L35,48 L12,27 L42,35 Z"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="0.8"
-                    />
-                  </svg>
-                </div>
-
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10 text-left">
-                  <div className="space-y-3 lg:max-w-3xl">
-                    <span
-                      className={`inline-flex items-center gap-1.5 text-[9px] uppercase font-black tracking-[0.2em] px-3 py-1 rounded-sm border ${theme.badge} backdrop-blur-md`}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
-                      Special Festival Promotion
-                    </span>
-                    <h2 className="text-2xl md:text-4xl font-display font-extrabold uppercase tracking-wider drop-shadow-md text-white">
-                      {adConfig.title}
-                    </h2>
-                    <p className="text-xs md:text-sm text-white/80 font-medium font-sans leading-relaxed tracking-wide">
-                      {adConfig.subtitle}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-4 lg:self-center">
-                    {adConfig.code && (
-                      <div className="flex flex-col">
-                        <span className="text-[9px] uppercase tracking-widest text-white/40 font-bold mb-1.5">
-                          Promo Code
-                        </span>
-                        <button
-                          onClick={handleCopyCode}
-                          title="Click to copy coupon code"
-                          className={`px-4 py-2 border rounded-sm font-mono text-xs tracking-widest font-black flex items-center gap-2 overflow-hidden transition-all duration-300 relative ${theme.btnCoupon}`}
-                        >
-                          {copiedCode ? (
-                            <span className="text-green-400 flex items-center gap-1.5 animate-bounce">
-                              ✔ COPIED!
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1.5">
-                              ✨ {adConfig.code.toUpperCase()}
-                            </span>
-                          )}
-                        </button>
-                      </div>
-                    )}
-
-                    <div className="flex flex-col">
-                      <span className="text-[9px] uppercase tracking-widest text-[#000000]/0 font-bold mb-1.5 pointer-events-none hidden sm:block">
-                        Shop
+                <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 py-10 md:py-16">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 text-left">
+                    <div className="space-y-3 lg:max-w-3xl">
+                      <span className="inline-flex items-center gap-1.5 text-[9px] uppercase font-black tracking-[0.2em] px-3 py-1 rounded-sm border border-accent-gold/45 text-accent-gold bg-black/60 backdrop-blur-md">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent-gold animate-ping"></span>
+                        Special Promotion
                       </span>
-                      <Link
-                        to={adConfig.link}
-                        className={`font-black text-[10px] uppercase tracking-widest px-6 py-3 rounded-sm transition-all duration-300 flex items-center justify-center gap-1 hover:scale-105 active:scale-95 ${theme.btnGrab}`}
-                      >
-                        Grab Offer <Icon name="ArrowRight" size={12} />
-                      </Link>
+                      <h2 className="text-2xl md:text-5xl font-display font-extrabold uppercase tracking-wider drop-shadow-md text-white">
+                        {adConfig.title}
+                      </h2>
+                      <p className="text-xs md:text-sm text-slate-200/90 font-medium font-sans leading-relaxed tracking-wide max-w-2xl">
+                        {adConfig.subtitle}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4 lg:self-center font-sans">
+                      {adConfig.code && (
+                        <div className="flex flex-col">
+                          <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold mb-1.5">
+                            Promo Code
+                          </span>
+                          <button
+                            onClick={handleCopyCode}
+                            title="Click to copy coupon code"
+                            className={`px-4 py-2.5 border rounded-sm font-mono text-xs tracking-widest font-black flex items-center gap-2 overflow-hidden transition-all duration-300 relative ${theme.btnCoupon}`}
+                          >
+                            {copiedCode ? (
+                              <span className="text-green-400 flex items-center gap-1.5 animate-bounce">
+                                ✔ COPIED!
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1.5">
+                                ✨ {adConfig.code.toUpperCase()}
+                              </span>
+                            )}
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="flex flex-col">
+                        <span className="text-[9px] uppercase tracking-widest text-[#000000]/0 font-bold mb-1.5 pointer-events-none hidden sm:block">
+                          Shop
+                        </span>
+                        <Link
+                          to={adConfig.link}
+                          className={`font-black text-[10px] uppercase tracking-widest px-6 py-3.5 rounded-sm transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105 active:scale-95 ${theme.btnGrab}`}
+                        >
+                          {adConfig.primaryButtonText || "Grab Offer"}{" "}
+                          <Icon name="ArrowRight" size={12} />
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -522,28 +520,18 @@ const Home = () => {
 
       {/* MARQUEE VALUE BANNER */}
       <div className="bg-[#8a1c14] text-white py-3 border-y border-white/10 overflow-hidden select-none">
-        <div className="flex whitespace-nowrap animate-[marquee_25s_linear_infinite] text-[10px] uppercase font-bold tracking-[0.25em] space-x-12">
-          <span>
-            Sustainable Fabrics • Handcrafted with Love • Made in India •
-            Premium Tailoring • Custom Fit
-          </span>
-          <span>
-            Sustainable Fabrics • Handcrafted with Love • Made in India •
-            Premium Tailoring • Custom Fit
-          </span>
-          <span>
-            Sustainable Fabrics • Handcrafted with Love • Made in India •
-            Premium Tailoring • Custom Fit
-          </span>
-          <span>
-            Sustainable Fabrics • Handcrafted with Love • Made in India •
-            Premium Tailoring • Custom Fit
-          </span>
+        <div className="flex whitespace-nowrap animate-[marquee_25s_linear_infinite] text-[10px] uppercase font-bold tracking-[0.25em]">
+          {[...Array(8)].map((_, idx) => (
+            <span key={idx} className="shrink-0 mr-12">
+              Sustainable Fabrics • Handcrafted with Love • Made in India •
+              Premium Tailoring • Custom Fit
+            </span>
+          ))}
         </div>
       </div>
 
       {/* EXQUISITE CATEGORY SELECTION CIRCLES (Boutique Horizontal Navigation) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 md:pt-4">
         <div className="flex flex-col space-y-4">
           <div className="text-left space-y-1">
             <span className="text-[10px] text-[#8a1c14] tracking-[0.2em] uppercase font-bold">
@@ -554,7 +542,7 @@ const Home = () => {
             </h2>
           </div>
 
-          <div className="flex items-center gap-6 overflow-x-auto pb-4 scrollbar-none snap-x select-none">
+          <div className="flex items-center gap-4 md:gap-6 overflow-x-auto pb-4 px-4 sm:px-6 -mx-4 sm:-mx-6 scrollbar-none snap-x select-none">
             {[
               {
                 title: "Designer Suits",
@@ -597,7 +585,7 @@ const Home = () => {
                 to={cat.path}
                 className="snap-start flex flex-col items-center space-y-3 group min-w-[100px] sm:min-w-[130px] text-center"
               >
-                <div className="relative w-18 h-18 sm:w-24 sm:h-24 rounded-full p-[2px] transition-transform duration-300 group-hover:scale-105 border border-accent-gold/40 group-hover:border-accent-gold shadow-md">
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[2px] transition-transform duration-300 group-hover:scale-105 border border-accent-gold/40 group-hover:border-accent-gold shadow-md">
                   <div className="w-full h-full rounded-full overflow-hidden relative">
                     <img
                       src={cat.image}
@@ -608,10 +596,10 @@ const Home = () => {
                   </div>
                 </div>
                 <div className="space-y-0.5">
-                  <h4 className="text-[11px] sm:text-xs font-semibold text-textPrimary uppercase tracking-wider group-hover:text-[#8a1c14] transition-colors">
+                  <h4 className="text-[10px] xs:text-[11px] sm:text-xs font-semibold text-textPrimary uppercase tracking-wider group-hover:text-[#8a1c14] transition-colors">
                     {cat.title}
                   </h4>
-                  <span className="text-[9px] text-[#8a1c14] italic group-hover:underline">
+                  <span className="text-[8px] xs:text-[9px] text-[#8a1c14] italic group-hover:underline">
                     Explore
                   </span>
                 </div>
@@ -622,18 +610,50 @@ const Home = () => {
       </section>
 
       {/* SECTION 2: THE PARIWESH EDIT (Comfort meets Couture layout with countdown) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="max-w-2xl mx-auto">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+          {/* Left card - Premium promotional visual block */}
+          <div className="relative overflow-hidden border border-borderLight min-h-[450px] flex flex-col justify-between rounded-none shadow-sm group">
+            <img
+              src="https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=800&auto=format&fit=crop"
+              alt="Atelier Craftsmanship"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/30 flex flex-col justify-between p-8 md:p-12 text-white">
+              <div className="space-y-2 text-left">
+                <span className="text-[9px] text-accent-gold uppercase tracking-[0.3em] font-black block">
+                  — Pariwesh Atelier —
+                </span>
+                <h3 className="text-2xl sm:text-3xl font-serif tracking-wide leading-tight">
+                  The Art of <br />
+                  Handcrafted Luxury
+                </h3>
+              </div>
+              <div className="space-y-4 text-left">
+                <p className="text-[11px] text-white/80 font-sans tracking-wide leading-relaxed max-w-sm">
+                  Discover the meticulous craftsmanship behind our signature
+                  embroidery, hand-spun Zari, and vintage silhouettes. Every
+                  stitch is a tribute to heritage.
+                </p>
+                <div className="pt-2">
+                  <span className="inline-block text-[10px] text-accent-gold group-hover:text-white uppercase tracking-widest font-black border-b border-accent-gold/40 pb-1 transition-all duration-300 cursor-pointer">
+                    Read Story
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Right card - Soft beige editorial layout */}
           <div className="bg-[#FAF7F3] border border-borderLight p-8 md:p-12 flex flex-col justify-between text-left space-y-8">
             <div className="space-y-4">
               <span className="text-[9px] text-[#8a1c14] font-black uppercase tracking-[0.3em] block">
                 — The Pariwesh Edit —
               </span>
-              <h2 className="text-4xl md:text-5xl font-serif text-textPrimary leading-tight">
+              <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-serif text-textPrimary leading-tight">
                 Where comfort <br />
                 meets{" "}
-                <span className="font-script text-[#8a1c14] text-4xl lowercase tracking-normal">
+                <span className="font-script text-[#8a1c14] text-3xl xs:text-4xl sm:text-5xl lowercase tracking-normal">
                   couture.
                 </span>
               </h2>
@@ -645,7 +665,7 @@ const Home = () => {
             </div>
 
             {/* Micro stats banner */}
-            <div className="grid grid-cols-3 gap-4 border-y border-[#8a1c14]/10 py-6">
+            <div className="grid grid-cols-3 gap-2 xs:gap-4 border-y border-[#8a1c14]/10 py-6">
               <div>
                 <h4 className="text-2xl font-serif text-textPrimary font-semibold">
                   150+
@@ -745,127 +765,141 @@ const Home = () => {
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-8">
-          {products.map((product) => (
-            <div
-              key={product._id}
-              className="group relative bg-transparent flex flex-col h-full transition-all duration-300"
-            >
-              {/* Product Badge */}
-              {product.tag && (
-                <span className="absolute top-3 left-3 z-10 bg-[#8a1c14] text-white font-bold text-[9px] uppercase tracking-wider px-2.5 py-1 shadow-sm">
-                  {product.tag}
-                </span>
-              )}
-
-              {/* Product Heart Selector */}
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleWishlistToggle(product);
-                }}
-                className={`absolute top-3 right-3 z-10 p-2 rounded-full shadow-sm hover:scale-110 transition-all border border-borderLight bg-white/80 hover:bg-white ${
-                  wishlistItems.some((p) => p._id === product._id)
-                    ? "text-[#8a1c14]"
-                    : "text-textPrimary hover:text-[#8a1c14]"
-                }`}
+        {products.length === 0 ? (
+          <div className="py-16 text-center border border-dashed border-accent-gold/30 rounded bg-[#FAF7F3] max-w-7xl mx-auto px-4">
+            <p className="text-xs font-semibold text-textSecondary tracking-wider uppercase">
+              Our premium catalogue is currently updating
+            </p>
+            <p className="text-[11px] text-textSecondary/70 italic mt-1">
+              Stay tuned for our upcoming seasonal arrivals and designer
+              curations.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-8">
+            {products.map((product) => (
+              <div
+                key={product._id}
+                className="group relative bg-transparent flex flex-col h-full transition-all duration-300"
               >
-                {wishlistItems.some((p) => p._id === product._id) ? (
-                  <Icon name="HeartFill" size={16} />
-                ) : (
-                  <Icon name="HeartOutline" size={16} />
-                )}
-              </button>
-
-              {/* Image / Video Container with Zoom */}
-              <Link
-                to={`/product/${product.slug}`}
-                className="aspect-[4/5] overflow-hidden relative block bg-bgLight border border-borderLight"
-                style={{ clipPath: "url(#mehrab-clip)" }}
-              >
-                {product.video ? (
-                  <video
-                    src={product.video}
-                    className="w-full h-full object-cover group-hover:scale-[1.12] transform-gpu transition-all duration-[800ms] ease-out origin-top"
-                    muted
-                    loop
-                    autoPlay
-                    playsInline
-                  />
-                ) : (
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-[1.15] transform-gpu transition-transform duration-[800ms] ease-out origin-top"
-                  />
-                )}
-
-                {/* Arch outline SVG overlay */}
-                <svg
-                  viewBox="0 0 100 125"
-                  className="absolute inset-0 w-full h-full pointer-events-none fill-none stroke-accent-gold stroke-[1.5px] opacity-60"
-                  preserveAspectRatio="none"
-                >
-                  <path d="M 0,125 L 0,43.75 C 0,35 8,32.5 12,30 C 12,22.5 22,18.75 28,15 C 28,10 38,7.5 44,3.75 C 47,1.25 49,0 50,0 C 51,0 53,1.25 56,3.75 C 62,7.5 72,10 72,15 C 78,18.75 88,22.5 88,30 C 92,32.5 100,35 100,43.75 L 100,125" />
-                </svg>
-
-                {/* Add to cart hover overlay */}
-                <div className="absolute inset-0 bg-secondary/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4 space-y-2 z-20">
-                  <span className="text-white text-[9px] uppercase tracking-widest font-bold text-center block">
-                    Quick Buy Size
+                {/* Product Badge */}
+                {product.tag && (
+                  <span className="absolute top-3 left-3 z-10 bg-[#8a1c14] text-white font-bold text-[9px] uppercase tracking-wider px-2.5 py-1 shadow-sm">
+                    {product.tag}
                   </span>
-                  <div className="flex justify-center gap-1">
-                    {["S", "M", "L", "XL"].map((size) => (
-                      <button
-                        key={size}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleQuickAddToCart(product, size);
-                        }}
-                        className="w-8 h-8 rounded-full bg-primary/95 text-textPrimary hover:bg-[#8a1c14] hover:text-white text-[10px] font-bold shadow-sm transition-all duration-200"
-                      >
-                        {size}
-                      </button>
-                    ))}
+                )}
+
+                {/* Product Heart Selector */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleWishlistToggle(product);
+                  }}
+                  className={`absolute top-3 right-3 z-10 p-2 rounded-full shadow-sm hover:scale-110 transition-all border border-borderLight bg-white/80 hover:bg-white ${
+                    wishlistItems.some((p) => p._id === product._id)
+                      ? "text-[#8a1c14]"
+                      : "text-textPrimary hover:text-[#8a1c14]"
+                  }`}
+                >
+                  {wishlistItems.some((p) => p._id === product._id) ? (
+                    <Icon name="HeartFill" size={16} />
+                  ) : (
+                    <Icon name="HeartOutline" size={16} />
+                  )}
+                </button>
+
+                {/* Image / Video Container with Zoom */}
+                <Link
+                  to={`/product/${product.slug}`}
+                  className="aspect-[4/5] overflow-hidden relative block bg-bgLight border border-borderLight"
+                  style={{ clipPath: "url(#mehrab-clip)" }}
+                >
+                  {product.video ? (
+                    <video
+                      src={product.video}
+                      className="w-full h-full object-cover group-hover:scale-[1.12] transform-gpu transition-all duration-[800ms] ease-out origin-top"
+                      muted
+                      loop
+                      autoPlay
+                      playsInline
+                    />
+                  ) : (
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-[1.15] transform-gpu transition-transform duration-[800ms] ease-out origin-top"
+                    />
+                  )}
+
+                  {/* Arch outline SVG overlay */}
+                  <svg
+                    viewBox="0 0 100 125"
+                    className="absolute inset-0 w-full h-full pointer-events-none fill-none stroke-accent-gold stroke-[1.5px] opacity-60"
+                    preserveAspectRatio="none"
+                  >
+                    <path d="M 0,125 L 0,43.75 C 0,35 8,32.5 12,30 C 12,22.5 22,18.75 28,15 C 28,10 38,7.5 44,3.75 C 47,1.25 49,0 50,0 C 51,0 53,1.25 56,3.75 C 62,7.5 72,10 72,15 C 78,18.75 88,22.5 88,30 C 92,32.5 100,35 100,43.75 L 100,125" />
+                  </svg>
+
+                  {/* Add to cart hover overlay */}
+                  <div className="absolute inset-0 bg-secondary/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4 space-y-2 z-20">
+                    <span className="text-white text-[9px] uppercase tracking-widest font-bold text-center block">
+                      Quick Buy Size
+                    </span>
+                    <div className="flex justify-center gap-1">
+                      {["S", "M", "L", "XL"].map((size) => (
+                        <button
+                          key={size}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleQuickAddToCart(product, size);
+                          }}
+                          className="w-8 h-8 rounded-full bg-primary/95 text-textPrimary hover:bg-[#8a1c14] hover:text-white text-[10px] font-bold shadow-sm transition-all duration-200"
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </Link>
+
+                {/* Info area */}
+                <div className="py-4 flex flex-col flex-grow justify-between space-y-2 text-left">
+                  <div className="space-y-1">
+                    <span className="text-[9px] text-[#8a1c14] uppercase tracking-widest font-black block">
+                      {product.category}
+                    </span>
+                    <h3 className="text-xs font-semibold text-textPrimary leading-snug group-hover:text-[#8a1c14] transition-colors line-clamp-2">
+                      <Link to={`/product/${product.slug}`}>
+                        {product.name}
+                      </Link>
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center space-x-2 text-xs">
+                    <span className="text-[#8a1c14] font-bold">
+                      ₹{product.sellingPrice}
+                    </span>
+                    <span className="text-textSecondary line-through font-medium">
+                      ₹{product.mrp}
+                    </span>
+                  </div>
+
+                  <div className="pt-0.5">
+                    <span className="bg-[#8a1c14]/10 text-[#8a1c14] border border-[#8a1c14]/20 text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-none font-bold inline-block">
+                      {Math.round(
+                        ((product.mrp - product.sellingPrice) / product.mrp) *
+                          100,
+                      )}
+                      % OFF
+                    </span>
                   </div>
                 </div>
-              </Link>
-
-              {/* Info area */}
-              <div className="py-4 flex flex-col flex-grow justify-between space-y-2 text-left">
-                <div className="space-y-1">
-                  <span className="text-[9px] text-[#8a1c14] uppercase tracking-widest font-black block">
-                    {product.category}
-                  </span>
-                  <h3 className="text-xs font-semibold text-textPrimary leading-snug group-hover:text-[#8a1c14] transition-colors line-clamp-2">
-                    <Link to={`/product/${product.slug}`}>{product.name}</Link>
-                  </h3>
-                </div>
-
-                <div className="flex items-center space-x-2 text-xs">
-                  <span className="text-[#8a1c14] font-bold">
-                    ₹{product.sellingPrice}
-                  </span>
-                  <span className="text-textSecondary line-through font-medium">
-                    ₹{product.mrp}
-                  </span>
-                </div>
-
-                <div className="pt-0.5">
-                  <span className="bg-[#8a1c14]/10 text-[#8a1c14] border border-[#8a1c14]/20 text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-none font-bold inline-block">
-                    {Math.round(
-                      ((product.mrp - product.sellingPrice) / product.mrp) *
-                        100,
-                    )}
-                    % OFF
-                  </span>
-                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* SECTION 4: WHY CHOOSE PARIWESH */}

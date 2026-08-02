@@ -1,6 +1,8 @@
 import React from "react";
 import { RiAddCircleLine, RiDeleteBinLine } from "react-icons/ri";
-import Skeleton from "../../../components/common/Skeleton.jsx";
+import SkeletonLoader from "../../../components/admin/ui/SkeletonLoader.jsx";
+import Button from "../../../components/admin/ui/Button.jsx";
+import Input from "../../../components/admin/ui/Input.jsx";
 
 const AdminManagementTab = ({
   adminsLoading,
@@ -17,18 +19,20 @@ const AdminManagementTab = ({
   handleAddAdminSubmit,
 }) => {
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center border-b border-slate-850 pb-3">
-        <h3 className="text-xs uppercase font-extrabold text-slate-400">
-          Delegate admin dashboard keys
+    <div className="space-y-6 text-slate-700 font-sans">
+      <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+        <h3 className="text-xs uppercase font-extrabold text-slate-800 tracking-wider">
+          Delegate Admin Dashboard Keys
         </h3>
-        <button
+        <Button
           onClick={() => setShowAddAdmin(true)}
-          className="flex items-center space-x-1 text-xs font-bold text-accent-gold hover:underline"
+          variant="outline"
+          size="sm"
+          className="flex items-center space-x-1 text-xs text-[#c5a880] border-slate-205"
         >
           <RiAddCircleLine size={16} />
           <span>Authorize Admin Phone</span>
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -36,35 +40,35 @@ const AdminManagementTab = ({
           ? Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-slate-900 border border-slate-850 p-4.5 rounded-lg flex items-center justify-between"
+                className="bg-white border border-slate-200 p-4.5 rounded-xl flex items-center justify-between shadow-sm"
               >
                 <div className="space-y-2 w-2/3">
-                  <Skeleton className="h-4.5 w-24" />
-                  <Skeleton className="h-3 w-32" />
-                  <Skeleton className="h-3 w-20" />
+                  <SkeletonLoader className="h-4.5 w-24 rounded animate-pulse" />
+                  <SkeletonLoader className="h-3 w-32 rounded animate-pulse" />
+                  <SkeletonLoader className="h-3 w-20 rounded animate-pulse" />
                 </div>
-                <Skeleton className="h-8 w-8" />
+                <SkeletonLoader className="h-8 w-8 rounded-full animate-pulse" />
               </div>
             ))
           : adminsList.map((admin, idx) => (
               <div
                 key={idx}
-                className="bg-slate-900 border border-slate-850 p-4.5 rounded-lg flex items-center justify-between"
+                className="bg-white border border-slate-200 p-4.5 rounded-xl flex items-center justify-between shadow-sm"
               >
                 <div className="space-y-1">
-                  <p className="font-semibold text-slate-200 text-sm tracking-tight">
+                  <p className="font-semibold text-slate-800 text-sm tracking-tight">
                     {admin.name}
                   </p>
-                  <p className="text-[10px] text-slate-500 font-mono pr-2">
+                  <p className="text-[10px] text-slate-450 font-mono pr-2">
                     {admin.email}
                   </p>
-                  <p className="text-[9px] text-accent-gold font-mono tracking-widest font-bold uppercase">
+                  <p className="text-[9px] text-[#c5a880] font-mono tracking-widest font-bold uppercase">
                     Phone: {admin.phone}
                   </p>
                 </div>
                 <button
                   onClick={() => handleRevokeAdmin(admin._id, admin.name)}
-                  className="text-slate-500 hover:text-red-400 p-2.5 transition"
+                  className="text-slate-400 hover:text-rose-500 p-2.5 transition"
                   title="Revoke Admin Access"
                 >
                   <RiDeleteBinLine size={16} />
@@ -77,72 +81,62 @@ const AdminManagementTab = ({
       {showAddAdmin && (
         <form
           onSubmit={handleAddAdminSubmit}
-          className="bg-slate-900 border border-slate-850 p-5 rounded-lg max-w-md space-y-4 animate-slide-in-top"
+          className="bg-white border border-slate-200 p-5 rounded-xl max-w-md space-y-4 shadow-md animate-fade-in"
         >
           <div>
-            <h4 className="text-xs font-bold text-slate-200 font-sans uppercase">
-              Promote buyer number to Administrative
+            <h4 className="text-xs font-bold text-slate-800 font-sans uppercase tracking-wider">
+              Promote Buyer Number to Administrative
             </h4>
             <p className="text-[9px] text-slate-500 mt-1">
-              If the number doesn't exist, we will automatically set credentials
+              If the number doesn't exist, we will automatically set
+              credentials.
             </p>
           </div>
           <div className="space-y-3">
-            <div className="space-y-1.5 flex flex-col font-sans">
-              <label className="text-[10px] text-slate-450 font-bold uppercase">
-                Admin Name
-              </label>
-              <input
-                type="text"
-                required
-                value={newAdminName}
-                onChange={(e) => setNewAdminName(e.target.value)}
-                placeholder="Super Admin Name"
-                className="bg-slate-950 border border-slate-800 text-xs p-2 rounded text-white"
-              />
-            </div>
-            <div className="space-y-1.5 flex flex-col font-sans">
-              <label className="text-[10px] text-slate-450 font-bold uppercase">
-                Admin Email
-              </label>
-              <input
-                type="email"
-                required
-                value={newAdminEmail}
-                onChange={(e) => setNewAdminEmail(e.target.value)}
-                placeholder="e.g. support@pariwesh.com"
-                className="bg-slate-950 border border-slate-800 text-xs p-2 rounded text-white"
-              />
-            </div>
-            <div className="space-y-1.5 flex flex-col font-sans">
-              <label className="text-[10px] text-slate-450 font-bold uppercase font-mono">
-                10-Digit Mobile phone number
-              </label>
-              <input
-                type="number"
-                required
-                value={newAdminPhone}
-                onChange={(e) => setNewAdminPhone(e.target.value)}
-                placeholder="e.g. 9782681155"
-                className="bg-slate-950 border border-slate-800 text-xs p-2 rounded text-white"
-              />
-            </div>
+            <Input
+              type="text"
+              required
+              label="Admin Name"
+              value={newAdminName}
+              onChange={(e) => setNewAdminName(e.target.value)}
+              placeholder="Super Admin Name"
+            />
+            <Input
+              type="email"
+              required
+              label="Admin Email"
+              value={newAdminEmail}
+              onChange={(e) => setNewAdminEmail(e.target.value)}
+              placeholder="e.g. support@pariwesh.com"
+            />
+            <Input
+              type="number"
+              required
+              label="10-Digit Mobile Phone Number"
+              value={newAdminPhone}
+              onChange={(e) => setNewAdminPhone(e.target.value)}
+              placeholder="e.g. 9782681155"
+            />
           </div>
 
-          <div className="flex space-x-3.5">
-            <button
+          <div className="flex space-x-3 pt-2">
+            <Button
               type="submit"
-              className="bg-accent-gold text-slate-950 text-[10px] font-bold py-1.5 px-4 rounded"
+              variant="primary"
+              size="sm"
+              className="text-[10px] font-bold py-1.5 px-4"
             >
               Enroll Admin Number
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setShowAddAdmin(false)}
-              className="bg-slate-950 border border-slate-800 text-slate-400 text-[10px] py-1.5 px-3 rounded"
+              className="text-[10px] py-1.5 px-3"
             >
               Discard
-            </button>
+            </Button>
           </div>
         </form>
       )}

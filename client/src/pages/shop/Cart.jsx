@@ -131,23 +131,9 @@ const Cart = () => {
       }
     } catch (err) {
       console.error("Coupon validation error:", err);
-      // Fallback for PARIWESHGOLD / LHRGOLD offline verification
-      const codeUpper = coupon.trim().toUpperCase();
-      if (
-        codeUpper === "PARIWESHGOLD" ||
-        codeUpper === "LHRGOLD" ||
-        codeUpper === "FESTIVE35"
-      ) {
-        const sub = getSubtotal();
-        const pct = codeUpper === "FESTIVE35" ? 0.35 : 0.15;
-        setDiscount(Math.round(sub * pct));
-        setCouponApplied(true);
-        setCouponError("");
-      } else {
-        setCouponError(err.response?.data?.message || "Invalid coupon code!");
-        setDiscount(0);
-        setCouponApplied(false);
-      }
+      setCouponError(err.response?.data?.message || "Invalid coupon code!");
+      setDiscount(0);
+      setCouponApplied(false);
     }
   };
 
@@ -538,8 +524,11 @@ const Cart = () => {
                       alt={item.product.name}
                       className="w-20 h-24 object-cover bg-bgLight rounded border border-borderLight"
                     />
-                    <div className="space-y-1">
-                      <h4 className="text-sm font-semibold text-textPrimary leading-snug">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <h4
+                        className="text-sm font-semibold text-textPrimary leading-snug truncate"
+                        title={item.product.name}
+                      >
                         {item.product.name}
                       </h4>
                       <p className="text-[10px] text-textSecondary uppercase font-medium">
@@ -791,7 +780,7 @@ const Cart = () => {
               type="submit"
               variant="gold"
               size="lg"
-              className="w-full"
+              className="w-full truncate px-2"
               disabled={loading}
             >
               {loading ? "Placing Order..." : "Confirm & Book Order Ensembles"}

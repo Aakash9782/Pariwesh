@@ -2,7 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
-import Skeleton from "../../components/common/Skeleton.jsx";
+import PageHeader from "../../components/admin/ui/PageHeader.jsx";
+import Card from "../../components/admin/ui/Card.jsx";
+import Button from "../../components/admin/ui/Button.jsx";
+import Input from "../../components/admin/ui/Input.jsx";
+import Select from "../../components/admin/ui/Select.jsx";
+import SkeletonLoader from "../../components/admin/ui/SkeletonLoader.jsx";
 import {
   RiSearchLine,
   RiRefreshLine,
@@ -118,39 +123,39 @@ const InventoryPage = () => {
   return (
     <div className="space-y-6">
       {/* Title */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-wide text-white">
-            Inventory Controls
-          </h2>
-          <p className="text-slate-400 text-xs mt-1">
-            Directly adjust available clothing sizes stock levels inline without
-            leaving the catalog
-          </p>
-        </div>
-        <button
-          onClick={fetchInventory}
-          className="flex items-center space-x-2 bg-slate-950 hover:bg-slate-800 text-accent-gold text-xs font-bold py-2.5 px-4.5 rounded-lg border border-slate-805 transition"
-        >
-          <RiRefreshLine size={16} />
-          <span>Refresh Stock</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Inventory Controls"
+        subtitle="Directly adjust available clothing sizes stock levels inline without leaving the catalog"
+        breadcrumbs={[
+          { label: "Dashboard", link: "/admin" },
+          { label: "Inventory" },
+        ]}
+        actions={
+          <Button
+            variant="outline"
+            className="flex items-center space-x-2 text-slate-700 hover:text-slate-900 border-slate-200 animate-slide-in"
+            onClick={fetchInventory}
+          >
+            <RiRefreshLine size={16} className="text-slate-500" />
+            <span>Refresh Stock</span>
+          </Button>
+        }
+      />
 
       {/* Filters */}
-      <div className="bg-slate-950 border border-slate-800 rounded-lg p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <Card className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
         {/* Search */}
         <div className="relative">
           <RiSearchLine
-            className="absolute left-3.5 top-3 text-slate-500"
-            size={17}
+            className="absolute left-3 top-3 text-slate-400"
+            size={16}
           />
           <input
             type="text"
             placeholder="Search SKUs, product names..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-10 pr-4 py-2 text-xs text-white focus:outline-none"
+            className="w-full bg-[#FAF9F6] border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-800 focus:outline-[#c5a880] focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880] transition"
           />
         </div>
 
@@ -158,7 +163,7 @@ const InventoryPage = () => {
         <select
           value={catFilter}
           onChange={(e) => setCatFilter(e.target.value)}
-          className="bg-slate-900 border border-slate-800 text-slate-350 text-xs rounded-lg p-2.5 focus:outline-none"
+          className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#c5a880] transition"
         >
           <option value="">All Categories</option>
           <option value="suits">Suits</option>
@@ -169,234 +174,239 @@ const InventoryPage = () => {
         {/* Fabric */}
         <input
           type="text"
-          placeholder="Filter fabric type (e.g. Cotton, Linen)..."
+          placeholder="Filter fabric type (e.g. Cotton)..."
           value={fabricFilter}
           onChange={(e) => setFabricFilter(e.target.value)}
-          className="bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none"
+          className="w-full bg-[#FAF9F6] border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-[#c5a880] focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880] transition"
         />
 
         {/* Status flags */}
         <select
           value={stockStatusFilter}
           onChange={(e) => setStockStatusFilter(e.target.value)}
-          className="bg-slate-900 border border-slate-800 text-slate-350 text-xs rounded-lg p-2.5 focus:outline-none"
+          className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#c5a880] transition"
         >
           <option value="all">Threshold: All</option>
           <option value="out">Out of Stock (0 units)</option>
           <option value="low">Warning Low (≤ 5 units)</option>
           <option value="ok">Healthy Levels (5+ units)</option>
         </select>
-      </div>
+      </Card>
 
       {/* Inventory list table */}
-      <div className="bg-slate-950 border border-slate-800 rounded-lg overflow-x-auto shadow-xl">
-        <table className="w-full text-left text-xs font-sans min-w-[900px]">
-          <thead className="bg-slate-950 border-b border-slate-800 text-slate-400 font-extrabold uppercase tracking-widest text-[9px]">
-            <tr>
-              <th className="py-4.5 px-5">Garment Preview</th>
-              <th className="py-4.5 px-5">Products Details SKU</th>
-              <th className="py-4.5 px-5">Category</th>
-              <th className="py-4.5 text-center px-5">
-                Sizes Inventory Stock Ledger
-              </th>
-              <th className="py-4.5 text-center px-5 font-mono">
-                Aggregated Units
-              </th>
-              <th className="py-4.5 text-center px-5">Status flag</th>
-              <th className="py-4.5 text-center px-5">Adjust inline</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800/60">
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="border-b border-slate-800/40">
-                  <td className="py-4.5 px-5">
-                    <Skeleton className="w-10 h-12 rounded" />
-                  </td>
-                  <td className="py-4.5 px-5 space-y-1.5">
-                    <Skeleton className="h-4.5 w-32" />
-                    <Skeleton className="h-3 w-20" />
-                  </td>
-                  <td className="py-4.5 px-5">
-                    <Skeleton className="h-4 w-16" />
-                  </td>
-                  <td className="py-4.5 px-5">
-                    <div className="flex justify-center space-x-2">
-                      <Skeleton className="h-6 w-10" />
-                      <Skeleton className="h-6 w-10" />
-                      <Skeleton className="h-6 w-10" />
-                      <Skeleton className="h-6 w-10" />
-                    </div>
-                  </td>
-                  <td className="py-4.5 px-5 text-center">
-                    <Skeleton className="h-4 w-12 mx-auto" />
-                  </td>
-                  <td className="py-4.5 px-5 text-center">
-                    <Skeleton className="h-4 w-14 mx-auto" />
-                  </td>
-                  <td className="py-4.5 px-5 text-center">
-                    <Skeleton className="h-7 w-20 mx-auto" />
-                  </td>
-                </tr>
-              ))
-            ) : filteredProducts.length === 0 ? (
+      <Card className="overflow-hidden animate-fade-in">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left text-xs min-w-[900px] border-collapse">
+            <thead className="bg-[#FAF9F6] border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
               <tr>
-                <td
-                  colSpan={7}
-                  className="py-12 text-center text-slate-500 italic"
-                >
-                  No matching inventory files found
-                </td>
+                <th className="py-4 px-5">Garment Preview</th>
+                <th className="py-4 px-5">Product Details SKU</th>
+                <th className="py-4 px-5">Category</th>
+                <th className="py-4 text-center px-5">
+                  Sizes Inventory Stock Ledger
+                </th>
+                <th className="py-4 text-center px-5">Aggregated Units</th>
+                <th className="py-4 text-center px-5">Status Flag</th>
+                <th className="py-4 text-center px-5">Adjust Inline</th>
               </tr>
-            ) : (
-              filteredProducts.map((p, idx) => {
-                const totalStock = Object.values(p.sizesStock || {}).reduce(
-                  (acc, curr) => acc + curr,
-                  0,
-                );
-                const isEditing = editingId === p._id;
-                return (
-                  <tr key={idx} className="hover:bg-slate-900/40 transition">
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}>
                     <td className="py-4 px-5">
-                      {p.images && p.images[0] ? (
-                        <img
-                          src={p.images[0]}
-                          className="w-9 h-11 object-cover rounded border border-slate-800"
-                          alt=""
-                        />
-                      ) : (
-                        <div className="w-9 h-11 bg-slate-900 rounded border border-slate-800" />
-                      )}
+                      <SkeletonLoader className="w-9 h-11 rounded animate-pulse" />
                     </td>
-                    <td className="py-4 px-5 space-y-1">
-                      <p className="font-semibold text-slate-200 text-sm tracking-tight">
-                        {p.name}
-                      </p>
-                      <p className="text-[10px] text-slate-500 font-mono tracking-wide">
-                        {p.sku}
-                      </p>
+                    <td className="py-4 px-5 space-y-1.5">
+                      <SkeletonLoader className="h-4.5 w-32 animate-pulse" />
+                      <SkeletonLoader className="h-3 w-20 animate-pulse" />
                     </td>
-                    <td className="py-4 px-5 text-slate-400 capitalize font-mono">
-                      {p.category}
+                    <td className="py-4 px-5">
+                      <SkeletonLoader className="h-4 w-16 animate-pulse" />
                     </td>
-
-                    {/* Sizes indicators / Inputs */}
+                    <td className="py-4 px-5">
+                      <div className="flex justify-center space-x-2">
+                        <SkeletonLoader className="h-6 w-10 rounded animate-pulse" />
+                        <SkeletonLoader className="h-6 w-10 rounded animate-pulse" />
+                        <SkeletonLoader className="h-6 w-10 rounded animate-pulse" />
+                        <SkeletonLoader className="h-6 w-10 rounded animate-pulse" />
+                      </div>
+                    </td>
                     <td className="py-4 px-5 text-center">
-                      {isEditing ? (
-                        <div className="flex items-center justify-center space-x-1.5 font-sans">
-                          {["S", "M", "L", "XL", "XXL"].map((sz) => (
-                            <div key={sz} className="text-[10px] space-y-0.5">
-                              <span className="block text-slate-550 lowercase tracking-wider font-bold">
-                                {sz}
-                              </span>
-                              <input
-                                type="number"
-                                value={
-                                  editStockState[sz] !== undefined
-                                    ? editStockState[sz]
-                                    : 0
-                                }
-                                onChange={(e) =>
-                                  handleStockValueChange(sz, e.target.value)
-                                }
-                                className="w-9 bg-slate-900 border border-slate-800 text-white rounded p-1 text-center font-mono text-[11px]"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center space-x-4">
-                          {["S", "M", "L", "XL", "XXL"].map((sz) => {
-                            const val = p.sizesStock?.[sz] || 0;
-                            return (
-                              <span
-                                key={sz}
-                                className="text-slate-400 text-xs font-mono"
-                              >
-                                <strong className="text-slate-550 font-sans font-bold text-[9px] uppercase mr-0.5">
-                                  {sz}/
-                                </strong>
-                                <span
-                                  className={
-                                    val === 0
-                                      ? "text-red-500 font-bold"
-                                      : "text-slate-200"
-                                  }
-                                >
-                                  {val}
-                                </span>
-                              </span>
-                            );
-                          })}
-                        </div>
-                      )}
+                      <SkeletonLoader className="h-4 w-12 mx-auto animate-pulse" />
                     </td>
-
-                    <td className="py-4 text-center px-5 font-mono text-sm tracking-tight text-white font-bold">
-                      {isEditing ? (
-                        <span className="text-accent-gold">
-                          {Object.values(editStockState).reduce(
-                            (acc, curr) => acc + curr,
-                            0,
-                          )}{" "}
-                          Units
-                        </span>
-                      ) : (
-                        <span>{totalStock} Units</span>
-                      )}
+                    <td className="py-4 px-5 text-center">
+                      <SkeletonLoader className="h-4.5 w-14 mx-auto animate-pulse" />
                     </td>
-
-                    <td className="py-4 text-center px-5">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-widest ${
-                          totalStock === 0
-                            ? "bg-red-500/10 text-red-400"
-                            : totalStock <= 5
-                              ? "bg-yellow-500/10 text-yellow-400"
-                              : "bg-emerald-500/10 text-emerald-400"
-                        }`}
-                      >
-                        {totalStock === 0
-                          ? "Out of Stock"
-                          : totalStock <= 5
-                            ? "Low stock"
-                            : "In Stock"}
-                      </span>
-                    </td>
-
-                    <td className="py-4 text-center px-5">
-                      {isEditing ? (
-                        <div className="flex justify-center space-x-2">
-                          <button
-                            onClick={() => handleSaveStock(p._id)}
-                            className="bg-accent-gold text-slate-950 text-[10px] font-extrabold uppercase py-1 px-3.5 rounded flex items-center space-x-1"
-                          >
-                            <RiSaveLine size={13} />
-                            <span>Save</span>
-                          </button>
-                          <button
-                            onClick={() => setEditingId(null)}
-                            className="bg-slate-900 border border-slate-800 text-slate-400 text-[10px] py-1 px-2.5 rounded font-bold"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleEditStockInit(p)}
-                          className="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-1.5 px-3 rounded-lg text-slate-400 hover:text-accent-gold transition font-semibold"
-                        >
-                          Adjust Stocks
-                        </button>
-                      )}
+                    <td className="py-4 px-5 text-center">
+                      <SkeletonLoader className="h-7 w-20 mx-auto rounded animate-pulse" />
                     </td>
                   </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+                ))
+              ) : filteredProducts.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="py-12 text-center text-slate-400 italic"
+                  >
+                    No matching inventory files found.
+                  </td>
+                </tr>
+              ) : (
+                filteredProducts.map((p, idx) => {
+                  const totalStock = Object.values(p.sizesStock || {}).reduce(
+                    (acc, curr) => acc + curr,
+                    0,
+                  );
+                  const isEditing = editingId === p._id;
+                  return (
+                    <tr key={idx} className="hover:bg-slate-50/50 transition">
+                      <td className="py-4 px-5">
+                        {p.images && p.images[0] ? (
+                          <img
+                            src={p.images[0]}
+                            className="w-9 h-11 object-cover rounded border border-slate-205"
+                            alt=""
+                          />
+                        ) : (
+                          <div className="w-9 h-11 bg-slate-100 rounded border border-slate-205" />
+                        )}
+                      </td>
+                      <td className="py-4 px-5 space-y-1">
+                        <p className="font-semibold text-slate-900 text-xs animate-slide-in">
+                          {p.name}
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-mono tracking-wide">
+                          {p.sku}
+                        </p>
+                      </td>
+                      <td className="py-4 px-5 text-slate-600 capitalize font-mono text-[11px]">
+                        {p.category}
+                      </td>
+
+                      {/* Sizes indicators / Inputs */}
+                      <td className="py-4 px-5 text-center">
+                        {isEditing ? (
+                          <div className="flex items-center justify-center space-x-1.5 font-sans">
+                            {["S", "M", "L", "XL", "XXL"].map((sz) => (
+                              <div key={sz} className="text-[10px] space-y-0.5">
+                                <span className="block text-slate-500 font-bold uppercase text-[9px]">
+                                  {sz}
+                                </span>
+                                <input
+                                  type="number"
+                                  value={
+                                    editStockState[sz] !== undefined
+                                      ? editStockState[sz]
+                                      : 0
+                                  }
+                                  onChange={(e) =>
+                                    handleStockValueChange(sz, e.target.value)
+                                  }
+                                  className="w-9 bg-white border border-slate-200 text-slate-800 rounded p-1 text-center font-mono text-[11px] focus:outline-[#c5a880] focus:ring-1 focus:ring-[#c5a880]"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center space-x-3.5">
+                            {["S", "M", "L", "XL", "XXL"].map((sz) => {
+                              const val = p.sizesStock?.[sz] || 0;
+                              return (
+                                <span
+                                  key={sz}
+                                  className="text-slate-500 text-xs font-mono"
+                                >
+                                  <strong className="text-slate-400 font-sans font-bold text-[9px] uppercase mr-0.5">
+                                    {sz}/
+                                  </strong>
+                                  <span
+                                    className={
+                                      val === 0
+                                        ? "text-rose-605 font-bold"
+                                        : "text-slate-800"
+                                    }
+                                  >
+                                    {val}
+                                  </span>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="py-4 text-center px-5 font-mono text-xs tracking-tight text-slate-800 font-bold">
+                        {isEditing ? (
+                          <span className="text-[#c5a880]">
+                            {Object.values(editStockState).reduce(
+                              (acc, curr) => acc + curr,
+                              0,
+                            )}{" "}
+                            Units
+                          </span>
+                        ) : (
+                          <span>{totalStock} Units</span>
+                        )}
+                      </td>
+
+                      <td className="py-4 text-center px-5">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide inline-block ${
+                            totalStock === 0
+                              ? "bg-rose-50 text-rose-700 border border-rose-100"
+                              : totalStock <= 5
+                                ? "bg-amber-50 text-[#c5a880] border border-[#c5a880]/15"
+                                : "bg-emerald-58 text-emerald-700 border border-emerald-100"
+                          }`}
+                        >
+                          {totalStock === 0
+                            ? "Out of Stock"
+                            : totalStock <= 5
+                              ? "Low Stock"
+                              : "In Stock"}
+                        </span>
+                      </td>
+
+                      <td className="py-4 text-center px-5">
+                        {isEditing ? (
+                          <div className="flex justify-center space-x-1.5">
+                            <Button
+                              onClick={() => handleSaveStock(p._id)}
+                              size="sm"
+                              className="text-[10px] py-1 px-3.5 h-auto bg-[#c5a880] hover:bg-[#b0936a] text-white flex items-center space-x-1"
+                            >
+                              <RiSaveLine size={13} />
+                              <span>Save</span>
+                            </Button>
+                            <Button
+                              onClick={() => setEditingId(null)}
+                              variant="outline"
+                              size="sm"
+                              className="text-[10px] py-1 px-2.5 h-auto border-slate-200 text-slate-600"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            onClick={() => handleEditStockInit(p)}
+                            variant="outline"
+                            size="sm"
+                            className="text-[10px] py-1 px-3 h-auto"
+                          >
+                            Adjust Stocks
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 };

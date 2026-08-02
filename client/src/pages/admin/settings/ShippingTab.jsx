@@ -1,15 +1,20 @@
 import React from "react";
+import Button from "../../../components/admin/ui/Button.jsx";
+import Input from "../../../components/admin/ui/Input.jsx";
 
 const ShippingTab = ({ shippingForm, setShippingForm, handleSaveShipping }) => {
   return (
-    <form onSubmit={handleSaveShipping} className="space-y-6 max-w-2xl">
+    <form
+      onSubmit={handleSaveShipping}
+      className="space-y-6 max-w-2xl text-slate-700 font-sans"
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5.5">
-        <div className="space-y-1.5 flex flex-col font-sans">
-          <label className="text-slate-450 text-xs font-semibold">
+        <div className="space-y-1">
+          <label className="block text-xs font-semibold text-slate-700">
             Enable Cash On Delivery (COD)
           </label>
           <select
-            className="w-full bg-slate-900 border border-slate-805 rounded p-2.5 text-xs text-slate-200 focus:outline-none font-sans"
+            className="w-full h-10 px-3 bg-white border border-slate-250 rounded-md text-xs text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880]"
             value={shippingForm.codEnabled}
             onChange={(e) =>
               setShippingForm({
@@ -22,46 +27,39 @@ const ShippingTab = ({ shippingForm, setShippingForm, handleSaveShipping }) => {
             <option value="false">Only Pre-paid online payments</option>
           </select>
         </div>
-        <div className="space-y-1.5">
-          <label className="text-slate-450 text-xs font-semibold">
-            Base Delivery Fee Charge (INR)
-          </label>
-          <input
-            type="number"
-            className="w-full bg-slate-900 border border-slate-805 rounded p-2.5 text-xs text-white"
-            value={shippingForm.deliveryCharge}
-            onChange={(e) =>
-              setShippingForm({
-                ...shippingForm,
-                deliveryCharge: e.target.value,
-              })
-            }
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-slate-450 text-xs font-semibold font-sans">
-            Free Shipping threshold Limit (INR)
-          </label>
-          <input
-            type="number"
-            className="w-full bg-slate-900 border border-slate-805 rounded p-2.5 text-xs text-white"
-            value={shippingForm.freeThreshold}
-            onChange={(e) =>
-              setShippingForm({
-                ...shippingForm,
-                freeThreshold: e.target.value,
-              })
-            }
-          />
-        </div>
+        <Input
+          type="number"
+          label="Base Delivery Fee Charge (INR)"
+          value={shippingForm.deliveryCharge}
+          onChange={(e) =>
+            setShippingForm({
+              ...shippingForm,
+              deliveryCharge: e.target.value,
+            })
+          }
+        />
+        <Input
+          type="number"
+          label="Free Shipping Threshold Limit (INR)"
+          value={shippingForm.freeThreshold}
+          onChange={(e) =>
+            setShippingForm({
+              ...shippingForm,
+              freeThreshold: e.target.value,
+            })
+          }
+        />
       </div>
 
-      <button
-        type="submit"
-        className="bg-accent-gold text-slate-950 text-xs font-bold py-2.5 px-6.5 rounded-lg transition hover:bg-yellow-500"
-      >
-        Save Shipment metrics
-      </button>
+      <div className="pt-2">
+        <Button
+          type="submit"
+          variant="primary"
+          className="px-6 py-2.5 text-xs uppercase tracking-wider font-bold"
+        >
+          Save Shipment Metrics
+        </Button>
+      </div>
     </form>
   );
 };

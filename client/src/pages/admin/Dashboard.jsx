@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
-import Skeleton from "../../components/common/Skeleton.jsx";
+import PageHeader from "../../components/admin/ui/PageHeader.jsx";
+import Card from "../../components/admin/ui/Card.jsx";
+import Button from "../../components/admin/ui/Button.jsx";
+import SkeletonLoader from "../../components/admin/ui/SkeletonLoader.jsx";
 import {
   RiShoppingBag3Line,
   RiMoneyDollarCircleLine,
@@ -11,15 +14,13 @@ import {
   RiArchiveLine,
   RiAlertLine,
   RiCompass3Line,
-  RiFileTextLine,
   RiPercentLine,
   RiArrowUpSLine,
-  RiArrowDownSLine,
 } from "react-icons/ri";
 
 const DashboardModule = () => {
   const navigate = useNavigate();
-  const { showAlert: alert } = useAlert();
+  const { toast } = useAlert();
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -185,9 +186,10 @@ const DashboardModule = () => {
         conversionRate: conversion,
         visitorsToday: visToday,
       });
+
+      toast.success("Dashboard metrics synced successfully");
     } catch (err) {
       console.error("Dashboard fetching failure:", err);
-      // Fallback seeds if DB requests fail conceptual local configurations
     } finally {
       setIsLoading(false);
     }
@@ -203,10 +205,10 @@ const DashboardModule = () => {
         {/* Header Title Skeleton */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
           <div className="space-y-2">
-            <Skeleton className="h-7 w-48" />
-            <Skeleton className="h-3 w-72" />
+            <SkeletonLoader className="h-7 w-48" />
+            <SkeletonLoader className="h-3 w-72" />
           </div>
-          <Skeleton className="h-9 w-32" />
+          <SkeletonLoader className="h-9 w-32" />
         </div>
 
         {/* Grid count cards Skeleton */}
@@ -214,76 +216,31 @@ const DashboardModule = () => {
           {Array.from({ length: 12 }).map((_, idx) => (
             <div
               key={idx}
-              className="bg-slate-950 border border-slate-800 p-4.5 rounded-lg flex flex-col justify-between space-y-4"
+              className="bg-white border border-slate-200 p-4.5 rounded-lg flex flex-col justify-between space-y-4 shadow-sm"
             >
               <div className="flex justify-between items-center">
-                <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-4 w-4" variant="circle" />
+                <SkeletonLoader className="h-3 w-20" />
+                <SkeletonLoader className="h-4 w-4 rounded-full" />
               </div>
-              <Skeleton className="h-6 w-12" />
+              <SkeletonLoader className="h-6 w-12" />
             </div>
           ))}
         </div>
 
         {/* Charts Grid Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-slate-950 border border-slate-800 p-6 rounded-lg space-y-4 animate-pulse">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-64 w-full" />
+          <div className="lg:col-span-2 bg-white border border-slate-200 p-6 rounded-lg space-y-4 shadow-xs">
+            <SkeletonLoader className="h-4 w-32" />
+            <SkeletonLoader className="h-64 w-full" />
           </div>
-          <div className="bg-slate-950 border border-slate-800 p-6 rounded-lg space-y-6">
-            <Skeleton className="h-4 w-40" />
+          <div className="bg-white border border-slate-200 p-6 rounded-lg space-y-6 shadow-xs">
+            <SkeletonLoader className="h-4 w-40" />
             <div className="flex justify-center py-4">
-              <Skeleton className="h-32 w-32" variant="circle" />
+              <SkeletonLoader className="h-32 w-32 rounded-full" />
             </div>
             <div className="space-y-2">
-              <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-4/5" />
-              <Skeleton className="h-3 w-3/5" />
-            </div>
-          </div>
-        </div>
-
-        {/* Lists Grid Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-slate-950 border border-slate-800 p-5 rounded-lg space-y-4">
-            <div className="flex justify-between items-center">
-              <Skeleton className="h-4 w-36" />
-              <Skeleton className="h-3 w-16" />
-            </div>
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex justify-between items-center p-3 bg-slate-900/30 border border-slate-900 rounded-lg"
-                >
-                  <div className="space-y-1.5 w-2/3">
-                    <Skeleton className="h-3 w-24" />
-                    <Skeleton className="h-3 w-16" />
-                  </div>
-                  <Skeleton className="h-3 w-12" />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="bg-slate-950 border border-slate-800 p-5 rounded-lg space-y-4">
-            <div className="flex justify-between items-center">
-              <Skeleton className="h-4 w-36" />
-              <Skeleton className="h-3 w-16" />
-            </div>
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex justify-between items-center p-3 bg-slate-900/30 border border-slate-900 rounded-lg"
-                >
-                  <div className="space-y-1.5 w-2/3">
-                    <Skeleton className="h-3 w-24" />
-                    <Skeleton className="h-3 w-16" />
-                  </div>
-                  <Skeleton className="h-3 w-12" />
-                </div>
-              ))}
+              <SkeletonLoader className="h-3 w-full" />
+              <SkeletonLoader className="h-3 w-4/5" />
             </div>
           </div>
         </div>
@@ -296,149 +253,124 @@ const DashboardModule = () => {
       label: "Today's Orders",
       val: stats.todayOrders,
       icon: <RiShoppingBag3Line />,
-      color: "border-slate-800",
       path: "/admin/orders?date=today",
     },
     {
       label: "Today's Revenue",
       val: `₹${stats.todayRevenue}`,
-      icon: <RiMoneyDollarCircleLine />,
-      color: "border-slate-800 text-green-400",
+      icon: <RiMoneyDollarCircleLine className="text-emerald-600" />,
       path: "/admin/analytics",
     },
     {
       label: "Monthly Revenue",
       val: `₹${stats.monthlyRevenue}`,
-      icon: <RiMoneyDollarCircleLine />,
-      color: "border-accent-gold/40 text-accent-gold",
+      icon: <RiMoneyDollarCircleLine className="text-[#c5a880]" />,
       path: "/admin/analytics",
     },
     {
       label: "Pending Orders",
       val: stats.pending,
-      icon: <RiShoppingBag3Line className="text-yellow-400" />,
-      color: "border-yellow-900/30",
+      icon: <RiShoppingBag3Line className="text-amber-500" />,
       path: "/admin/orders?status=Placed",
     },
     {
       label: "Processing Orders",
       val: stats.processing,
-      icon: <RiCompass3Line className="text-blue-400" />,
-      color: "border-blue-900/30",
+      icon: <RiCompass3Line className="text-blue-500" />,
       path: "/admin/orders?status=Processing",
     },
     {
       label: "Shipped Orders",
       val: stats.shipped,
-      icon: <RiCompass3Line className="text-indigo-400" />,
-      color: "border-indigo-900/30",
+      icon: <RiCompass3Line className="text-indigo-500" />,
       path: "/admin/orders?status=Shipped",
     },
     {
       label: "Delivered Orders",
       val: stats.delivered,
-      icon: <RiShoppingBag3Line className="text-green-400" />,
-      color: "border-green-900/30",
+      icon: <RiShoppingBag3Line className="text-emerald-505" />,
       path: "/admin/orders?status=Delivered",
     },
     {
       label: "Cancelled Orders",
       val: stats.cancelled,
-      icon: <RiShoppingBag3Line className="text-rose-500" />,
-      color: "border-rose-900/35",
+      icon: <RiShoppingBag3Line className="text-red-500" />,
       path: "/admin/orders?status=Cancelled",
     },
     {
       label: "Refund Requests",
       val: stats.refunds,
-      icon: <RiExchangeFundsLine className="text-purple-400" />,
-      color: "border-purple-900/35",
+      icon: <RiExchangeFundsLine className="text-purple-500" />,
       path: "/admin/orders?status=Refunded",
     },
     {
       label: "COD Pending Volume",
       val: `₹${stats.codPending}`,
-      icon: <RiMoneyDollarCircleLine className="text-amber-500" />,
-      color: "border-slate-800",
+      icon: <RiMoneyDollarCircleLine className="text-amber-600" />,
       path: "/admin/orders?paymentMethod=COD",
     },
     {
       label: "Online Paid Volume",
       val: stats.onlinePaid,
-      icon: <RiMoneyDollarCircleLine className="text-emerald-400" />,
-      color: "border-slate-800",
+      icon: <RiMoneyDollarCircleLine className="text-emerald-500" />,
       path: "/admin/orders?paymentStatus=Paid",
     },
     {
       label: "Total Customers",
       val: stats.totalCustomers,
-      icon: <RiGroupLine className="text-sky-400" />,
-      color: "border-slate-800",
+      icon: <RiGroupLine className="text-sky-500" />,
       path: "/admin/customers",
     },
     {
       label: "Total Catalog Products",
       val: stats.totalProducts,
-      icon: <RiArchiveLine className="text-slate-400" />,
-      color: "border-slate-800",
+      icon: <RiArchiveLine className="text-slate-500" />,
       path: "/admin/products",
     },
     {
       label: "Low Stock Items",
       val: stats.lowStock,
-      icon: <RiAlertLine className="text-amber-400 animate-pulse" />,
-      color: "border-amber-900/40",
+      icon: <RiAlertLine className="text-amber-400" />,
       path: "/admin/inventory?status=low",
     },
     {
       label: "Out of Stock Items",
       val: stats.outOfStock,
-      icon: <RiAlertLine className="text-red-500 animate-bounce" />,
-      color: "border-rose-955/40",
+      icon: <RiAlertLine className="text-red-500" />,
       path: "/admin/inventory?status=out",
     },
     {
       label: "Average Order Value (AOV)",
       val: `₹${stats.aov}`,
       icon: <RiPercentLine />,
-      color: "border-slate-800",
       path: "/admin/analytics",
     },
     {
       label: "Conversion Rate",
       val: `${stats.conversionRate}%`,
       icon: <RiPercentLine />,
-      color: "border-slate-800",
       path: "/admin/analytics",
     },
     {
       label: "Visitors Today",
       val: stats.visitorsToday,
       icon: <RiCompass3Line />,
-      color: "border-slate-800",
       path: "/admin/analytics",
     },
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Upper header title with real time and refresh button */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-        <div>
-          <h2 className="text-3xl font-display font-medium tracking-wide text-white">
-            Enterprise Overview
-          </h2>
-          <p className="text-slate-400 text-xs mt-1 font-sans">
-            Real-time indicators syncing with localized stores database
-          </p>
-        </div>
-        <button
-          onClick={fetchData}
-          className="bg-slate-950 hover:bg-slate-800 text-accent-gold text-xs font-semibold py-2.5 px-4.5 border border-slate-700/80 rounded-lg transition"
-        >
-          Sync Live Data
-        </button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Enterprise Overview"
+        subtitle="Real-time parameters syncing with localized stores database"
+        breadcrumbs={[{ label: "Admin" }, { label: "Dashboard" }]}
+        actions={
+          <Button variant="primary" size="sm" onClick={fetchData}>
+            Sync Live Data
+          </Button>
+        }
+      />
 
       {/* Grid count cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -446,15 +378,17 @@ const DashboardModule = () => {
           <div
             key={idx}
             onClick={() => navigate(card.path)}
-            className={`bg-gradient-to-br from-slate-950 to-slate-900 border p-4.5 rounded-lg flex flex-col justify-between space-y-3.5 hover:shadow-xl hover:-translate-y-0.5 hover:border-accent-gold/40 cursor-pointer transition-all duration-200 ${card.color}`}
+            className="bg-white border border-slate-200 p-4.5 rounded-lg flex flex-col justify-between space-y-4 hover:border-[#c5a880] cursor-pointer transition-all duration-300 shadow-xxs hover:shadow-md group"
           >
-            <div className="flex justify-between items-center text-slate-405">
-              <span className="text-[10px] uppercase font-bold tracking-wider leading-relaxed">
+            <div className="flex justify-between items-start text-slate-400">
+              <span className="text-[9px] uppercase font-bold tracking-wider leading-relaxed text-slate-500 font-display">
                 {card.label}
               </span>
-              <span className="text-slate-500">{card.icon}</span>
+              <span className="text-slate-400 text-sm group-hover:text-[#c5a880] transition-colors">
+                {card.icon}
+              </span>
             </div>
-            <p className="text-xl font-bold tracking-tight text-white font-mono">
+            <p className="text-xl font-semibold tracking-tight text-slate-800 font-display">
               {card.val}
             </p>
           </div>
@@ -464,22 +398,22 @@ const DashboardModule = () => {
       {/* Modern SVG custom line/bar charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Chart 1: Revenue Line Graph */}
-        <div className="bg-slate-950 border border-slate-800 rounded-lg p-5">
+        <Card className="flex flex-col">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-semibold tracking-wide uppercase text-slate-400">
+            <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-600 font-display">
               Revenue Curve
             </h3>
-            <span className="text-[10px] text-green-400 font-bold bg-green-500/10 px-2 py-0.5 rounded flex items-center">
+            <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded flex items-center border border-emerald-100 font-mono">
               <RiArrowUpSLine className="mr-0.5" /> +14.2% MoM
             </span>
           </div>
           <div className="h-64 flex items-end justify-between relative px-2 pt-8">
             {/* Horizontal Grid lines */}
-            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-5 py-8">
-              <div className="border-t border-slate-100" />
-              <div className="border-t border-slate-100" />
-              <div className="border-t border-slate-100" />
-              <div className="border-t border-slate-100" />
+            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20 py-8">
+              <div className="border-t border-slate-200" />
+              <div className="border-t border-slate-200" />
+              <div className="border-t border-slate-200" />
+              <div className="border-t border-slate-200" />
             </div>
 
             {/* Line graph design using absolute SVG overlay */}
@@ -490,8 +424,8 @@ const DashboardModule = () => {
             >
               <defs>
                 <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#D4AF37" stopOpacity="0.3" />
-                  <stop offset="100%" stopColor="#D4AF37" stopOpacity="0.0" />
+                  <stop offset="0%" stopColor="#c5a880" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#c5a880" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
               {/* Chart line shadow gradient area */}
@@ -503,103 +437,103 @@ const DashboardModule = () => {
               <path
                 d="M 0 100 Q 15 65 30 50 T 60 25 T 90 10 L 100 10"
                 fill="none"
-                stroke="#D4AF37"
-                strokeWidth="2"
+                stroke="#c5a880"
+                strokeWidth="1.5"
                 strokeLinecap="round"
               />
             </svg>
 
-            <div className="text-[9px] text-slate-500 w-full flex justify-between absolute bottom-1 px-4">
+            <div className="text-[9px] text-slate-500 w-full flex justify-between absolute bottom-1 px-4 font-mono">
               <span>May 2026</span>
               <span>June 2026</span>
               <span>July 2026</span>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Chart 2: Category distribution bar chart */}
-        <div className="bg-slate-950 border border-slate-800 rounded-lg p-5">
-          <h3 className="text-sm font-semibold tracking-wide uppercase text-slate-400 mb-6">
+        <Card className="flex flex-col">
+          <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-600 mb-6 font-display">
             Popular Sales Categories
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-4 flex-grow flex flex-col justify-center">
             {[
               {
                 cat: "Suits & Suit Sets",
                 pct: 54,
                 rev: "₹2.45L",
-                color: "bg-accent-gold",
+                color: "bg-[#c5a880]",
               },
               {
                 cat: "Kurtis & Short Tops",
                 pct: 31,
                 rev: "₹1.40L",
-                color: "bg-slate-400",
+                color: "bg-[#a88f65]",
               },
               {
                 cat: "Premium Ethnic Wear",
                 pct: 15,
                 rev: "₹68k",
-                color: "bg-indigo-500",
+                color: "bg-slate-400",
               },
             ].map((row, idx) => (
               <div key={idx} className="space-y-1.5">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-slate-350">{row.cat}</span>
-                  <span className="text-slate-500">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-700 font-medium">{row.cat}</span>
+                  <span className="text-slate-500 font-semibold font-mono">
                     {row.rev} ({row.pct}%)
                   </span>
                 </div>
-                <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden">
+                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                   <div
-                    className={`h-full ${row.color}`}
+                    className={`h-full ${row.color} rounded-full`}
                     style={{ width: `${row.pct}%` }}
                   />
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Split Activity logs & Low stock products list */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Side: Recent Activity Logs */}
-        <div className="bg-slate-950 border border-slate-800 rounded-lg p-5 flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-semibold tracking-wide uppercase text-slate-400">
+        <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col shadow-xs">
+          <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+            <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-750 font-display">
               Security & Activity Logs
             </h3>
-            <span className="text-[10px] text-accent-gold font-semibold font-mono">
+            <span className="text-[10px] text-[#c5a880] font-semibold font-mono">
               100 Max Records
             </span>
           </div>
           <div className="flex-grow overflow-y-auto max-h-72 space-y-2.5">
             {logs.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-8 text-center">
+              <p className="text-xs text-slate-400 italic py-8 text-center">
                 No logs generated yet
               </p>
             ) : (
               logs.slice(0, 8).map((log, idx) => (
                 <div
                   key={idx}
-                  className="bg-slate-900/50 hover:bg-slate-900 border border-slate-900 p-3 rounded-lg flex items-center justify-between text-xs text-slate-300"
+                  className="bg-slate-50 hover:bg-slate-100/50 border border-slate-200 p-3 rounded-lg flex items-center justify-between text-xs text-slate-700 transition"
                 >
                   <div className="space-y-1 pr-4">
-                    <p className="font-semibold text-slate-200">{log.action}</p>
-                    <p className="text-[10px] text-slate-500">
+                    <p className="font-semibold text-slate-800">{log.action}</p>
+                    <p className="text-[10px] text-slate-400">
                       by{" "}
-                      <span className="font-medium text-slate-400">
+                      <span className="font-semibold text-slate-600">
                         {log.adminName}
                       </span>{" "}
                       ({log.device})
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[10px] text-slate-450 font-mono">
+                    <p className="text-[10px] text-slate-500 font-mono">
                       {log.ipAddress}
                     </p>
-                    <p className="text-[9px] text-slate-600 mt-0.5">
+                    <p className="text-[9px] text-slate-400 mt-0.5">
                       {new Date(log.createdAt).toLocaleTimeString()}
                     </p>
                   </div>
@@ -610,12 +544,12 @@ const DashboardModule = () => {
         </div>
 
         {/* Right Side: Low Stock Products Grid Widget */}
-        <div className="bg-slate-950 border border-slate-800 rounded-lg p-5 flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-semibold tracking-wide uppercase text-slate-400">
+        <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col shadow-xs">
+          <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+            <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-750 font-display">
               Inventory Shortage Alerts
             </h3>
-            <span className="text-[9px] bg-red-950/60 border border-red-900 text-red-400 font-bold px-2 py-0.5 rounded">
+            <span className="text-[9px] bg-red-50 border border-red-200 text-red-700 font-bold px-2 py-0.5 rounded">
               Needs Replenishing
             </span>
           </div>
@@ -627,7 +561,7 @@ const DashboardModule = () => {
                   0,
                 ) <= 5,
             ).length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-8 text-center">
+              <p className="text-xs text-slate-400 italic py-8 text-center">
                 All catalog items have healthy stock levels
               </p>
             ) : (
@@ -648,38 +582,38 @@ const DashboardModule = () => {
                   return (
                     <div
                       key={idx}
-                      className="bg-slate-900/50 border border-slate-900 p-2.5 rounded-lg flex items-center justify-between text-xs"
+                      className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg flex items-center justify-between text-xs transition hover:bg-slate-100/50"
                     >
                       <div className="flex items-center space-x-3">
                         {prod.images && prod.images[0] && (
                           <img
                             src={prod.images[0]}
-                            className="w-9 h-9 object-cover rounded"
+                            className="w-9 h-9 object-cover rounded border border-slate-200"
                             alt=""
                           />
                         )}
                         <div>
-                          <p className="font-semibold text-slate-200">
+                          <p className="font-semibold text-slate-800">
                             {prod.name}
                           </p>
-                          <p className="text-[10px] text-slate-500 font-mono">
+                          <p className="text-[10px] text-slate-400 font-mono">
                             {prod.sku}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <span
-                          className={`px-2.5 py-0.5 rounded text-[10px] font-bold ${
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                             total === 0
-                              ? "bg-red-500/10 text-red-400"
-                              : "bg-yellow-500/10 text-yellow-400"
+                              ? "bg-red-50 text-red-700 border border-red-100"
+                              : "bg-amber-50 text-amber-700 border border-amber-100"
                           }`}
                         >
                           {total === 0
                             ? "Out of Stock"
                             : `${total} Units Remaining`}
                         </span>
-                        <div className="text-[9px] text-slate-500 mt-1">
+                        <div className="text-[9px] text-slate-450 mt-1 uppercase tracking-wider font-mono">
                           {Object.entries(prod.sizesStock || {})
                             .map(([sz, stock]) => `${sz}:${stock}`)
                             .join(" | ")}

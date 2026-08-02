@@ -15,6 +15,8 @@ import {
   RiWhatsappLine,
 } from "react-icons/ri";
 import { logoutSuccess } from "../redux/slices/authSlice.js";
+import { clearCart } from "../redux/slices/cartSlice.js";
+import { clearWishlist } from "../redux/slices/wishlistSlice.js";
 import API from "../services/api.js";
 import { useAlert } from "../contexts/AlertContext.jsx";
 import { hydrateCommerce } from "../services/hydrateCommerce.js";
@@ -42,6 +44,10 @@ const MainLayout = () => {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const cartItems = useSelector((state) => state.cart.items);
+  const totalCartQuantity = cartItems.reduce(
+    (sum, item) => sum + item.quantity,
+    0,
+  );
   const wishlistProducts = useSelector((state) => state.wishlist.products);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
@@ -75,14 +81,6 @@ const MainLayout = () => {
       }
     }
   }, [isAuthenticated, location.pathname, navigate, user]);
-
-  const [darkMode, setDarkMode] = useState(
-    localStorage.getItem("theme") === "dark",
-  );
-  const [accentTheme, setAccentTheme] = useState(
-    localStorage.getItem("accent") || "gold",
-  );
-  const [showAccentPicker, setShowAccentPicker] = useState(false);
 
   const [logoUrl, setLogoUrl] = useState(
     () => localStorage.getItem("brandLogoUrl") || "",
@@ -147,16 +145,6 @@ const MainLayout = () => {
     };
   }, []);
 
-  React.useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [darkMode]);
-
   // Dynamically update the website favicon to match the custom brand logo
   React.useEffect(() => {
     const favicon = document.querySelector('link[rel="icon"]');
@@ -165,22 +153,12 @@ const MainLayout = () => {
     }
   }, [logoUrl]);
 
-  React.useEffect(() => {
-    document.documentElement.setAttribute("data-accent", accentTheme);
-    localStorage.setItem("accent", accentTheme);
-  }, [accentTheme]);
-
-  const toggleDarkMode = () => setDarkMode(!darkMode);
-
-  const selectAccent = (accent) => {
-    setAccentTheme(accent);
-    setShowAccentPicker(false);
-  };
-
   const dispatch = useDispatch();
 
   const handleLogout = () => {
     dispatch(logoutSuccess());
+    dispatch(clearCart());
+    dispatch(clearWishlist());
   };
 
   const handleJoinClub = (e) => {
@@ -234,7 +212,7 @@ const MainLayout = () => {
         <div className="w-full bg-secondary text-primary py-2 text-[10px] sm:text-xs font-display tracking-widest uppercase transition-all duration-300 overflow-hidden relative whitespace-nowrap select-none">
           <div className="animate-marquee flex items-center justify-around min-w-full">
             {/* Repeated text blocks for infinite seamless flow */}
-            {[...Array(6)].map((_, index) => (
+            {[...Array(12)].map((_, index) => (
               <span key={index} className="mx-6 flex items-center shrink-0">
                 <span>{announcementText}</span>
                 <span className="mx-6 text-accent-gold select-none">•</span>
@@ -279,7 +257,7 @@ const MainLayout = () => {
                 <img
                   src={logoUrl}
                   alt="PARIWESH Logo"
-                  className="h-10 md:h-12 w-auto object-contain max-w-[200px]"
+                  className="h-10 md:h-12 w-auto object-contain max-w-[110px] xs:max-w-[130px] md:max-w-[200px]"
                 />
               ) : (
                 <>
@@ -309,90 +287,18 @@ const MainLayout = () => {
               )}
             </Link>
 
-            {/* Cart Link (Conditional) */}
-            {(isAuthenticated || cartItems.length > 0) && (
-              <Link
-                to="/cart"
-                className="hover:text-accent-gold transition-colors relative"
-              >
-                <RiShoppingBagLine size={22} />
-                {cartItems.length > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-accent-gold text-secondary font-bold text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white">
-                    {cartItems.length}
-                  </span>
-                )}
-              </Link>
-            )}
-
-            {/* Dark/Light mode toggle (Hidden on Mobile) */}
-            <button
-              onClick={toggleDarkMode}
-              className="hidden md:flex hover:text-accent-gold transition-colors items-center justify-center"
-              title="Toggle Dark/Light Mode"
+            {/* Cart Link (Always Visible) */}
+            <Link
+              to="/cart"
+              className="hover:text-accent-gold transition-colors relative"
             >
-              {darkMode ? <RiSunLine size={21} /> : <RiMoonLine size={21} />}
-            </button>
-
-            {/* Accent Theme color switcher (Hidden on Mobile) */}
-            <div className="relative hidden md:block">
-              <button
-                onClick={() => setShowAccentPicker(!showAccentPicker)}
-                className="hover:text-accent-gold transition-colors flex items-center justify-center"
-                title="Change Color Theme"
-              >
-                <RiPaletteLine size={21} />
-              </button>
-              {showAccentPicker && (
-                <div className="absolute right-0 mt-3 w-40 bg-primary border border-gray-100 rounded-sm shadow-xl z-50 p-2 space-y-1 animate-fade-in text-textPrimary">
-                  <div className="text-[8px] uppercase font-bold text-textSecondary tracking-wider p-1">
-                    Accent Accents
-                  </div>
-                  {[
-                    {
-                      key: "gold",
-                      name: "Premium Gold",
-                      color: "bg-[#D4AF37]",
-                    },
-                    {
-                      key: "emerald",
-                      name: "Royal Emerald",
-                      color: "bg-[#0F5132]",
-                    },
-                    {
-                      key: "sapphire",
-                      name: "Sapphire Blue",
-                      color: "bg-[#1E3A8A]",
-                    },
-                    { key: "rose", name: "Velvet Rose", color: "bg-[#DB2777]" },
-                    {
-                      key: "amethyst",
-                      name: "Midnight Amethyst",
-                      color: "bg-[#8A2BE2]",
-                    },
-                    {
-                      key: "teal",
-                      name: "Ocean Teal",
-                      color: "bg-[#008080]",
-                    },
-                  ].map((x) => (
-                    <button
-                      key={x.key}
-                      onClick={() => selectAccent(x.key)}
-                      className={`w-full text-left text-[11px] px-2.5 py-1.5 rounded-sm flex items-center space-x-2 transition-all ${
-                        accentTheme === x.key
-                          ? "bg-bgLight font-bold text-accent-gold"
-                          : "hover:bg-bgLight text-textSecondary"
-                      }`}
-                    >
-                      <span
-                        className={`w-3 h-3 rounded-full ${x.color} border border-white/20`}
-                      />
-                      <span className="truncate">{x.name}</span>
-                    </button>
-                  ))}
-                </div>
+              <RiShoppingBagLine size={22} />
+              {totalCartQuantity > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-accent-gold text-secondary font-bold text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white">
+                  {totalCartQuantity}
+                </span>
               )}
-            </div>
+            </Link>
 
             {/* Auth Menu (Visible on Desktop & Mobile) */}
             {isAuthenticated ? (
@@ -440,8 +346,8 @@ const MainLayout = () => {
         </div>
 
         {/* Tier 2: Horizontal Navigation bar (Desktop only) */}
-        <div className="hidden md:block border-t border-borderLight py-3.5 bg-primary/95 backdrop-blur-md">
-          <nav className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-center gap-x-4 lg:gap-x-6 xl:gap-x-8 gap-y-2">
+        <div className="hidden md:block border-t border-borderLight py-3.5 bg-primary/95 backdrop-blur-md overflow-x-auto scrollbar-none">
+          <nav className="max-w-7xl mx-auto px-4 flex items-center justify-start lg:justify-center gap-x-3 lg:gap-x-6 xl:gap-x-8 gap-y-2 whitespace-nowrap">
             {navLinks.map((link, idx) => (
               <Link
                 key={idx}
@@ -571,69 +477,6 @@ const MainLayout = () => {
                     </span>
                   )}
                 </Link>
-
-                {/* Dark Mode toggle & Accent picker button */}
-                <div className="pt-3 flex items-center justify-between border-t border-borderLight/40">
-                  <button
-                    onClick={toggleDarkMode}
-                    className="flex items-center space-x-2 text-xs font-semibold text-textPrimary hover:text-accent-gold transition-colors"
-                  >
-                    {darkMode ? (
-                      <RiSunLine size={18} />
-                    ) : (
-                      <RiMoonLine size={18} />
-                    )}
-                    <span>{darkMode ? "Light Mode" : "Dark Mode"}</span>
-                  </button>
-
-                  <button
-                    onClick={() => setShowAccentPicker(!showAccentPicker)}
-                    className="flex items-center space-x-2 text-xs font-semibold text-textPrimary hover:text-accent-gold transition-colors"
-                  >
-                    <RiPaletteLine size={18} />
-                    <span>Colors Theme</span>
-                  </button>
-                </div>
-
-                {showAccentPicker && (
-                  <div className="grid grid-cols-2 gap-1.5 p-2 bg-primary rounded border border-borderLight text-[10px]">
-                    {[
-                      { key: "gold", name: "Gold", color: "bg-[#D4AF37]" },
-                      {
-                        key: "emerald",
-                        name: "Emerald",
-                        color: "bg-[#0F5132]",
-                      },
-                      {
-                        key: "sapphire",
-                        name: "Sapphire",
-                        color: "bg-[#1E3A8A]",
-                      },
-                      { key: "rose", name: "Rose", color: "bg-[#DB2777]" },
-                      {
-                        key: "amethyst",
-                        name: "Amethyst",
-                        color: "bg-[#8A2BE2]",
-                      },
-                      { key: "teal", name: "Teal", color: "bg-[#008080]" },
-                    ].map((x) => (
-                      <button
-                        key={x.key}
-                        onClick={() => selectAccent(x.key)}
-                        className={`flex items-center space-x-1.5 p-1 rounded transition ${
-                          accentTheme === x.key
-                            ? "bg-bgLight font-bold text-accent-gold"
-                            : "text-textSecondary"
-                        }`}
-                      >
-                        <span
-                          className={`w-2.5 h-2.5 rounded-full ${x.color} border border-white/20`}
-                        />
-                        <span className="truncate">{x.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             </motion.div>
           </>
@@ -791,7 +634,7 @@ const MainLayout = () => {
         href="https://wa.me/918209903441?text=Hello%20Pariwesh%20Ensembles%20support!%20I'm%20interested%20in%20your%20products."
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20BA56] text-white p-3.5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer"
+        className="fixed bottom-20 xs:bottom-24 md:bottom-8 right-4 md:right-8 z-50 bg-[#25D366] hover:bg-[#20BA56] text-white p-3.5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer"
         title="Chat with us on WhatsApp"
       >
         <RiWhatsappLine size={24} />

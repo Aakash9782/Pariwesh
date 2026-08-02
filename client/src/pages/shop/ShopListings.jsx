@@ -35,19 +35,28 @@ const ShopListings = () => {
   );
 
   const [products, setProducts] = useState([]);
+  const [isApiLoading, setIsApiLoading] = useState(true);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 6;
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        setIsLoading(true);
+        setIsApiLoading(true);
         const res = await API.get("/products");
         if (res.data && res.data.success) {
-          setProducts(res.data.data);
+          const activeOnly = (res.data.data || []).filter(
+            (p) => !p.status || p.status === "active",
+          );
+          setProducts(activeOnly);
         }
       } catch (err) {
         console.error("Failed fetching products:", err);
         setProducts([]);
       } finally {
+        setIsApiLoading(false);
         setIsLoading(false);
       }
     };
@@ -67,6 +76,7 @@ const ShopListings = () => {
   // Simulate loading state transitions on filters
   useEffect(() => {
     setIsLoading(true);
+    setCurrentPage(1);
     const delay = setTimeout(() => {
       setIsLoading(false);
     }, 600);
@@ -102,6 +112,19 @@ const ShopListings = () => {
       if (sortBy === "rating") return b.rating - a.rating;
       return b._id - a._id; // default latest
     });
+
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
+
+  // Safety effect: reset to page 1 if current page becomes invalid after filters are applied
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [filteredProducts.length, currentPage, totalPages]);
 
   const resetFilters = () => {
     setSelectedCategory("all");
@@ -157,7 +180,7 @@ const ShopListings = () => {
 
       <div className="flex gap-10 items-start">
         {/* DESKTOP SIDEBAR FILTER */}
-        <aside className="hidden md:block w-64 flex-shrink-0 bg-primary border border-borderLight p-6 rounded-sm space-y-8 sticky top-28">
+        <aside className="hidden md:block w-64 flex-shrink-0 bg-primary border border-borderLight p-6 rounded-sm space-y-8 sticky top-36 z-30">
           <div className="flex justify-between items-center pb-4 border-b border-borderLight">
             <h3 className="text-xs font-display font-bold uppercase tracking-wider text-textPrimary">
               Refine Search
@@ -260,7 +283,7 @@ const ShopListings = () => {
 
         {/* PRODUCTS GRID / RENDER AREA */}
         <div className="flex-grow">
-          {isLoading ? (
+          {isApiLoading || isLoading ? (
             // Load skeletons in loader state
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
               {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -268,132 +291,185 @@ const ShopListings = () => {
               ))}
             </div>
           ) : filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
-              {filteredProducts.map((product) => (
-                <div
-                  key={product._id}
-                  className="group relative bg-transparent flex flex-col h-full transition-all duration-300"
-                >
-                  {/* Badge */}
-                  {product.tag && (
-                    <span className="absolute top-3 left-3 z-10 bg-secondary text-accent-gold font-bold text-[9px] uppercase tracking-wider px-2.5 py-1 shadow-sm rounded-sm">
-                      {product.tag}
-                    </span>
-                  )}
-                  {/* Heart wishlist toggle */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      dispatch(toggleWishlistProduct(product));
-                      syncWishlistNow();
-                    }}
-                    className={`absolute top-3 right-3 z-10 p-2 rounded-full shadow-sm hover:scale-110 transition-all border border-borderLight/30 bg-primary/80 hover:bg-primary ${
-                      wishlistItems.some((p) => p._id === product._id)
-                        ? "text-[#8a1c14]"
-                        : "text-textPrimary hover:text-[#8a1c14]"
-                    }`}
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
+                {paginatedProducts.map((product) => (
+                  <div
+                    key={product._id}
+                    className="group relative bg-transparent flex flex-col h-full transition-all duration-300"
                   >
-                    {wishlistItems.some((p) => p._id === product._id) ? (
-                      <RiHeartFill size={16} />
-                    ) : (
-                      <RiHeartLine size={16} />
-                    )}
-                  </button>
-
-                  <Link
-                    to={`/product/${product.slug}`}
-                    className="aspect-[4/5] overflow-hidden relative block bg-bgLight"
-                    style={{ clipPath: "url(#mehrab-clip)" }}
-                  >
-                    {product.video ? (
-                      <video
-                        src={product.video}
-                        className="w-full h-full object-cover group-hover:scale-[1.12] transform-gpu transition-all duration-[800ms] ease-out origin-top"
-                        muted
-                        loop
-                        autoPlay
-                        playsInline
-                      />
-                    ) : (
-                      <img
-                        src={product.images[0]}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-[1.15] transform-gpu transition-transform duration-[800ms] ease-out origin-top"
-                      />
-                    )}
-
-                    {/* Arch outline SVG overlay */}
-                    <svg
-                      viewBox="0 0 100 125"
-                      className="absolute inset-0 w-full h-full pointer-events-none fill-none stroke-accent-gold stroke-[2px]"
-                      preserveAspectRatio="none"
-                    >
-                      <path d="M 0,125 L 0,43.75 C 0,35 8,32.5 12,30 C 12,22.5 22,18.75 28,15 C 28,10 38,7.5 44,3.75 C 47,1.25 49,0 50,0 C 51,0 53,1.25 56,3.75 C 62,7.5 72,10 72,15 C 78,18.75 88,22.5 88,30 C 92,32.5 100,35 100,43.75 L 100,125" />
-                    </svg>
-
-                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
-                      <span className="bg-primary hover:bg-secondary text-secondary hover:text-white px-4 py-2.5 rounded-full flex items-center space-x-2 text-[10px] uppercase font-bold tracking-wide shadow-md transition-all duration-300">
-                        <RiShoppingBagLine size={13} />
-                        <span>Add To Bag</span>
+                    {/* Badge */}
+                    {product.tag && (
+                      <span className="absolute top-3 left-3 z-10 bg-secondary text-accent-gold font-bold text-[9px] uppercase tracking-wider px-2.5 py-1 shadow-sm rounded-sm">
+                        {product.tag}
                       </span>
-                    </div>
-                  </Link>
+                    )}
+                    {/* Heart wishlist toggle */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dispatch(toggleWishlistProduct(product));
+                        syncWishlistNow();
+                      }}
+                      className={`absolute top-3 right-3 z-10 p-2 rounded-full shadow-sm hover:scale-110 transition-all border border-borderLight/30 bg-primary/80 hover:bg-primary ${
+                        wishlistItems.some((p) => p._id === product._id)
+                          ? "text-[#8a1c14]"
+                          : "text-textPrimary hover:text-[#8a1c14]"
+                      }`}
+                    >
+                      {wishlistItems.some((p) => p._id === product._id) ? (
+                        <RiHeartFill size={16} />
+                      ) : (
+                        <RiHeartLine size={16} />
+                      )}
+                    </button>
 
-                  <div className="py-4 flex flex-col flex-grow justify-between space-y-2 text-left bg-transparent">
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-center text-[9px] text-textSecondary uppercase tracking-widest font-bold">
-                        <span>{product.category}</span>
-                        <span className="text-accent-gold">
-                          ★ {product.rating}
+                    <Link
+                      to={`/product/${product.slug}`}
+                      className="aspect-[4/5] overflow-hidden relative block bg-bgLight"
+                      style={{ clipPath: "url(#mehrab-clip)" }}
+                    >
+                      {product.video ? (
+                        <video
+                          src={product.video}
+                          className="w-full h-full object-cover group-hover:scale-[1.12] transform-gpu transition-all duration-[800ms] ease-out origin-top"
+                          muted
+                          loop
+                          autoPlay
+                          playsInline
+                        />
+                      ) : (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-[1.15] transform-gpu transition-transform duration-[800ms] ease-out origin-top"
+                        />
+                      )}
+
+                      {/* Arch outline SVG overlay */}
+                      <svg
+                        viewBox="0 0 100 125"
+                        className="absolute inset-0 w-full h-full pointer-events-none fill-none stroke-accent-gold stroke-[2px]"
+                        preserveAspectRatio="none"
+                      >
+                        <path d="M 0,125 L 0,43.75 C 0,35 8,32.5 12,30 C 12,22.5 22,18.75 28,15 C 28,10 38,7.5 44,3.75 C 47,1.25 49,0 50,0 C 51,0 53,1.25 56,3.75 C 62,7.5 72,10 72,15 C 78,18.75 88,22.5 88,30 C 92,32.5 100,35 100,43.75 L 100,125" />
+                      </svg>
+
+                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+                        <span className="bg-primary hover:bg-secondary text-secondary hover:text-white px-4 py-2.5 rounded-full flex items-center space-x-2 text-[10px] uppercase font-bold tracking-wide shadow-md transition-all duration-300">
+                          <RiShoppingBagLine size={13} />
+                          <span>Add To Bag</span>
                         </span>
                       </div>
-                      <h3 className="text-xs font-semibold text-textPrimary leading-snug group-hover:text-accent-gold transition-colors line-clamp-2">
-                        <Link to={`/product/${product.slug}`}>
-                          {product.name}
-                        </Link>
-                      </h3>
-                    </div>
+                    </Link>
 
-                    <div className="flex items-center space-x-2 text-xs">
-                      <span className="text-textSecondary line-through font-medium">
-                        ₹{product.mrp}
-                      </span>
-                      <span className="text-secondary font-bold">
-                        ₹{product.price}
-                      </span>
-                    </div>
+                    <div className="py-4 flex flex-col flex-grow justify-between space-y-2 text-left bg-transparent">
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-[9px] text-textSecondary uppercase tracking-widest font-bold">
+                          <span>{product.category}</span>
+                          <span className="text-accent-gold">
+                            ★ {product.rating}
+                          </span>
+                        </div>
+                        <h3 className="text-xs font-semibold text-textPrimary leading-snug group-hover:text-accent-gold transition-colors line-clamp-2">
+                          <Link to={`/product/${product.slug}`}>
+                            {product.name}
+                          </Link>
+                        </h3>
+                      </div>
 
-                    <div className="pt-0.5">
-                      <span className="bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-900/30 text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-sm font-bold inline-block">
-                        {Math.round(
-                          ((product.mrp - product.price) / product.mrp) * 100,
-                        )}
-                        % OFF
-                      </span>
+                      <div className="flex items-center space-x-2 text-xs">
+                        <span className="text-textSecondary line-through font-medium">
+                          ₹{product.mrp}
+                        </span>
+                        <span className="text-secondary font-bold">
+                          ₹{product.price}
+                        </span>
+                      </div>
+
+                      <div className="pt-0.5">
+                        <span className="bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-900/30 text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-sm font-bold inline-block">
+                          {Math.round(
+                            ((product.mrp - product.price) / product.mrp) * 100,
+                          )}
+                          % OFF
+                        </span>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+
+              {/* Luxury Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center space-x-2 pt-10 border-t border-gray-100 mt-10">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                    disabled={currentPage === 1}
+                    className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider border rounded-sm transition-colors ${
+                      currentPage === 1
+                        ? "border-gray-200 text-gray-300 cursor-not-allowed"
+                        : "border-borderLight text-textPrimary hover:bg-bgLight hover:text-accent-gold"
+                    }`}
+                  >
+                    Prev
+                  </button>
+                  {[...Array(totalPages)].map((_, index) => {
+                    const pageNum = index + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-9 h-9 text-xs font-semibold border rounded-sm transition-all ${
+                          currentPage === pageNum
+                            ? "bg-secondary border-secondary text-primary font-bold shadow-md"
+                            : "border-borderLight text-textPrimary hover:bg-bgLight hover:text-accent-gold"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(p + 1, totalPages))
+                    }
+                    disabled={currentPage === totalPages}
+                    className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider border rounded-sm transition-colors ${
+                      currentPage === totalPages
+                        ? "border-gray-200 text-gray-305 cursor-not-allowed"
+                        : "border-borderLight text-textPrimary hover:bg-bgLight hover:text-accent-gold"
+                    }`}
+                  >
+                    Next
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           ) : (
             // Empty view layout
             <div className="text-center py-24 bg-white border border-gray-100 rounded-sm">
               <h3 className="text-lg font-display text-textPrimary font-semibold">
-                No Ensembles Match Your Search
+                {products.length === 0
+                  ? "No Products Available"
+                  : "No Ensembles Match Your Search"}
               </h3>
               <p className="text-xs text-textSecondary mt-2">
-                Try adjusting your filters, color pallete, or set a larger
-                pricing range.
+                {products.length === 0
+                  ? "Our premium catalog is currently being updated. Please check back later."
+                  : "Try adjusting your filters, color pallete, or set a larger pricing range."}
               </p>
-              <Button
-                onClick={resetFilters}
-                variant="primary"
-                size="sm"
-                className="mt-6"
-              >
-                Clear All Filters
-              </Button>
+              {products.length > 0 && (
+                <Button
+                  onClick={resetFilters}
+                  variant="primary"
+                  size="sm"
+                  className="mt-6"
+                >
+                  Clear All Filters
+                </Button>
+              )}
             </div>
           )}
         </div>
