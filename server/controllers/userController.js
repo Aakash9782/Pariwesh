@@ -112,12 +112,16 @@ const deliverOtpEmail = async ({ name, email, otp }) => {
   console.warn(
     `[OTP EMAIL FAIL] email=${email} otp=${otp} reason=${mailResult.error}`,
   );
-  const timedOut = /timed out|ETIMEDOUT|timeout/i.test(
-    mailResult.error || "",
+  const errText = mailResult.error || "";
+  const timedOut = /timed out|ETIMEDOUT|timeout/i.test(errText);
+  const resendDomain = /verify a domain|only send testing emails/i.test(
+    errText,
   );
   const warning = timedOut
     ? "Email provider unreachable (often Render free blocking SMTP). Set RESEND_API_KEY on the server."
-    : mailResult.error || "Failed to send OTP email";
+    : resendDomain
+      ? "Resend is in test mode — OTP can only go to your Resend account email until you verify a domain at resend.com/domains."
+      : errText || "Failed to send OTP email";
   return {
     delivered: false,
     channel: "email",

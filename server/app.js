@@ -26,6 +26,10 @@ import emailRouter from "./routes/emailRoutes.js";
 
 const app = express();
 
+// Render / reverse proxies set X-Forwarded-For. Required for express-rate-limit
+// to identify clients correctly (ERR_ERL_UNEXPECTED_X_FORWARDED_FOR).
+app.set("trust proxy", 1);
+
 // 1. SECURITY MIDDLEWARES
 app.use(
   helmet({
