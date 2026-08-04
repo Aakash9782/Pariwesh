@@ -72,6 +72,7 @@ If Razorpay init fails, order is **not** kept.
 
 - Client: Vercel / Netlify (`client/vercel.json`, `client/netlify.toml`)  
 - API: e.g. Render — set `FRONTEND_URL` and all secrets  
+- **Email on Render free:** SMTP (Gmail 465/587) is blocked — set `RESEND_API_KEY` (+ optional `RESEND_FROM`). See `.env.example`.
 
 ## Not done yet
 

@@ -112,11 +112,17 @@ const deliverOtpEmail = async ({ name, email, otp }) => {
   console.warn(
     `[OTP EMAIL FAIL] email=${email} otp=${otp} reason=${mailResult.error}`,
   );
+  const timedOut = /timed out|ETIMEDOUT|timeout/i.test(
+    mailResult.error || "",
+  );
+  const warning = timedOut
+    ? "Email provider unreachable (often Render free blocking SMTP). Set RESEND_API_KEY on the server."
+    : mailResult.error || "Failed to send OTP email";
   return {
     delivered: false,
     channel: "email",
     otp: process.env.NODE_ENV !== "production" ? otp : null,
-    warning: mailResult.error || "Failed to send OTP email",
+    warning,
     resendAfterSeconds: RESEND_COOLDOWN_SEC,
   };
 };
