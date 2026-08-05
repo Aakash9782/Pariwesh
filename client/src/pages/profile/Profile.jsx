@@ -15,6 +15,7 @@ import Skeleton from "../../components/common/Skeleton.jsx";
 import Input from "../../components/form/Input.jsx";
 import { logoutSuccess, updateProfile } from "../../redux/slices/authSlice.js";
 import API from "../../services/api.js";
+import SEO from "../../components/common/SEO.jsx";
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -375,6 +376,7 @@ const Profile = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
+      <SEO title="My Account Profile" noindex={true} />
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-12">
         {/* Mobile Horizontal Tabs Selector */}
         <div className="lg:hidden flex border-b border-borderLight pb-4 overflow-x-auto bg-transparent px-1 gap-2 scrollbar-none">

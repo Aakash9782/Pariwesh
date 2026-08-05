@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import SEO from "../components/common/SEO.jsx";
 import Icon from "../theme/icons.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import HeroSlider from "../components/home/HeroSlider.jsx";
@@ -163,9 +164,7 @@ const Home = () => {
           try {
             const parsed = JSON.parse(settings.festiveBannerSettings);
             const now = new Date();
-            const start = parsed.startDate
-              ? new Date(parsed.startDate)
-              : null;
+            const start = parsed.startDate ? new Date(parsed.startDate) : null;
             const end = parsed.endDate ? new Date(parsed.endDate) : null;
             const isDateValid =
               (!start || now >= start) && (!end || now <= end);
@@ -355,8 +354,49 @@ const Home = () => {
     );
   };
 
+  const websiteSchema = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Pariwesh",
+      url:
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "https://pariwesh.com",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${typeof window !== "undefined" ? window.location.origin : "https://pariwesh.com"}/shop?search={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Pariwesh",
+      url:
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "https://pariwesh.com",
+      logo:
+        typeof window !== "undefined"
+          ? `${window.location.origin}/logo.png`
+          : "https://pariwesh.com/logo.png",
+      contactPoint: {
+        "@type": "ContactPoint",
+        telephone: "+918209903441",
+        contactType: "customer service",
+      },
+    },
+  ];
+
   return (
     <div className="space-y-16 pb-20">
+      <SEO
+        title="PARIWESH | Premium Traditional Ethnic Wear & Kurtas"
+        description="Discover premium traditional ethnic suit sets, handcrafted kurtis, and designer wear for women at PARIWESH. Elevated designs crafted with luxury fabrics."
+        keywords="Pariwesh, Ethnic Wear, Suit Sets, Kurtis, Traditional Indian Wear, Luxury Crafts, Designer Kurtas"
+        structuredData={websiteSchema}
+      />
       {/* Dynamic Festive Offer Banner Row */}
       {adConfig.active &&
         (() => {
@@ -599,6 +639,8 @@ const Home = () => {
                     <img
                       src={cat.image}
                       alt={cat.title}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-[1.12] transition-transform duration-500 ease-out"
                     />
                     <div className="absolute inset-0 bg-secondary/10 group-hover:bg-transparent transition-colors duration-300"></div>
@@ -626,6 +668,8 @@ const Home = () => {
             <img
               src="https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=800&auto=format&fit=crop"
               alt="Atelier Craftsmanship"
+              loading="lazy"
+              decoding="async"
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/30 flex flex-col justify-between p-8 md:p-12 text-white">
@@ -849,6 +893,8 @@ const Home = () => {
                     <img
                       src={product.images[0]}
                       alt={product.name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-[1.15] transform-gpu transition-transform duration-[800ms] ease-out origin-top"
                     />
                   )}

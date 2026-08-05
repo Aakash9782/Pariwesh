@@ -19,6 +19,7 @@ import { addToCart } from "../../redux/slices/cartSlice.js";
 import { toggleWishlistProduct } from "../../redux/slices/wishlistSlice.js";
 import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
+import SEO from "../../components/common/SEO.jsx";
 import {
   syncCartNow,
   syncWishlistNow,
@@ -204,8 +205,101 @@ const ProductDetails = () => {
     syncWishlistNow();
   };
 
+  const productImageUrl = product?.images?.[0] || product?.image || "";
+  const price = product?.price || 0;
+  const inStock = product?.sizesStock
+    ? Object.values(product.sizesStock).some((qty) => Number(qty) > 0)
+    : true;
+
+  const productSchema = product
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: product.name,
+        image: product.images || [productImageUrl],
+        description:
+          product.description ||
+          `Premium handcrafted ${product.name} from PARIWESH.`,
+        sku: product.sku || "",
+        category: product.category || "Ethnic Wear",
+        offers: {
+          "@type": "Offer",
+          url: typeof window !== "undefined" ? window.location.href : "",
+          priceCurrency: "INR",
+          price: price,
+          itemCondition: "https://schema.org/NewCondition",
+          availability: inStock
+            ? "https://schema.org/InStock"
+            : "https://schema.org/OutOfStock",
+          seller: {
+            "@type": "Organization",
+            name: "PARIWESH",
+          },
+        },
+      }
+    : null;
+
+  const breadcrumbSchema = product
+    ? {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item:
+              typeof window !== "undefined"
+                ? window.location.origin
+                : "https://pariwesh.com",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Shop",
+            item:
+              typeof window !== "undefined"
+                ? `${window.location.origin}/shop`
+                : "https://pariwesh.com/shop",
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: product.category || "Suits",
+            item:
+              typeof window !== "undefined"
+                ? `${window.location.origin}/shop?category=${encodeURIComponent(product.category || "suits")}`
+                : `https://pariwesh.com/shop?category=${encodeURIComponent(product.category || "suits")}`,
+          },
+          {
+            "@type": "ListItem",
+            position: 4,
+            name: product.name,
+            item: typeof window !== "undefined" ? window.location.href : "",
+          },
+        ],
+      }
+    : null;
+
+  const seoTitle = product
+    ? `${product.name} - Buy Premium Ethnic Wear`
+    : "Product Details";
+  const seoDesc = product
+    ? `Buy ${product.name} at ₹${product.price} online. ${product.description || ""}`.substring(
+        0,
+        155,
+      )
+    : "";
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 text-slate-800">
+      <SEO
+        title={seoTitle}
+        description={seoDesc}
+        ogImage={productImageUrl}
+        ogType="product"
+        structuredData={[productSchema, breadcrumbSchema].filter(Boolean)}
+      />
       {/* Dynamic alert indicator */}
       {addedPopup && (
         <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md text-white px-6 py-3.5 rounded-full shadow-2xl text-xs uppercase tracking-widest font-semibold flex items-center space-x-3.5 border border-accent-gold/40 animate-fade-in animate-slide-up">
@@ -265,6 +359,7 @@ const ProductDetails = () => {
                     alt={`detail thumbnail ${idx + 1}`}
                     className="w-full h-full object-cover"
                     loading="lazy"
+                    decoding="async"
                   />
                 </button>
               ))}

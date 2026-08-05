@@ -18,6 +18,7 @@ import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
 import { updateProfile } from "../../redux/slices/authSlice.js";
 import { syncCartNow } from "../../services/hydrateCommerce.js";
+import SEO from "../../components/common/SEO.jsx";
 
 const loadRazorpayScript = () =>
   new Promise((resolve) => {
@@ -424,6 +425,7 @@ const Cart = () => {
   if (orderSuccess) {
     return (
       <div className="max-w-xl mx-auto px-4 py-20 text-center space-y-6 animate-fade-in relative z-10">
+        <SEO title="Order Confirmed" noindex={true} />
         <div className="w-20 h-20 bg-success/10 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
           <RiCheckboxCircleLine size={48} />
         </div>
@@ -480,6 +482,7 @@ const Cart = () => {
   if (cartItems.length === 0) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-24 text-center space-y-6">
+        <SEO title="Empty Bag" noindex={true} />
         <h2 className="text-3xl font-display font-medium text-textPrimary uppercase tracking-wider">
           Your bag is empty
         </h2>
@@ -500,6 +503,12 @@ const Cart = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <SEO
+        title={
+          checkoutStep ? "Secure Payment Checkout" : "Shopping Bag Collection"
+        }
+        noindex={true}
+      />
       <h1 className="text-3xl font-display font-medium uppercase tracking-wider text-textPrimary mb-10">
         Shopping Bag Ensembles
       </h1>

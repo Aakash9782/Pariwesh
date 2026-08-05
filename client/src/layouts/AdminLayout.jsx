@@ -29,6 +29,7 @@ import {
 } from "react-icons/ri";
 import API from "../services/api.js";
 import { useAlert } from "../contexts/AlertContext.jsx";
+import SEO from "../components/common/SEO.jsx";
 
 const NAV_ITEMS = [
   { name: "Dashboard", path: "/admin/dashboard", icon: RiDashboardLine },
@@ -254,6 +255,7 @@ const AdminLayout = () => {
 
   return (
     <div className="flex min-h-screen bg-[#FAF9F6] text-slate-700 font-sans admin-shell">
+      <SEO title="Admin Hub Portal" noindex={true} />
       {/* Desktop sidebar */}
       <aside
         className={`hidden md:flex flex-col bg-white border-r border-slate-200 transition-all duration-300 sticky top-0 h-screen shadow-xs z-30 ${
@@ -279,7 +281,9 @@ const AdminLayout = () => {
             type="button"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="text-slate-400 hover:text-[#c5a880] transition-colors p-1.5 rounded-md hover:bg-slate-50"
-            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={
+              sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
           >
             {sidebarCollapsed ? (
               <RiMenuUnfoldLine size={20} />
@@ -499,7 +503,10 @@ const AdminLayout = () => {
         <div className="fixed inset-0 z-[999] flex items-start justify-center pt-[10vh] p-4 bg-neutral-950/40 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xl animate-scaleDown">
             <div className="flex items-center border-b border-slate-200 px-4 py-3.5">
-              <RiSearchLine size={18} className="text-[#c5a880] mr-3 shrink-0" />
+              <RiSearchLine
+                size={18}
+                className="text-[#c5a880] mr-3 shrink-0"
+              />
               <input
                 type="text"
                 autoFocus
@@ -529,7 +536,10 @@ const AdminLayout = () => {
               ) : hasSearchHits ? (
                 <>
                   {globalSearchResults.products.length > 0 && (
-                    <SearchGroup title="Products" count={globalSearchResults.products.length}>
+                    <SearchGroup
+                      title="Products"
+                      count={globalSearchResults.products.length}
+                    >
                       {globalSearchResults.products.slice(0, 8).map((p) => (
                         <SearchRow
                           key={p._id}
@@ -546,7 +556,10 @@ const AdminLayout = () => {
                     </SearchGroup>
                   )}
                   {globalSearchResults.orders.length > 0 && (
-                    <SearchGroup title="Orders" count={globalSearchResults.orders.length}>
+                    <SearchGroup
+                      title="Orders"
+                      count={globalSearchResults.orders.length}
+                    >
                       {globalSearchResults.orders.slice(0, 8).map((o) => (
                         <SearchRow
                           key={o._id}
@@ -563,7 +576,10 @@ const AdminLayout = () => {
                     </SearchGroup>
                   )}
                   {globalSearchResults.customers.length > 0 && (
-                    <SearchGroup title="Customers" count={globalSearchResults.customers.length}>
+                    <SearchGroup
+                      title="Customers"
+                      count={globalSearchResults.customers.length}
+                    >
                       {globalSearchResults.customers.slice(0, 8).map((c) => (
                         <SearchRow
                           key={c._id}
@@ -579,7 +595,10 @@ const AdminLayout = () => {
                     </SearchGroup>
                   )}
                   {globalSearchResults.coupons.length > 0 && (
-                    <SearchGroup title="Coupons" count={globalSearchResults.coupons.length}>
+                    <SearchGroup
+                      title="Coupons"
+                      count={globalSearchResults.coupons.length}
+                    >
                       {globalSearchResults.coupons.slice(0, 8).map((cop) => (
                         <SearchRow
                           key={cop._id}
@@ -646,7 +665,9 @@ const SearchRow = ({ onClick, title, subtitle, meta, badge, image }) => (
         </span>
       )}
       {meta && (
-        <span className="text-xs font-bold text-[#c5a880] font-mono">{meta}</span>
+        <span className="text-xs font-bold text-[#c5a880] font-mono">
+          {meta}
+        </span>
       )}
     </div>
   </button>

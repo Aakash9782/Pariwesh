@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../../services/api.js";
 import { ProductSkeleton } from "../../components/common/Skeleton.jsx";
+import SEO from "../../components/common/SEO.jsx";
 
 const Collections = () => {
   const [collections, setCollections] = useState([]);
@@ -29,6 +30,11 @@ const Collections = () => {
 
   return (
     <div className="pb-20">
+      <SEO
+        title="Curated Collections | Indian Traditional Edits"
+        description="Explore luxury curated lookbook edits from PARIWESH. Find designer girls kurtis, embroidered suit sets, and traditional handloom silhouettes."
+        keywords="pariwesh collections, lookbook, traditional wear, ethnic suites"
+      />
       <section className="relative min-h-[42vh] flex items-end overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -46,7 +52,8 @@ const Collections = () => {
             Curated Collections
           </h1>
           <p className="mt-3 max-w-xl text-sm text-white/75 leading-relaxed">
-            Explore handpicked edits — from everyday kurtis to festive suit sets.
+            Explore handpicked edits — from everyday kurtis to festive suit
+            sets.
           </p>
         </div>
       </section>

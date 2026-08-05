@@ -74,6 +74,8 @@ const VibeGrid = () => {
               <img
                 src={vibe.insetImg}
                 alt={vibe.title}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
               />
             </div>

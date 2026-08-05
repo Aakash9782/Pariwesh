@@ -5,11 +5,7 @@ import PendingSignup from "../models/PendingSignup.js";
 import { sendSuccess, sendError } from "../utils/responseFormatter.js";
 import { sendMail } from "../utils/mailer.js";
 import { buildOtpEmail } from "../utils/emailTemplates.js";
-import {
-  normalizePhone,
-  isValidEmail,
-  isAdminEmail,
-} from "../utils/phone.js";
+import { normalizePhone, isValidEmail, isAdminEmail } from "../utils/phone.js";
 import {
   signAccessToken,
   signRefreshToken,
@@ -44,7 +40,12 @@ const publicUser = (user) => ({
   addresses: user.addresses || [],
 });
 
-const sendTokenResponse = (user, statusCode, res, message = "Login successful") => {
+const sendTokenResponse = (
+  user,
+  statusCode,
+  res,
+  message = "Login successful",
+) => {
   const token = generateToken(user._id);
   const refreshToken = generateRefreshToken(user._id);
 
@@ -109,9 +110,7 @@ const deliverOtpEmail = async ({ name, email, otp }) => {
     };
   }
 
-  console.warn(
-    `[OTP EMAIL FAIL] email=${email} otp=${otp} reason=${mailResult.error}`,
-  );
+  console.warn(`[OTP EMAIL FAIL] email=${email} reason=${mailResult.error}`);
   return {
     delivered: false,
     channel: "email",
@@ -161,7 +160,11 @@ export const registerUser = async (req, res) => {
 
     const cleanPhone = normalizePhone(phone);
     if (!cleanPhone || cleanPhone.length !== 10) {
-      return sendError(res, "Please provide a valid 10-digit phone number", 400);
+      return sendError(
+        res,
+        "Please provide a valid 10-digit phone number",
+        400,
+      );
     }
 
     if (!name || !String(name).trim()) {
@@ -314,7 +317,8 @@ export const loginUser = async (req, res) => {
           otpRequired: true,
           otpChannel: "email",
           pendingSignup: false,
-          resendAfterSeconds: otpResult.resendAfterSeconds ?? RESEND_COOLDOWN_SEC,
+          resendAfterSeconds:
+            otpResult.resendAfterSeconds ?? RESEND_COOLDOWN_SEC,
           ...(otpResult.otp ? { devOtp: otpResult.otp } : {}),
           ...(otpResult.warning ? { warning: otpResult.warning } : {}),
         },
@@ -352,16 +356,16 @@ export const verifyOtp = async (req, res) => {
 
     if (pending) {
       if (!pending.otp?.hash || !pending.otp?.expiresAt) {
-        return sendError(
-          res,
-          "No OTP pending. Please sign up again.",
-          400,
-        );
+        return sendError(res, "No OTP pending. Please sign up again.", 400);
       }
       if (new Date(pending.otp.expiresAt).getTime() < Date.now()) {
         pending.otp = { hash: null, expiresAt: null };
         await pending.save();
-        return sendError(res, "OTP has expired. Please request a new one.", 400);
+        return sendError(
+          res,
+          "OTP has expired. Please request a new one.",
+          400,
+        );
       }
       if (hashOtp(otp) !== pending.otp.hash) {
         return sendError(res, "Invalid OTP code", 400);
@@ -416,7 +420,11 @@ export const verifyOtp = async (req, res) => {
     }
 
     if (!user.otp?.hash || !user.otp?.expiresAt) {
-      return sendError(res, "No OTP pending. Please login or sign up again.", 400);
+      return sendError(
+        res,
+        "No OTP pending. Please login or sign up again.",
+        400,
+      );
     }
 
     if (new Date(user.otp.expiresAt).getTime() < Date.now()) {
@@ -496,7 +504,11 @@ export const resendOtp = async (req, res) => {
     }
 
     if (!user) {
-      return sendError(res, "No pending signup found. Please sign up again.", 404);
+      return sendError(
+        res,
+        "No pending signup found. Please sign up again.",
+        404,
+      );
     }
 
     if (user.status === "suspended") {
@@ -612,7 +624,8 @@ export const adminUpdateUser = async (req, res) => {
     if (req.body.email !== undefined) user.email = req.body.email;
     if (req.body.role !== undefined) user.role = req.body.role;
     if (req.body.status !== undefined) user.status = req.body.status;
-    if (req.body.isVerified !== undefined) user.isVerified = req.body.isVerified;
+    if (req.body.isVerified !== undefined)
+      user.isVerified = req.body.isVerified;
     const updated = await user.save();
     return sendSuccess(res, "User updated successfully", updated);
   } catch (error) {

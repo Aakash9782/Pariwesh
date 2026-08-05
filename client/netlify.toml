@@ -6,6 +6,12 @@
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
 
 [[redirects]]
+  from = "/sitemap.xml"
+  to = "https://pariwesh.onrender.com/api/v1/seo/sitemap"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

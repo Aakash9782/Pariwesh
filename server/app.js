@@ -7,6 +7,7 @@ import rateLimit from "express-rate-limit";
 import errorHandlerMiddleware from "./middleware/error.js";
 import { sendSuccess } from "./utils/responseFormatter.js";
 import ErrorResponse from "./utils/errorHandler.js";
+import { isMailConfigured } from "./utils/mailer.js";
 
 import settingRouter from "./routes/settingRoutes.js";
 import orderRouter from "./routes/orderRoutes.js";
@@ -23,6 +24,7 @@ import wishlistRouter from "./routes/wishlistRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
 import brandRouter from "./routes/brandRoutes.js";
 import emailRouter from "./routes/emailRoutes.js";
+import seoRouter from "./routes/seoRoutes.js";
 
 const app = express();
 
@@ -130,6 +132,16 @@ app.get("/api/v1/health", (req, res) => {
   });
 });
 
+app.get("/api/v1/email/health", (req, res) => {
+  const provider = process.env.EMAIL_PROVIDER || "smtp";
+  const isValid = isMailConfigured();
+  return res.status(200).json({
+    success: true,
+    provider,
+    configured: isValid,
+  });
+});
+
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
@@ -153,6 +165,7 @@ app.use("/api/v1/wishlist", wishlistRouter);
 app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/brands", brandRouter);
 app.use("/api/v1/emails", emailRouter);
+app.use("/api/v1/seo", seoRouter);
 
 // 7. 404 HANDLER
 app.use("*", (req, res, next) => {

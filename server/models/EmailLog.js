@@ -54,6 +54,21 @@ const EmailLogSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    provider: {
+      type: String,
+      default: "smtp",
+      index: true,
+    },
+    statusCode: {
+      type: Number,
+    },
+    latencyMs: {
+      type: Number,
+    },
+    retryCount: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true },
 );

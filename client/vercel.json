@@ -1,3 +1,9 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://pariwesh.onrender.com/api/v1/seo/sitemap"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

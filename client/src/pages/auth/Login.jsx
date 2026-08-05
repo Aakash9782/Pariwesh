@@ -13,6 +13,7 @@ import Input from "../../components/form/Input.jsx";
 import { authSuccess } from "../../redux/slices/authSlice.js";
 import API from "../../services/api.js";
 import { hydrateCommerce } from "../../services/hydrateCommerce.js";
+import SEO from "../../components/common/SEO.jsx";
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SEC = 60;
@@ -174,10 +175,7 @@ const Login = () => {
       }
       setOtpSent(true);
       setOtpCode("");
-      showOtpInfo(
-        data,
-        res.data.message || "OTP sent to your email.",
-      );
+      showOtpInfo(data, res.data.message || "OTP sent to your email.");
       startResendTimer(data.resendAfterSeconds ?? RESEND_COOLDOWN_SEC);
     } catch (err) {
       const status = err.response?.status;
@@ -247,10 +245,7 @@ const Login = () => {
       });
       if (res.data?.success) {
         const data = res.data.data || {};
-        showOtpInfo(
-          data,
-          res.data.message || "OTP resent to your email.",
-        );
+        showOtpInfo(data, res.data.message || "OTP resent to your email.");
         setOtpCode("");
         startResendTimer(data.resendAfterSeconds ?? RESEND_COOLDOWN_SEC);
       }
@@ -275,6 +270,16 @@ const Login = () => {
 
   return (
     <div className="relative min-h-[75vh] flex items-center justify-center px-4 py-16 overflow-hidden">
+      <SEO
+        title={
+          otpSent
+            ? "Verify OTP"
+            : mode === "signup"
+              ? "Member Registration"
+              : "Member Login"
+        }
+        noindex={true}
+      />
       <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-accent-gold/10 dark:bg-accent-gold/5 rounded-full blur-3xl pointer-events-none transform -translate-x-1/2 -translate-y-1/2"></div>
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent-gold/5 dark:bg-primary/5 rounded-full blur-3xl pointer-events-none transform translate-x-1/2 translate-y-1/2"></div>
 

@@ -6,6 +6,7 @@ import API from "../../services/api.js";
 import { ProductSkeleton } from "../../components/common/Skeleton.jsx";
 import { toggleWishlistProduct } from "../../redux/slices/wishlistSlice.js";
 import { syncWishlistNow } from "../../services/hydrateCommerce.js";
+import SEO from "../../components/common/SEO.jsx";
 
 const CollectionDetail = () => {
   const { slug } = useParams();
@@ -65,8 +66,50 @@ const CollectionDetail = () => {
 
   const products = collection.products || [];
 
+  const breadcrumbSchema = collection
+    ? {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item:
+              typeof window !== "undefined"
+                ? window.location.origin
+                : "https://pariwesh.com",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Collections",
+            item:
+              typeof window !== "undefined"
+                ? `${window.location.origin}/collections`
+                : "https://pariwesh.com/collections",
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: collection.name,
+            item: typeof window !== "undefined" ? window.location.href : "",
+          },
+        ],
+      }
+    : null;
+
   return (
     <div className="pb-20">
+      <SEO
+        title={`${collection.name} Edit - Exclusive Traditional Wear`}
+        description={
+          collection.description ||
+          `Browse the exclusive ${collection.name} edit at PARIWESH.`
+        }
+        keywords={`pariwesh, ${collection.name}, designer collection, luxury ethnic`}
+        structuredData={breadcrumbSchema}
+      />
       <section className="relative min-h-[36vh] flex items-end overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -109,6 +152,8 @@ const CollectionDetail = () => {
                     <img
                       src={product.images?.[0]}
                       alt={product.name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     {product.tag && (

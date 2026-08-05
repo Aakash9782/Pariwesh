@@ -14,6 +14,7 @@ import { ProductSkeleton } from "../../components/common/Skeleton.jsx";
 import { toggleWishlistProduct } from "../../redux/slices/wishlistSlice.js";
 import API from "../../services/api.js";
 import { syncWishlistNow } from "../../services/hydrateCommerce.js";
+import SEO from "../../components/common/SEO.jsx";
 
 const ShopListings = () => {
   const dispatch = useDispatch();
@@ -139,8 +140,26 @@ const ShopListings = () => {
   const colorsList = ["all", "Gold", "Red", "Ivory", "Green", "Blue", "Pink"];
   const sizesList = ["all", "S", "M", "L", "XL"];
 
+  const categoryTitle =
+    selectedCategory && selectedCategory !== "all"
+      ? `${selectedCategory.trim().charAt(0).toUpperCase() + selectedCategory.slice(1)} Collection`
+      : "Shop Premium Ensembles";
+
+  const seoTitle = searchQuery
+    ? `Search Results for "${searchQuery}"`
+    : categoryTitle;
+
+  const seoDesc = `Explore PARIWESH's premium luxury dress catalog for women. Discover top hand-finished designer ${
+    selectedCategory !== "all" ? selectedCategory : "ethnic wear"
+  } sets crafted with comfort and elegance.`;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <SEO
+        title={seoTitle}
+        description={seoDesc}
+        keywords={`pariwesh shop, ${selectedCategory}, designer suits, boutique online`}
+      />
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-100 pb-6 mb-8 gap-4">
         <div>
@@ -343,6 +362,8 @@ const ShopListings = () => {
                         <img
                           src={product.images[0]}
                           alt={product.name}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover group-hover:scale-[1.15] transform-gpu transition-transform duration-[800ms] ease-out origin-top"
                         />
                       )}
