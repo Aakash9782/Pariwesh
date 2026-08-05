@@ -23,6 +23,11 @@
     "react-helmet-async": "^2.0.5",
     "zod": "^4.4.3"
   },
+  "overrides": {
+    "react-helmet-async": {
+      "react": "$react"
+    }
+  },
   "devDependencies": {
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

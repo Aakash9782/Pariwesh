@@ -15,5 +15,10 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "overrides": {
+    "react-helmet-async": {
+      "react": "^19.2.7"
+    }
   }
 }
