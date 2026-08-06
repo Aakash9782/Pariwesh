@@ -4,7 +4,9 @@ import {
   buildPaymentSuccessEmail,
   buildPaymentFailedEmail,
   buildOrderShippedEmail,
+  buildOrderStatusUpdateEmail,
 } from "./emailTemplates.js";
+import Setting from "../models/Setting.js";
 
 const recipientFor = (order) =>
   order?.customer?.email || order?.shippingAddress?.email || "";
@@ -12,7 +14,10 @@ const recipientFor = (order) =>
 export const emailOrderPlaced = async (order) => {
   const to = recipientFor(order);
   if (!to) {
-    console.warn("[Mail] order placed skipped — no customer email", order?.orderId);
+    console.warn(
+      "[Mail] order placed skipped — no customer email",
+      order?.orderId,
+    );
     return;
   }
   const { subject, html } = buildOrderPlacedEmail(order);
@@ -64,5 +69,38 @@ export const emailOrderShipped = async (order) => {
     html,
     type: "order_shipped",
     meta: { orderId: order?.orderId },
+  });
+};
+
+export const emailOrderStatusUpdate = async (order) => {
+  const to = recipientFor(order);
+  if (!to) {
+    console.warn(
+      "[Mail] order status update skipped — no customer email",
+      order?.orderId,
+    );
+    return;
+  }
+
+  let settings = {};
+  try {
+    const settingsList = await Setting.find({});
+    settingsList.forEach((s) => {
+      settings[s.key] = s.value;
+    });
+  } catch (err) {
+    console.error(
+      "[Mail] Failed to load brand settings, using fallbacks:",
+      err.message,
+    );
+  }
+
+  const { subject, html } = buildOrderStatusUpdateEmail(order, settings);
+  await sendMail({
+    to,
+    subject,
+    html,
+    type: "other",
+    meta: { orderId: order?.orderId, orderStatus: order?.orderStatus },
   });
 };

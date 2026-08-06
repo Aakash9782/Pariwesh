@@ -6,17 +6,16 @@ dotenv.config();
 
 const run = async () => {
   try {
-    console.log("Connecting database...");
     await mongoose.connect(process.env.MONGO_URI);
-    console.log("Connected! Fetching settings...");
     const list = await Setting.find({});
-    console.log("Settings list length:", list.length);
-    console.log("Settings list details:", JSON.stringify(list, null, 2));
+    console.log(
+      "KEYS:",
+      list.map((s) => s.key),
+    );
     process.exit(0);
   } catch (err) {
-    console.error("DB Fetch Error:", err);
+    console.error(err);
     process.exit(1);
   }
 };
-
 run();

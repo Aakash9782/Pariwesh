@@ -214,7 +214,8 @@ export const buildPaymentSuccessEmail = (order) => {
       title: "Payment successful",
       eyebrow: "Payment confirmation",
       bodyHtml,
-      footerNote: "Thank you for your purchase. We will update you on shipping.",
+      footerNote:
+        "Thank you for your purchase. We will update you on shipping.",
     }),
   };
 };
@@ -269,6 +270,193 @@ export const buildOrderShippedEmail = (order) => {
         "Track your parcel on the courier website using the AWB above. For help, reply to this email.",
     }),
   };
+};
+
+export const buildOrderStatusUpdateEmail = (order, settings) => {
+  const brandName = settings?.brandName || brand.name || "PARIWESH";
+  const supportEmail = settings?.supportEmail || "contact@pariwesh.co";
+  const brandLogoUrl = settings?.brandLogoUrl || "";
+  const frontendUrl = (
+    settings?.frontendUrl ||
+    process.env.FRONTEND_URL ||
+    "https://pariweshcollection.vercel.app"
+  ).trim();
+  const trackUrl = `${frontendUrl}/profile`;
+  const shopUrl = `${frontendUrl}/shop`;
+
+  const status = order.orderStatus || "";
+  let displayStatus = status;
+  if (status === "Placed") displayStatus = "Order Placed";
+  else if (status === "Confirmed") displayStatus = "Order Confirmed";
+  else if (status.startsWith("Return_")) {
+    displayStatus = status.replace(/_/g, " ");
+  }
+
+  let description = `Your order status has been updated to ${displayStatus}.`;
+  if (status === "Processing") {
+    description = "Your order is now being carefully processed by our team.";
+  } else if (status === "Packed") {
+    description =
+      "Great news! Your order has been packed and is ready for shipment.";
+  } else if (status === "Ready to Ship") {
+    description =
+      "Your order has been packed successfully and is ready to be handed over to our delivery partner.";
+  } else if (status === "Shipped") {
+    description = "Your order has been shipped successfully.";
+  } else if (status === "Out for Delivery") {
+    description = "Your package is out for delivery and should reach you soon.";
+  } else if (status === "Delivered") {
+    description =
+      "Your order has been delivered successfully. Thank you for placing your trust in us!";
+  } else if (status === "Cancelled") {
+    description = "We regret to inform you that your order has been cancelled.";
+  } else if (status === "Returned") {
+    description = "Your return request has been processed.";
+  } else if (status === "Refunded") {
+    description = "Your refund has been initiated/completed.";
+  } else if (status === "Placed") {
+    description = "Your order has been placed successfully.";
+  } else if (status === "Confirmed") {
+    description = "Your order has been confirmed.";
+  }
+
+  const isTrackingAllowed = [
+    "Shipped",
+    "Out for Delivery",
+    "Delivered",
+  ].includes(status);
+  const hasTracking =
+    isTrackingAllowed && order.trackingId && order.shippingProvider;
+
+  let trackingHtml = "";
+  if (hasTracking) {
+    trackingHtml = `
+      <div style="margin:18px 0;padding:16px;background:#E3F2FD;border:1px solid #BBDEFB;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${brand.dark};">
+        <div style="font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;color:#1565C0;">Delivery Details</div>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="font-size:13px;font-family:Arial,sans-serif;">
+          <tr>
+            <td style="padding:4px 0;color:${brand.muted};width:120px;">Courier Name</td>
+            <td style="padding:4px 0;font-weight:600;color:${brand.dark};">${escapeHtml(order.shippingProvider)}</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0;color:${brand.muted};">Tracking ID</td>
+            <td style="padding:4px 0;font-weight:700;font-family:Consolas,monospace;color:${brand.dark};">${escapeHtml(order.trackingId)}</td>
+          </tr>
+        </table>
+      </div>
+    `;
+  }
+
+  const shopButtonText =
+    status === "Delivered" ? "Shop Again" : "Continue Shopping";
+  let buttonsHtml = `<div style="margin:24px 0 16px;">`;
+  if (isTrackingAllowed && order.trackingId) {
+    buttonsHtml += `
+      <a href="${escapeHtml(trackUrl)}" style="display:inline-block;padding:12px 24px;margin-right:12px;margin-bottom:8px;background:${brand.gold};color:${brand.white};text-decoration:none;font-family:Arial,sans-serif;font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:0.05em;border-radius:2px;">Track Order</a>
+    `;
+  }
+  buttonsHtml += `
+      <a href="${escapeHtml(shopUrl)}" style="display:inline-block;padding:12px 24px;margin-bottom:8px;background:${brand.dark};color:${brand.white};text-decoration:none;font-family:Arial,sans-serif;font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:0.05em;border-radius:2px;">${escapeHtml(shopButtonText)}</a>
+    </div>
+  `;
+
+  const detailsBlockHtml = `
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:18px 0;font-family:Arial,Helvetica,sans-serif;">
+      <tr>
+        <td style="padding:12px;background:${brand.bg};border:1px solid ${brand.border};">
+          <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${brand.muted};">Order ID</div>
+          <div style="margin-top:4px;font-size:16px;color:${brand.gold};font-weight:700;">${escapeHtml(order.orderId)}</div>
+          <div style="margin-top:8px;font-size:12px;color:${brand.muted};">${formatDate(order.createdAt)}</div>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  const bodyHtml = `
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:${brand.muted};font-family:Arial,Helvetica,sans-serif;">
+      Hi ${escapeHtml(order.customer?.name || order.shippingAddress?.fullName || "there")},
+    </p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:${brand.dark};font-family:Arial,sans-serif;font-weight:500;">
+      ${escapeHtml(description)}
+    </p>
+    <div style="margin:16px 0;padding:12px 14px;background:${brand.bg};border:1px solid ${brand.border};font-family:Arial,sans-serif;font-size:13px;">
+      Current Status: <strong style="text-transform:uppercase;color:${brand.gold};">${escapeHtml(displayStatus)}</strong>
+    </div>
+    ${trackingHtml}
+    ${buttonsHtml}
+    ${detailsBlockHtml}
+  `;
+
+  const dynamicEyebrow = `${brandName} Order Update`;
+
+  return {
+    subject: `${brandName} · Update for Order ${order.orderId}`,
+    html: wrapLayoutWithSettings({
+      title: `Order Status: ${displayStatus}`,
+      eyebrow: dynamicEyebrow,
+      bodyHtml,
+      footerNote: `If you have any questions or require support, feel free to contact us at ${supportEmail}.`,
+      settings,
+    }),
+  };
+};
+
+const wrapLayoutWithSettings = ({
+  title,
+  eyebrow,
+  bodyHtml,
+  footerNote,
+  settings,
+}) => {
+  const brandName = settings?.brandName || brand.name || "PARIWESH";
+  const brandLogoUrl = settings?.brandLogoUrl || "";
+
+  const logoSection = brandLogoUrl
+    ? `<img src="${escapeHtml(brandLogoUrl)}" alt="${escapeHtml(brandName)}" style="max-height:45px;max-width:240px;object-fit:contain;" />`
+    : `<div style="font-size:22px;letter-spacing:0.28em;font-weight:700;color:${brand.dark};">${escapeHtml(brandName)}</div>`;
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(title)}</title>
+</head>
+<body style="margin:0;padding:0;background:${brand.bg};font-family:Georgia,'Times New Roman',serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${brand.bg};padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background:${brand.white};border:1px solid ${brand.border};">
+          <tr>
+            <td style="height:4px;background:${brand.gold};font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:28px 32px 8px;text-align:center;">
+              ${logoSection}
+              <div style="margin-top:10px;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${brand.gold};">${escapeHtml(eyebrow || "")}</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 32px 28px;">
+              <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:${brand.dark};font-weight:500;">${escapeHtml(title)}</h1>
+              ${bodyHtml}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 32px;background:${brand.bg};border-top:1px solid ${brand.border};">
+              <p style="margin:0;font-size:12px;line-height:1.6;color:${brand.muted};font-family:Arial,Helvetica,sans-serif;">
+                ${escapeHtml(footerNote || `Thank you for shopping with ${brandName}.`)}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
 };
 
 export const buildOtpEmail = ({ name, otp, expiresMinutes = 10 }) => ({

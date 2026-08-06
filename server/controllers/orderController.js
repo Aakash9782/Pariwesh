@@ -7,7 +7,11 @@ import {
   isRazorpayConfigured,
   createRazorpayOrder,
 } from "../utils/razorpay.js";
-import { emailOrderPlaced, emailOrderShipped } from "../utils/orderEmails.js";
+import {
+  emailOrderPlaced,
+  emailOrderShipped,
+  emailOrderStatusUpdate,
+} from "../utils/orderEmails.js";
 
 // @desc    Get orders (Admin views all, Customer views their own)
 // @route   GET /api/v1/orders
@@ -35,13 +39,8 @@ export const getOrders = async (req, res, next) => {
 // @access  Private (logged-in user required)
 export const createOrder = async (req, res, next) => {
   try {
-    const {
-      items,
-      shippingAddress,
-      pricing,
-      paymentMethod,
-      customer,
-    } = req.body;
+    const { items, shippingAddress, pricing, paymentMethod, customer } =
+      req.body;
 
     if (!req.user?._id) {
       return sendError(res, "Please login to place an order", 401);
@@ -103,8 +102,7 @@ export const createOrder = async (req, res, next) => {
           400,
         );
       }
-      const phone =
-        req.user.phone || customer?.phone || shippingAddress?.phone;
+      const phone = req.user.phone || customer?.phone || shippingAddress?.phone;
       if (phone) {
         const userUsage = couponInstance.usedBy?.find((u) => u.phone === phone);
         if (
@@ -212,8 +210,7 @@ export const createOrder = async (req, res, next) => {
               product.get(`sizesStock.${item.size || "M"}`) !== undefined
             ) {
               const size = item.size || "M";
-              const current =
-                Number(product.get(`sizesStock.${size}`)) || 0;
+              const current = Number(product.get(`sizesStock.${size}`)) || 0;
               product.set(
                 `sizesStock.${size}`,
                 current + Number(item.quantity),
@@ -372,13 +369,9 @@ export const updateOrderStatus = async (req, res, next) => {
 
     await order.save();
 
-    if (
-      order.orderStatus === "Shipped" &&
-      previousStatus !== "Shipped" &&
-      order.trackingId
-    ) {
-      emailOrderShipped(order).catch((err) =>
-        console.error("[Mail] shipped email failed:", err.message),
+    if (orderStatus && order.orderStatus !== previousStatus) {
+      emailOrderStatusUpdate(order).catch((err) =>
+        console.error("[Mail] order status update email failed:", err.message),
       );
     }
 
