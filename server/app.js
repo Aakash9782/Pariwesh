@@ -172,6 +172,7 @@ app.use("/api/v1/brands", brandRouter);
 app.use("/api/v1/emails", emailRouter);
 app.use("/api/v1/seo", seoRouter);
 app.use("/api/v1/shipping", shippingRouter);
+app.use("/api/v1/logistics", shippingRouter);
 
 // 7. 404 HANDLER
 app.use("*", (req, res, next) => {

@@ -179,6 +179,27 @@ const OrderSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    currentTrackingStatus: {
+      type: String,
+      default: "",
+    },
+    currentTrackingTimestamp: {
+      type: Date,
+    },
+    estimatedDeliveryDate: {
+      type: Date,
+    },
+    lastWebhookReceivedAt: {
+      type: Date,
+    },
+    deliveryHistory: [
+      {
+        status: String,
+        activity: String,
+        location: String,
+        timestamp: Date,
+      },
+    ],
   },
   { timestamps: true },
 );
