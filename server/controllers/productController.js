@@ -119,7 +119,9 @@ const SEED_PRODUCTS = [
 // @access  Public
 export const getProducts = async (req, res, next) => {
   try {
-    let products = await Product.find({}).sort({ createdAt: -1 });
+    let products = await Product.find({})
+      .select("-description")
+      .sort({ createdAt: -1 });
 
     // Auto-seeding check: If database collection is empty, load mock catalog
     if (products.length === 0) {

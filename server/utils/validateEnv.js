@@ -32,4 +32,23 @@ export const validateRequiredEnv = () => {
       "[Env] JWT_SECRET is ignored — use JWT_ACCESS_SECRET / JWT_REFRESH_SECRET only.",
     );
   }
+
+  // Shiprocket soft validation
+  const shiprocketRequired = [
+    "SHIPROCKET_EMAIL",
+    "SHIPROCKET_PASSWORD",
+    "SHIPROCKET_PICKUP_LOCATION",
+  ];
+  const missingShiprocket = shiprocketRequired.filter((key) => {
+    const val = process.env[key];
+    return !val || !String(val).trim();
+  });
+  if (missingShiprocket.length > 0) {
+    console.warn(
+      `⚠️  [Shiprocket] Missing environment variables: ${missingShiprocket.join(", ")}`,
+    );
+    console.warn(
+      "   Shiprocket automation features will log failures and bypass API actions until configured.",
+    );
+  }
 };

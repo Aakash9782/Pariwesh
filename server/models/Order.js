@@ -96,6 +96,10 @@ const OrderSchema = new mongoose.Schema(
         "Processing",
         "Packed",
         "Ready to Ship",
+        "Pickup Scheduled",
+        "Pickup Generated",
+        "Pickup Completed",
+        "In Transit",
         "Shipped",
         "Out for Delivery",
         "Delivered",
@@ -108,6 +112,12 @@ const OrderSchema = new mongoose.Schema(
         "Return_Received",
         "Return_Completed",
         "Return_Disputed",
+        "RTO Initiated",
+        "RTO Delivered",
+        "Lost",
+        "Damaged",
+        "Undelivered",
+        "Exception",
       ],
       default: "Placed",
     },
@@ -118,6 +128,45 @@ const OrderSchema = new mongoose.Schema(
     shippingProvider: {
       type: String,
       default: "",
+    },
+    shiprocketOrderId: {
+      type: String,
+      default: "",
+    },
+    shiprocketShipmentId: {
+      type: String,
+      default: "",
+    },
+    awbCode: {
+      type: String,
+      default: "",
+    },
+    courierName: {
+      type: String,
+      default: "",
+    },
+    courierId: {
+      type: String,
+      default: "",
+    },
+    shippingLabelUrl: {
+      type: String,
+      default: "",
+    },
+    shippingInvoiceUrl: {
+      type: String,
+      default: "",
+    },
+    manifestUrl: {
+      type: String,
+      default: "",
+    },
+    pickupToken: {
+      type: String,
+      default: "",
+    },
+    pickupScheduledAt: {
+      type: Date,
     },
     deliveredAt: {
       type: Date,

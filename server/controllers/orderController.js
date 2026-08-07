@@ -12,6 +12,15 @@ import {
   emailOrderShipped,
   emailOrderStatusUpdate,
 } from "../utils/orderEmails.js";
+import {
+  createShiprocketOrder,
+  getCourierRecommendations,
+  assignShiprocketAWB,
+  generateShiprocketLabel,
+  generateShiprocketInvoice,
+  generateShiprocketManifest,
+  requestShiprocketPickup,
+} from "../utils/shiprocket.js";
 
 // @desc    Get orders (Admin views all, Customer views their own)
 // @route   GET /api/v1/orders
@@ -367,6 +376,212 @@ export const updateOrderStatus = async (req, res, next) => {
       }
     }
 
+    // Shiprocket automated courier sequence when Order is set to "Ready to Ship"
+    if (order.orderStatus === "Ready to Ship") {
+      const email = process.env.SHIPROCKET_EMAIL;
+      const password = process.env.SHIPROCKET_PASSWORD;
+      if (!email || !password) {
+        console.warn(
+          "[Shiprocket Flow] Missing credentials in environment. Skipping Shiprocket flow.",
+        );
+        const timestamp = new Date().toISOString();
+        order.internalNotes =
+          `${order.internalNotes || ""}\n[${timestamp}] Shiprocket flow skipped: credentials not configured.`.trim();
+      } else {
+        try {
+          console.log(
+            `[Shiprocket Flow] Triggering courier routing flow for order ID: ${order.orderId}`,
+          );
+
+          // Step 1: Create Order
+          if (!order.shiprocketOrderId) {
+            console.log(
+              `[Shiprocket Flow] Step 1: Registering adhoc order with Shiprocket`,
+            );
+            const flowOrder = await createShiprocketOrder(order);
+            if (
+              !flowOrder ||
+              !flowOrder.shiprocketOrderId ||
+              !flowOrder.shiprocketShipmentId
+            ) {
+              throw new Error(
+                "Shiprocket Order Creation response is missing required order_id or shipment_id fields.",
+              );
+            }
+            order.shiprocketOrderId = flowOrder.shiprocketOrderId;
+            order.shiprocketShipmentId = flowOrder.shiprocketShipmentId;
+            await order.save();
+          }
+
+          // Step 2: Serviceability & AWB Assignment
+          if (!order.shiprocketOrderId || !order.shiprocketShipmentId) {
+            throw new Error(
+              "Missing prerequisite: Shiprocket Order ID / Shipment ID. Cannot assign AWB.",
+            );
+          }
+          if (!order.awbCode) {
+            console.log(
+              `[Shiprocket Flow] Step 2: Querying best courier recommendations from Serviceability API`,
+            );
+            const recommendation = await getCourierRecommendations(
+              order.shiprocketShipmentId,
+            );
+            if (!recommendation || !recommendation.courier_company_id) {
+              throw new Error(
+                "Courier Serviceability check returned no available courier company ID.",
+              );
+            }
+            console.log(
+              `[Shiprocket Flow] Selected courier partner: ${recommendation.courier_name} (ID: ${recommendation.courier_company_id})`,
+            );
+
+            console.log(
+              `[Shiprocket Flow] Step 2b: Calling AWB Assignment API for shipment: ${order.shiprocketShipmentId}`,
+            );
+            const awbDetails = await assignShiprocketAWB(
+              order.shiprocketShipmentId,
+              recommendation.courier_company_id,
+            );
+            if (!awbDetails || !awbDetails.awbCode || !awbDetails.courierName) {
+              throw new Error(
+                "AWB assignment response is missing required awb_code or courier_name.",
+              );
+            }
+            order.awbCode = awbDetails.awbCode;
+            order.courierName = awbDetails.courierName;
+            order.courierId = awbDetails.courierId;
+            // Map tracking fields for standard order compatibility
+            order.trackingId = awbDetails.awbCode;
+            order.shippingProvider = awbDetails.courierName;
+            await order.save();
+          }
+
+          // Step 3: Generate Shipping Label PDF
+          if (!order.awbCode) {
+            throw new Error(
+              "Missing prerequisite: AWB Code. Cannot generate label.",
+            );
+          }
+          if (!order.shippingLabelUrl) {
+            console.log(
+              `[Shiprocket Flow] Step 3: Fetching shipping label URL`,
+            );
+            const labelUrl = await generateShiprocketLabel(
+              order.shiprocketShipmentId,
+            );
+            if (!labelUrl) {
+              throw new Error(
+                "Label URL generation returned an empty or invalid URL.",
+              );
+            }
+            order.shippingLabelUrl = labelUrl;
+            await order.save();
+          }
+
+          // Step 4: Generate Invoice PDF
+          if (!order.shippingLabelUrl) {
+            throw new Error(
+              "Missing prerequisite: Shipping Label URL. Cannot generate invoice.",
+            );
+          }
+          if (!order.shippingInvoiceUrl) {
+            console.log(
+              `[Shiprocket Flow] Step 4: Fetching shipping invoice URL`,
+            );
+            const invoiceUrl = await generateShiprocketInvoice(
+              order.shiprocketOrderId,
+            );
+            if (!invoiceUrl) {
+              throw new Error(
+                "Invoice URL generation returned an empty or invalid URL.",
+              );
+            }
+            order.shippingInvoiceUrl = invoiceUrl;
+            await order.save();
+          }
+
+          // Step 5: Request Courier Pickup Collection (Non-blocking)
+          if (order.shippingInvoiceUrl && !order.pickupToken) {
+            console.log(
+              `[Shiprocket Flow] Step 5 (Non-blocking): Triggering manifest pickup request`,
+            );
+            try {
+              const pickupDetails = await requestShiprocketPickup(
+                order.shiprocketShipmentId,
+              );
+              if (pickupDetails && pickupDetails.pickupToken) {
+                order.pickupToken = pickupDetails.pickupToken;
+                order.pickupScheduledAt = pickupDetails.pickupScheduledAt;
+                await order.save();
+                console.log(
+                  `[Shiprocket Flow] Pickup requested successfully: ${order.pickupToken}`,
+                );
+              } else {
+                console.warn(
+                  "[Shiprocket Flow] Pickup response missing pickupToken details.",
+                );
+              }
+            } catch (pickupErr) {
+              console.error(
+                `[Shiprocket Flow] Pickup request encountered error (Non-blocking):`,
+                pickupErr.message,
+              );
+              const timestamp = new Date().toISOString();
+              order.internalNotes =
+                `${order.internalNotes || ""}\n[${timestamp}] Non-blocking Pickup failed: ${pickupErr.message}`.trim();
+              await order.save();
+            }
+          }
+
+          // Step 6: Generate + Print Manifest (Non-blocking)
+          if (order.pickupToken && !order.manifestUrl) {
+            console.log(
+              `[Shiprocket Flow] Step 6 (Non-blocking): Fetching manifest URL`,
+            );
+            try {
+              const manifestUrl = await generateShiprocketManifest(
+                order.shiprocketShipmentId,
+              );
+              if (manifestUrl) {
+                order.manifestUrl = manifestUrl;
+                await order.save();
+                console.log(
+                  `[Shiprocket Flow] Manifest generated successfully: ${order.manifestUrl}`,
+                );
+              } else {
+                console.warn(
+                  "[Shiprocket Flow] Manifest response returned empty URL.",
+                );
+              }
+            } catch (manifestErr) {
+              console.error(
+                `[Shiprocket Flow] Manifest generation encountered error (Non-blocking):`,
+                manifestErr.message,
+              );
+              const timestamp = new Date().toISOString();
+              order.internalNotes =
+                `${order.internalNotes || ""}\n[${timestamp}] Non-blocking Manifest failed: ${manifestErr.message}`.trim();
+              await order.save();
+            }
+          }
+
+          console.log(
+            `[Shiprocket Flow] Process completed successfully for order ${order.orderId}`,
+          );
+        } catch (flowError) {
+          console.error(
+            `[Shiprocket Flow] Courier sequence encountered transient error (Failure-Isolated):`,
+            flowError.message,
+          );
+          const timestamp = new Date().toISOString();
+          order.internalNotes =
+            `${order.internalNotes || ""}\n[${timestamp}] Shiprocket flow failed: ${flowError.message}`.trim();
+          await order.save();
+          // We intentionally do NOT throw this error out. Rest of controller logic must succeed.
+        }
+      }
+    }
+
     await order.save();
 
     if (orderStatus && order.orderStatus !== previousStatus) {
@@ -408,5 +623,188 @@ export const deleteOrder = async (req, res, next) => {
     return sendSuccess(res, "Order deleted from queue");
   } catch (error) {
     return sendError(res, error.message, 500);
+  }
+};
+
+// @desc    Retry Shiprocket Label Generation
+// @route   POST /api/v1/orders/:id/retry-label
+// @access  Admin
+export const retryShiprocketLabel = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findById(id);
+    if (!order) {
+      return sendError(res, "Order not found", 404);
+    }
+    if (!order.shiprocketShipmentId) {
+      return sendError(res, "Order not registered with Shiprocket yet", 400);
+    }
+    if (!order.awbCode) {
+      return sendError(res, "AWB code not assigned yet", 400);
+    }
+
+    console.log(
+      `[Shiprocket Flow] Retrying label generation for order: ${order.orderId}`,
+    );
+    const labelUrl = await generateShiprocketLabel(order.shiprocketShipmentId);
+    if (!labelUrl) {
+      return sendError(res, "Label URL generation returned empty value", 500);
+    }
+
+    order.shippingLabelUrl = labelUrl;
+    await order.save();
+
+    await logActivity(req, `Retry Shiprocket Label Success: ${order.orderId}`);
+    return sendSuccess(res, "Shipping label generated successfully", {
+      shippingLabelUrl: labelUrl,
+    });
+  } catch (error) {
+    console.error("[Shiprocket Retry] Label generation failed:", error.message);
+    return sendError(res, `Label generation failed: ${error.message}`, 505);
+  }
+};
+
+// @desc    Retry Shiprocket Invoice Generation
+// @route   POST /api/v1/orders/:id/retry-invoice
+// @access  Admin
+export const retryShiprocketInvoice = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findById(id);
+    if (!order) {
+      return sendError(res, "Order not found", 404);
+    }
+    if (!order.shiprocketOrderId) {
+      return sendError(res, "Order not registered with Shiprocket yet", 400);
+    }
+
+    console.log(
+      `[Shiprocket Flow] Retrying invoice generation for order: ${order.orderId}`,
+    );
+    const invoiceUrl = await generateShiprocketInvoice(order.shiprocketOrderId);
+    if (!invoiceUrl) {
+      return sendError(res, "Invoice URL generation returned empty value", 500);
+    }
+
+    order.shippingInvoiceUrl = invoiceUrl;
+    await order.save();
+
+    await logActivity(
+      req,
+      `Retry Shiprocket Invoice Success: ${order.orderId}`,
+    );
+    return sendSuccess(res, "Order invoice printed successfully", {
+      shippingInvoiceUrl: invoiceUrl,
+    });
+  } catch (error) {
+    console.error(
+      "[Shiprocket Retry] Invoice generation failed:",
+      error.message,
+    );
+    return sendError(res, `Invoice generation failed: ${error.message}`, 505);
+  }
+};
+
+// @desc    Retry Shiprocket Pickup Request
+// @route   POST /api/v1/orders/:id/retry-pickup
+// @access  Admin
+export const retryShiprocketPickup = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findById(id);
+    if (!order) {
+      return sendError(res, "Order not found", 404);
+    }
+    if (!order.shiprocketShipmentId) {
+      return sendError(res, "Order not registered with Shiprocket yet", 400);
+    }
+    if (!order.awbCode) {
+      return sendError(res, "AWB code not assigned yet", 400);
+    }
+
+    console.log(
+      `[Shiprocket Flow] Retrying courier pickup request for order: ${order.orderId}`,
+    );
+    const pickupDetails = await requestShiprocketPickup(
+      order.shiprocketShipmentId,
+    );
+    if (!pickupDetails || !pickupDetails.pickupToken) {
+      return sendError(
+        res,
+        "Pickup request response is missing required pickup token",
+        500,
+      );
+    }
+
+    order.pickupToken = pickupDetails.pickupToken;
+    order.pickupScheduledAt = pickupDetails.pickupScheduledAt;
+    await order.save();
+
+    await logActivity(req, `Retry Shiprocket Pickup Success: ${order.orderId}`);
+    return sendSuccess(res, "Courier pickup requested successfully", {
+      pickupToken: order.pickupToken,
+      pickupScheduledAt: order.pickupScheduledAt,
+    });
+  } catch (error) {
+    console.error("[Shiprocket Retry] Pickup request failed:", error.message);
+    return sendError(
+      res,
+      `Courier pickup scheduling failed: ${error.message}`,
+      505,
+    );
+  }
+};
+
+// @desc    Retry Shiprocket Manifest Generation
+// @route   POST /api/v1/orders/:id/retry-manifest
+// @access  Admin
+export const retryShiprocketManifest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findById(id);
+    if (!order) {
+      return sendError(res, "Order not found", 404);
+    }
+    if (!order.shiprocketShipmentId) {
+      return sendError(res, "Order not registered with Shiprocket yet", 400);
+    }
+    if (!order.pickupToken) {
+      return sendError(
+        res,
+        "Pickup has not been scheduled yet (pickupToken is missing)",
+        400,
+      );
+    }
+
+    console.log(
+      `[Shiprocket Flow] Retrying manifest generation for order: ${order.orderId}`,
+    );
+    const manifestUrl = await generateShiprocketManifest(
+      order.shiprocketShipmentId,
+    );
+    if (!manifestUrl) {
+      return sendError(
+        res,
+        "Manifest URL generation returned empty value",
+        500,
+      );
+    }
+
+    order.manifestUrl = manifestUrl;
+    await order.save();
+
+    await logActivity(
+      req,
+      `Retry Shiprocket Manifest Success: ${order.orderId}`,
+    );
+    return sendSuccess(res, "Print manifest sheet generated successfully", {
+      manifestUrl,
+    });
+  } catch (error) {
+    console.error(
+      "[Shiprocket Retry] Manifest generation failed:",
+      error.message,
+    );
+    return sendError(res, `Manifest generation failed: ${error.message}`, 505);
   }
 };

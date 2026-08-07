@@ -25,6 +25,7 @@ import categoryRouter from "./routes/categoryRoutes.js";
 import brandRouter from "./routes/brandRoutes.js";
 import emailRouter from "./routes/emailRoutes.js";
 import seoRouter from "./routes/seoRoutes.js";
+import shippingRouter from "./routes/shippingRoutes.js";
 
 const app = express();
 
@@ -170,6 +171,7 @@ app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/brands", brandRouter);
 app.use("/api/v1/emails", emailRouter);
 app.use("/api/v1/seo", seoRouter);
+app.use("/api/v1/shipping", shippingRouter);
 
 // 7. 404 HANDLER
 app.use("*", (req, res, next) => {

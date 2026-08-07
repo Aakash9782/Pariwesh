@@ -244,116 +244,139 @@ const OrdersPage = () => {
 
   // Print Invoice Builder (Dynamic Popup Styled HTML)
   const handlePrintInvoice = (order) => {
-    const printWindow = window.open("", "_blank");
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Invoice - ${order.orderId}</title>
-          <style>
-            body { font-family: monospace; padding: 40px; color: #111; }
-            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 20px; }
-            .bill-to { margin: 30px 0; }
-            table { width: 100%; border-collapse: collapse; margin: 30px 0; }
-            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-            th { bg-color: #f5f5f5; }
-            .totals { text-align: right; margin-top: 20px; }
-          </style>
-        </head>
-        <body onload="window.print()">
-          <div class="header">
-            <div>
-              <h2>PARIWESH ENTERPRISE LOGISTICS</h2>
-              <p>GSTIN: 07AAPPP1234A1Z9</p>
-              <p>Email: contact@pariwesh.co | Support: +91 9782XXXXXX</p>
-            </div>
-            <div>
-              <h3>ORDER INVOICE</h3>
-              <p>Invoice No: INV-${order.orderId}</p>
-              <p>Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
-            </div>
-          </div>
-          <div class="bill-to">
-            <strong>BILL TO:</strong>
-            <p>${order.shippingAddress?.fullName}</p>
-            <p>${order.shippingAddress?.street}, ${order.shippingAddress?.city}</p>
-            <p>${order.shippingAddress?.state} - ${order.shippingAddress?.pincode}</p>
-            <p>Phone: ${order.shippingAddress?.phone}</p>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Item Details</th>
-                <th>SKU</th>
-                <th>Size</th>
-                <th>Qty</th>
-                <th>Unit Price</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${order.items
-                .map(
-                  (item) => `
-                <tr>
-                  <td>${item.name}</td>
-                  <td>${item.sku}</td>
-                  <td>${item.size}</td>
-                  <td>${item.quantity}</td>
-                  <td>₹${item.price}</td>
-                  <td>₹${item.price * item.quantity}</td>
-                </tr>
-              `,
-                )
-                .join("")}
-            </tbody>
-          </table>
-          <div class="totals font-sans">
-            <p>Subtotal: ₹${order.pricing?.subtotal || order.totalPrice}</p>
-            <p>Discount: -₹${order.pricing?.discount || 0}</p>
-            <p>Delivery Charges: ₹${order.pricing?.delivery || 0}</p>
-            <h3>Grand Total: ₹${order.pricing?.grandTotal || order.totalPrice}</h3>
-          </div>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    alert(
+      "No real Shiprocket invoice PDF has been generated for this order.",
+      "warning",
+    );
   };
 
   // Print AWB Shipping Label Builder
   const handlePrintLabel = (order) => {
-    const printWindow = window.open("", "_blank");
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>AWB Shipping Label</title>
-          <style>
-            body { font-family: sans-serif; padding: 20px; text-align: center; }
-            .label-box { border: 3px double #000; padding: 20px; width: 400px; margin: auto; text-align: left; }
-            .barcode { font-family: monospace; font-size: 28px; letter-spacing: 6px; text-align: center; margin: 15px 0; border: 1px solid #000; padding: 10px; }
-          </style>
-        </head>
-        <body onload="window.print()">
-          <div class="label-box">
-            <h2 style="text-align: center; border-bottom: 2px solid #000; margin: 0 0 15px; padding-bottom: 5px;">
-              PARIWESH SHIPMENT LABEL
-            </h2>
-            <p><strong>AWB Tracking ID:</strong> ${order.trackingId || "AWB-PENDING"}</p>
-            <p><strong>Carrier:</strong> ${order.shippingProvider || "Delhivery Service"}</p>
-            <p><strong>Order ID:</strong> ${order.orderId}</p>
-            <hr />
-            <p><strong>SHIP TO:</strong></p>
-            <h3>${order.shippingAddress?.fullName}</h3>
-            <p>${order.shippingAddress?.street}, ${order.shippingAddress?.city}</p>
-            <p>${order.shippingAddress?.state} - ${order.shippingAddress?.pincode}</p>
-            <p>Mobile: ${order.shippingAddress?.phone}</p>
-            <hr />
-            <div class="barcode">|||| | |||||| || | || ||</div>
-            <p style="text-align: center; font-size: 11px; color:#500;">COD AMOUNT TO COLLECT: ₹${order.paymentMethod === "COD" ? order.pricing?.grandTotal || order.totalPrice : 0}</p>
-          </div>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    alert(
+      "No real Shiprocket shipping label PDF has been generated for this order.",
+      "warning",
+    );
+  };
+
+  // Retry / Generate Shiprocket Label
+  const handleRetryLabel = async (order) => {
+    try {
+      alert("Requesting Shiprocket Label PDF...", "info");
+      const res = await API.post(`/orders/${order._id}/retry-label`);
+      if (res.data?.success && res.data.data?.shippingLabelUrl) {
+        alert("Shipping Label PDF generated successfully!", "success");
+        const updatedLabelUrl = res.data.data.shippingLabelUrl;
+
+        // Update both local states
+        const updatedOrder = { ...order, shippingLabelUrl: updatedLabelUrl };
+        setSelectedOrder(updatedOrder);
+        setOrders((prev) =>
+          prev.map((o) =>
+            o._id === order._id
+              ? { ...o, shippingLabelUrl: updatedLabelUrl }
+              : o,
+          ),
+        );
+
+        window.open(updatedLabelUrl, "_blank");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(
+        err.response?.data?.message || "Failed to generate Shipping Label PDF",
+        "error",
+      );
+    }
+  };
+
+  // Retry / Generate Shiprocket Invoice
+  const handleRetryInvoice = async (order) => {
+    try {
+      alert("Requesting Shiprocket Invoice PDF...", "info");
+      const res = await API.post(`/orders/${order._id}/retry-invoice`);
+      if (res.data?.success && res.data.data?.shippingInvoiceUrl) {
+        alert("Shipping Invoice PDF generated successfully!", "success");
+        const updatedInvoiceUrl = res.data.data.shippingInvoiceUrl;
+
+        // Update both local states
+        const updatedOrder = {
+          ...order,
+          shippingInvoiceUrl: updatedInvoiceUrl,
+        };
+        setSelectedOrder(updatedOrder);
+        setOrders((prev) =>
+          prev.map((o) =>
+            o._id === order._id
+              ? { ...o, shippingInvoiceUrl: updatedInvoiceUrl }
+              : o,
+          ),
+        );
+
+        window.open(updatedInvoiceUrl, "_blank");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(
+        err.response?.data?.message ||
+          "Failed to generate Shipping Invoice PDF",
+        "error",
+      );
+    }
+  };
+
+  // Schedule / Retry Courier Pickup
+  const handleRetryPickup = async (order) => {
+    try {
+      alert("Scheduling Courier Pickup with Shiprocket...", "info");
+      const res = await API.post(`/orders/${order._id}/retry-pickup`);
+      if (res.data?.success) {
+        alert("Courier pickup scheduled successfully!", "success");
+        const { pickupToken, pickupScheduledAt } = res.data.data || {};
+
+        const updatedOrder = { ...order, pickupToken, pickupScheduledAt };
+        setSelectedOrder(updatedOrder);
+        setOrders((prev) =>
+          prev.map((o) =>
+            o._id === order._id ? { ...o, pickupToken, pickupScheduledAt } : o,
+          ),
+        );
+        fetchOrders();
+      }
+    } catch (err) {
+      console.error(err);
+      alert(
+        err.response?.data?.message || "Failed to schedule Courier Pickup",
+        "error",
+      );
+    }
+  };
+
+  // Generate / Retry Manifest
+  const handleRetryManifest = async (order) => {
+    try {
+      alert("Generating Shiprocket Manifest PDF...", "info");
+      const res = await API.post(`/orders/${order._id}/retry-manifest`);
+      if (res.data?.success && res.data.data?.manifestUrl) {
+        alert("Print Manifest sheet generated successfully!", "success");
+        const updatedManifestUrl = res.data.data.manifestUrl;
+
+        const updatedOrder = { ...order, manifestUrl: updatedManifestUrl };
+        setSelectedOrder(updatedOrder);
+        setOrders((prev) =>
+          prev.map((o) =>
+            o._id === order._id ? { ...o, manifestUrl: updatedManifestUrl } : o,
+          ),
+        );
+
+        window.open(updatedManifestUrl, "_blank");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(
+        err.response?.data?.message || "Failed to generate Manifest PDF",
+        "error",
+      );
+    }
   };
 
   // Excel Spreadsheet table exporter (CSV compatible format)
@@ -468,7 +491,10 @@ const OrdersPage = () => {
         >
           <option value="">Status: All</option>
           <option value="Placed">Placed</option>
+          <option value="Confirmed">Confirmed</option>
           <option value="Processing">Processing</option>
+          <option value="Packed">Packed</option>
+          <option value="Ready to Ship">Ready to Ship</option>
           <option value="Shipped">Shipped</option>
           <option value="Delivered">Delivered</option>
           <option value="Cancelled">Cancelled</option>
@@ -699,12 +725,98 @@ const OrdersPage = () => {
                   <button
                     type="button"
                     onClick={() => openShipForm(selectedOrder)}
-                    className="mt-3 text-[10px] uppercase tracking-wider text-[#c5a880] hover:underline font-bold text-left"
+                    className="mt-3 text-[10px] uppercase tracking-wider text-[#c5a880] hover:underline font-bold text-left block"
                   >
                     {selectedOrder.trackingId
                       ? "Edit AWB / courier"
                       : "Assign AWB & ship"}
                   </button>
+
+                  {(selectedOrder.shippingLabelUrl ||
+                    selectedOrder.shippingInvoiceUrl ||
+                    selectedOrder.manifestUrl ||
+                    selectedOrder.shiprocketShipmentId ||
+                    selectedOrder.pickupToken) && (
+                    <div className="mt-3 pt-3 border-t border-slate-100 space-y-1.5 font-sans">
+                      <p className="text-[9px] uppercase font-bold text-slate-400">
+                        Shiprocket Documents & Logistics
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 items-center">
+                        {selectedOrder.shippingLabelUrl ? (
+                          <a
+                            href={selectedOrder.shippingLabelUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-[9px] bg-[#c5a880]/15 hover:bg-[#c5a880]/25 text-[#c5a880] font-bold px-2 py-1 rounded transition"
+                          >
+                            Label PDF
+                          </a>
+                        ) : selectedOrder.shiprocketShipmentId &&
+                          selectedOrder.awbCode ? (
+                          <button
+                            type="button"
+                            onClick={() => handleRetryLabel(selectedOrder)}
+                            className="text-[9px] bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded border border-amber-250 border-amber-200 transition"
+                          >
+                            Regen Label
+                          </button>
+                        ) : null}
+
+                        {selectedOrder.shippingInvoiceUrl ? (
+                          <a
+                            href={selectedOrder.shippingInvoiceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-[9px] bg-slate-105 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1 rounded transition"
+                          >
+                            Tax Invoice
+                          </a>
+                        ) : selectedOrder.shiprocketOrderId ? (
+                          <button
+                            type="button"
+                            onClick={() => handleRetryInvoice(selectedOrder)}
+                            className="text-[9px] bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded border border-amber-200 transition"
+                          >
+                            Regen Invoice
+                          </button>
+                        ) : null}
+
+                        {selectedOrder.pickupToken ? (
+                          <span className="inline-flex items-center text-[9px] bg-emerald-50 text-emerald-700 font-bold px-2 py-1 rounded border border-emerald-200">
+                            Pickup Booked
+                          </span>
+                        ) : selectedOrder.shiprocketShipmentId &&
+                          selectedOrder.awbCode ? (
+                          <button
+                            type="button"
+                            onClick={() => handleRetryPickup(selectedOrder)}
+                            className="text-[9px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded border border-indigo-200 transition animate-pulse"
+                          >
+                            Schedule Pickup
+                          </button>
+                        ) : null}
+
+                        {selectedOrder.manifestUrl ? (
+                          <a
+                            href={selectedOrder.manifestUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-[9px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1 rounded transition"
+                          >
+                            Manifest PDF
+                          </a>
+                        ) : selectedOrder.pickupToken ? (
+                          <button
+                            type="button"
+                            onClick={() => handleRetryManifest(selectedOrder)}
+                            className="text-[9px] bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2 py-1 rounded border border-teal-200 transition"
+                          >
+                            Gen Manifest
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -863,7 +975,15 @@ const OrdersPage = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handlePrintInvoice(selectedOrder)}
+                onClick={() => {
+                  if (selectedOrder.shippingInvoiceUrl) {
+                    window.open(selectedOrder.shippingInvoiceUrl, "_blank");
+                  } else if (selectedOrder.shiprocketOrderId) {
+                    handleRetryInvoice(selectedOrder);
+                  } else {
+                    handlePrintInvoice(selectedOrder);
+                  }
+                }}
                 className="flex items-center justify-center space-x-1.5 border-slate-200"
               >
                 <RiPrinterLine size={15} />
@@ -873,7 +993,15 @@ const OrdersPage = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handlePrintLabel(selectedOrder)}
+                onClick={() => {
+                  if (selectedOrder.shippingLabelUrl) {
+                    window.open(selectedOrder.shippingLabelUrl, "_blank");
+                  } else if (selectedOrder.shiprocketOrderId) {
+                    handleRetryLabel(selectedOrder);
+                  } else {
+                    handlePrintLabel(selectedOrder);
+                  }
+                }}
                 className="flex items-center justify-center space-x-1.5 text-[#c5a880] border-[#c5a880]/30"
               >
                 <RiFileList3Line size={15} />
@@ -892,8 +1020,13 @@ const OrdersPage = () => {
                 className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2.5 focus:outline-none focus:ring-1 focus:ring-[#c5a880]"
               >
                 <option value="Placed">Status: Placed</option>
-                <option value="Processing">Status: Pack & Processing</option>
-                <option value="Shipped">Status: Ship Parcel</option>
+                <option value="Confirmed">Status: Confirmed</option>
+                <option value="Processing">Status: Processing</option>
+                <option value="Packed">Status: Packed</option>
+                <option value="Ready to Ship">
+                  Status: Ready to Ship (Auto-Shiprocket)
+                </option>
+                <option value="Shipped">Status: Shipped (Manual AWB)</option>
                 <option value="Delivered">Status: Mark Delivered</option>
                 <option value="Cancelled">Status: Cancel Booking</option>
               </select>
