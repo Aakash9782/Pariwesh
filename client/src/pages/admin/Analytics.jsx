@@ -25,8 +25,10 @@ const AnalyticsPage = () => {
     placedPct: 0,
     deliveredPct: 0,
     cancelledPct: 0,
+    returnsPct: 0,
     returnsCount: 0,
     revenueTotal: 0,
+    weeklyCounts: [0, 0, 0, 0, 0, 0, 0],
   });
 
   const fetchOrdersHistory = async () => {
@@ -45,6 +47,7 @@ const AnalyticsPage = () => {
         let delivered = 0;
         let cancelled = 0;
         let returns = 0;
+        const weeklyCounts = [0, 0, 0, 0, 0, 0, 0];
 
         list.forEach((ord) => {
           const val = ord.pricing?.grandTotal || ord.totalPrice || 0;
@@ -54,11 +57,33 @@ const AnalyticsPage = () => {
           else onlineCount++;
 
           const status = ord.orderStatus?.toLowerCase() || "";
-          if (status === "placed" || status === "pending") placed++;
-          else if (status === "delivered") delivered++;
-          else if (status === "cancelled") cancelled++;
-          else if (status === "refunded" || status === "return_requested")
+          if (
+            status === "placed" ||
+            status === "pending" ||
+            status === "confirmed" ||
+            status === "processing" ||
+            status === "packed" ||
+            status === "ready to ship" ||
+            status === "shipped"
+          ) {
+            placed++;
+          } else if (status === "delivered") {
+            delivered++;
+          } else if (status === "cancelled") {
+            cancelled++;
+          } else if (
+            status === "refunded" ||
+            status === "return_requested" ||
+            status.startsWith("return_")
+          ) {
             returns++;
+          }
+
+          // Compute day index based on order creation date
+          const date = new Date(ord.createdAt);
+          const day = date.getDay(); // 0 is Sunday, 1 is Monday...
+          const index = day === 0 ? 6 : day - 1; // Mon -> 0, Tue -> 1 ... Sun -> 6
+          weeklyCounts[index]++;
         });
 
         const totalOrders = list.length || 1;
@@ -69,8 +94,10 @@ const AnalyticsPage = () => {
           placedPct: Math.round((placed / totalOrders) * 100),
           deliveredPct: Math.round((delivered / totalOrders) * 100),
           cancelledPct: Math.round((cancelled / totalOrders) * 100),
+          returnsPct: Math.round((returns / totalOrders) * 100),
           returnsCount: returns,
           revenueTotal: totalRev,
+          weeklyCounts,
         });
       }
     } catch (err) {
@@ -84,6 +111,38 @@ const AnalyticsPage = () => {
   useEffect(() => {
     fetchOrdersHistory();
   }, []);
+
+  const weeklyCounts = metrics.weeklyCounts || [0, 0, 0, 0, 0, 0, 0];
+  const maxCount = Math.max(...weeklyCounts, 1);
+  const chartPoints = weeklyCounts.map((count, i) => {
+    const x = (i * 100) / 6;
+    const y = 90 - (count / maxCount) * 75;
+    return { x, y, count };
+  });
+
+  const linePath = chartPoints.reduce((acc, pt, i) => {
+    return i === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
+  }, "");
+
+  const areaPath = linePath ? `${linePath} L 100 95 L 0 95 Z` : "";
+
+  // Donut chart calculations
+  const circumference = 283;
+  const devRatio = metrics.deliveredPct || 0;
+  const plcRatio = metrics.placedPct || 0;
+  const canRatio = metrics.cancelledPct || 0;
+  const retRatio = metrics.returnsPct || 0;
+  const totalRatios = devRatio + plcRatio + canRatio + retRatio;
+
+  const devDash = (devRatio / 100) * circumference;
+  const plcDash = (plcRatio / 100) * circumference;
+  const canDash = (canRatio / 100) * circumference;
+  const retDash = (retRatio / 100) * circumference;
+
+  const devOffset = 0;
+  const plcOffset = devDash;
+  const canOffset = devDash + plcDash;
+  const retOffset = devDash + plcDash + canDash;
 
   return (
     <div className="space-y-6 text-slate-700 animate-fade-in font-sans">
@@ -206,19 +265,63 @@ const AnalyticsPage = () => {
                   viewBox="0 0 100 100"
                   preserveAspectRatio="none"
                 >
-                  <path
-                    d="M 0 90 L 20 80 Q 40 40 60 70 T 80 30 L 100 10"
-                    fill="none"
-                    stroke="#c5a880"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                  />
-                  {/* points */}
-                  <circle cx="0" cy="90" r="1.5" fill="#c5a880" />
-                  <circle cx="20" cy="80" r="1.5" fill="#c5a880" />
-                  <circle cx="60" cy="70" r="1.5" fill="#c5a880" />
-                  <circle cx="80" cy="30" r="1.5" fill="#c5a880" />
-                  <circle cx="100" cy="10" r="1.5" fill="#c5a880" />
+                  <defs>
+                    <linearGradient
+                      id="chartGradient"
+                      x1="0"
+                      x2="0"
+                      y1="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="0%"
+                        stopColor="#c5a880"
+                        stopOpacity="0.25"
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor="#c5a880"
+                        stopOpacity="0.0"
+                      />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Gradient area */}
+                  {areaPath && (
+                    <path
+                      d={areaPath}
+                      fill="url(#chartGradient)"
+                      className="transition-all duration-300"
+                    />
+                  )}
+
+                  {/* SVG line path */}
+                  {linePath && (
+                    <path
+                      d={linePath}
+                      fill="none"
+                      stroke="#c5a880"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      className="transition-all duration-300"
+                    />
+                  )}
+
+                  {/* Node circles */}
+                  {chartPoints.map((pt, i) => (
+                    <g key={i}>
+                      <title>{`Orders: ${pt.count}`}</title>
+                      <circle
+                        cx={pt.x}
+                        cy={pt.y}
+                        r="2.5"
+                        fill="#c5a880"
+                        stroke="#ffffff"
+                        strokeWidth="0.8"
+                        className="transition-all duration-300 cursor-pointer hover:scale-125"
+                      />
+                    </g>
+                  ))}
                 </svg>
                 <div className="text-[8px] text-slate-500 w-full flex justify-between absolute bottom-1 px-4 leading-relaxed font-mono font-semibold">
                   <span>Mon</span>
@@ -239,7 +342,7 @@ const AnalyticsPage = () => {
               </h3>
 
               <div className="flex justify-center items-center py-6">
-                {/* Simulated donut chart using nested SVG paths */}
+                {/* Dynamic donut chart */}
                 <svg className="w-32 h-32 transform -rotate-90">
                   <circle
                     cx="64"
@@ -249,19 +352,80 @@ const AnalyticsPage = () => {
                     strokeWidth="10"
                     fill="transparent"
                   />
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="45"
-                    stroke="#c5a880"
-                    strokeWidth="10"
-                    fill="transparent"
-                    strokeDasharray="283"
-                    strokeDashoffset={
-                      283 - (283 * (metrics.deliveredPct || 65)) / 100
-                    }
-                    strokeLinecap="round"
-                  />
+
+                  {totalRatios === 0 ? (
+                    <circle
+                      cx="64"
+                      cy="64"
+                      r="45"
+                      stroke="#cbd5e1"
+                      strokeWidth="10"
+                      fill="transparent"
+                    />
+                  ) : (
+                    <>
+                      {/* Delivered Segment */}
+                      {devDash > 0 && (
+                        <circle
+                          cx="64"
+                          cy="64"
+                          r="45"
+                          stroke="#c5a880"
+                          strokeWidth="10"
+                          fill="transparent"
+                          strokeDasharray={`${devDash} ${circumference - devDash}`}
+                          strokeDashoffset={-devOffset}
+                          strokeLinecap="round"
+                          className="transition-all duration-300"
+                        />
+                      )}
+                      {/* Processing / Placed Segment */}
+                      {plcDash > 0 && (
+                        <circle
+                          cx="64"
+                          cy="64"
+                          r="45"
+                          stroke="#64748b"
+                          strokeWidth="10"
+                          fill="transparent"
+                          strokeDasharray={`${plcDash} ${circumference - plcDash}`}
+                          strokeDashoffset={-plcOffset}
+                          strokeLinecap="round"
+                          className="transition-all duration-300"
+                        />
+                      )}
+                      {/* Cancelled Segment */}
+                      {canDash > 0 && (
+                        <circle
+                          cx="64"
+                          cy="64"
+                          r="45"
+                          stroke="#ef4444"
+                          strokeWidth="10"
+                          fill="transparent"
+                          strokeDasharray={`${canDash} ${circumference - canDash}`}
+                          strokeDashoffset={-canOffset}
+                          strokeLinecap="round"
+                          className="transition-all duration-300"
+                        />
+                      )}
+                      {/* Returned Segment */}
+                      {retDash > 0 && (
+                        <circle
+                          cx="64"
+                          cy="64"
+                          r="45"
+                          stroke="#a855f7"
+                          strokeWidth="10"
+                          fill="transparent"
+                          strokeDasharray={`${retDash} ${circumference - retDash}`}
+                          strokeDashoffset={-retOffset}
+                          strokeLinecap="round"
+                          className="transition-all duration-300"
+                        />
+                      )}
+                    </>
+                  )}
                 </svg>
               </div>
 
@@ -277,11 +441,11 @@ const AnalyticsPage = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 flex items-center font-medium">
-                    <span className="w-2.5 h-2.5 bg-slate-200 rounded-full mr-2" />
+                    <span className="w-2.5 h-2.5 bg-[#64748b] rounded-full mr-2" />
                     Processing / Placed
                   </span>
                   <span className="font-semibold text-slate-700">
-                    {metrics.placedPct}%
+                    {plcRatio}%
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -291,6 +455,15 @@ const AnalyticsPage = () => {
                   </span>
                   <span className="font-semibold text-slate-700">
                     {metrics.cancelledPct}%
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 flex items-center font-medium">
+                    <span className="w-2.5 h-2.5 bg-purple-500 rounded-full mr-2" />
+                    Returned / Refunded
+                  </span>
+                  <span className="font-semibold text-slate-700">
+                    {metrics.returnsPct}%
                   </span>
                 </div>
               </div>

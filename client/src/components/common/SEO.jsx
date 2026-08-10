@@ -25,10 +25,7 @@ const SEO = ({
   const pageKeywords = keywords || defaultKeywords;
 
   // Dynamically resolve canonical URL (using window.location to strictly avoid hardcoding domain names)
-  const origin =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://pariwesh.com";
+  const origin = "https://pariwesh.in";
   const path = typeof window !== "undefined" ? window.location.pathname : "";
   const canonical = canonicalUrl
     ? `${origin}${canonicalUrl}`

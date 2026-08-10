@@ -63,7 +63,9 @@ export const createOrder = async (req, res, next) => {
     // Never trust client paymentStatus — ONLINE stays Pending until gateway verifies (Razorpay)
     const safePaymentStatus = "Pending";
 
-    // 1. Validate existence and stock for all items
+    // 1. Validate existence and stock for all items, and calculate secure subtotal & gst
+    let calculatedSubtotal = 0;
+    const validatedItems = [];
     for (const item of items) {
       const product = await Product.findById(item.productId || item._id);
       if (!product) {
@@ -81,10 +83,26 @@ export const createOrder = async (req, res, next) => {
           400,
         );
       }
+      const itemSubtotal = product.price * Number(item.quantity);
+      calculatedSubtotal += itemSubtotal;
+
+      validatedItems.push({
+        productId: product._id.toString(),
+        name: product.name,
+        sku: product.sku,
+        price: product.price,
+        quantity: Number(item.quantity),
+        size,
+        color: item.color || product.color || "",
+        image: item.image || (product.images && product.images[0]) || "",
+        gstRate: product.gst || 0,
+        gstAmount: 0, // Will be computed after finalDiscount is determined
+      });
     }
 
     // 2. Validate coupon validity if applied
     let couponInstance = null;
+    let couponDiscount = 0;
     if (pricing && pricing.appliedCoupon) {
       couponInstance = await Coupon.findOne({
         code: pricing.appliedCoupon.toUpperCase(),
@@ -126,7 +144,105 @@ export const createOrder = async (req, res, next) => {
           );
         }
       }
+      if (couponInstance.discountType === "Percentage") {
+        couponDiscount = Math.round(
+          Number(calculatedSubtotal) * (couponInstance.value / 100),
+        );
+      } else {
+        couponDiscount = Math.min(
+          couponInstance.value,
+          Number(calculatedSubtotal),
+        );
+      }
     }
+
+    // 3. Central Configuration for Special Offers
+    const PREPAID_DISCOUNT = 5;
+    const FIFTH_PURCHASE_DISCOUNT = 15;
+    const FIFTH_PURCHASE_NUMBER = 4; // exactly 4 delivered orders previously means 5th purchase
+
+    // 4. Calculate eligible special offer based on actual DB records
+    let eligibleOfferType = null;
+    let eligibleOfferPercent = 0;
+
+    const deliveredCount = await Order.countDocuments({
+      "customer.userId": req.user._id.toString(),
+      orderStatus: "Delivered",
+    });
+
+    if (deliveredCount === FIFTH_PURCHASE_NUMBER) {
+      eligibleOfferType = "FIFTH_PURCHASE_15";
+      eligibleOfferPercent = FIFTH_PURCHASE_DISCOUNT;
+    } else if (method === "ONLINE") {
+      eligibleOfferType = "PREPAID_5";
+      eligibleOfferPercent = PREPAID_DISCOUNT;
+    }
+
+    // 5. Calculate final discount and enforce Coupon compatibility / no-stack rules
+    let finalDiscount = 0;
+    let appliedOffer = null;
+
+    if (pricing && pricing.appliedCoupon) {
+      // Coupon takes priority and disables automatic special offers
+      finalDiscount = couponDiscount;
+    } else if (pricing && pricing.specialOffer && pricing.specialOffer.type) {
+      const requestedOfferType = pricing.specialOffer.type;
+      if (requestedOfferType !== eligibleOfferType) {
+        return sendError(
+          res,
+          `Unauthorized special offer applied or not eligible: ${requestedOfferType}`,
+          400,
+        );
+      }
+      finalDiscount = Math.round(
+        calculatedSubtotal * (eligibleOfferPercent / 100),
+      );
+      appliedOffer = {
+        type: eligibleOfferType,
+        discountPercent: eligibleOfferPercent,
+      };
+    }
+
+    // Recalculate inclusive GST dynamically on the discounted amount
+    const discountRatio =
+      calculatedSubtotal > 0 ? finalDiscount / calculatedSubtotal : 0;
+    let calculatedGst = 0;
+    for (const valItem of validatedItems) {
+      const itemSubtotal = valItem.price * valItem.quantity;
+      const discountedItemSubtotal = itemSubtotal * (1 - discountRatio);
+      const itemGstAmount =
+        discountedItemSubtotal * (valItem.gstRate / (100 + valItem.gstRate));
+      valItem.gstAmount = Math.round(itemGstAmount);
+      calculatedGst += itemGstAmount;
+    }
+    calculatedGst = Math.round(calculatedGst);
+
+    const calculatedDelivery =
+      calculatedSubtotal >= 1500 || calculatedSubtotal === 0 ? 0 : 45;
+    const calculatedGrandTotal =
+      calculatedSubtotal + calculatedDelivery - finalDiscount;
+
+    // Assert grandTotal matches client calculations to prevent tampering
+    if (Math.abs(calculatedGrandTotal - pricing.grandTotal) > 2) {
+      return sendError(
+        res,
+        "Order total mismatch. Pricing/Discount forge detected.",
+        400,
+      );
+    }
+
+    const finalPricing = {
+      subtotal: calculatedSubtotal,
+      delivery: calculatedDelivery,
+      gst: calculatedGst,
+      discount: finalDiscount,
+      grandTotal: calculatedGrandTotal,
+      appliedCoupon:
+        pricing && pricing.appliedCoupon
+          ? pricing.appliedCoupon.toUpperCase()
+          : "",
+      specialOffer: appliedOffer || undefined,
+    };
 
     // Auto-generate human readable Order ID
     const randomNum = Math.floor(100000 + Math.random() * 900000);
@@ -148,9 +264,9 @@ export const createOrder = async (req, res, next) => {
     const newOrder = await Order.create({
       orderId,
       customer: boundCustomer,
-      items,
+      items: validatedItems,
       shippingAddress,
-      pricing,
+      pricing: finalPricing,
       paymentMethod: method,
       paymentStatus: safePaymentStatus,
       orderStatus: "Placed",

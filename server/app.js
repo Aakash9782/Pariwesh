@@ -47,6 +47,8 @@ app.use(
 const whitelist = [
   "https://pariwesh.com",
   "https://www.pariwesh.com",
+  "https://pariwesh.in",
+  "https://www.pariwesh.in",
   "https://pariwesh.vercel.app",
   "http://localhost:5173",
   "http://127.0.0.1:5173",

@@ -224,7 +224,10 @@ const ProductDetails = () => {
         category: product.category || "Ethnic Wear",
         offers: {
           "@type": "Offer",
-          url: typeof window !== "undefined" ? window.location.href : "",
+          url:
+            typeof window !== "undefined"
+              ? `https://pariwesh.in${window.location.pathname}`
+              : "",
           priceCurrency: "INR",
           price: price,
           itemCondition: "https://schema.org/NewCondition",
@@ -248,34 +251,28 @@ const ProductDetails = () => {
             "@type": "ListItem",
             position: 1,
             name: "Home",
-            item:
-              typeof window !== "undefined"
-                ? window.location.origin
-                : "https://pariwesh.com",
+            item: "https://pariwesh.in",
           },
           {
             "@type": "ListItem",
             position: 2,
             name: "Shop",
-            item:
-              typeof window !== "undefined"
-                ? `${window.location.origin}/shop`
-                : "https://pariwesh.com/shop",
+            item: "https://pariwesh.in/shop",
           },
           {
             "@type": "ListItem",
             position: 3,
             name: product.category || "Suits",
-            item:
-              typeof window !== "undefined"
-                ? `${window.location.origin}/shop?category=${encodeURIComponent(product.category || "suits")}`
-                : `https://pariwesh.com/shop?category=${encodeURIComponent(product.category || "suits")}`,
+            item: `https://pariwesh.in/shop?category=${encodeURIComponent(product.category || "suits")}`,
           },
           {
             "@type": "ListItem",
             position: 4,
             name: product.name,
-            item: typeof window !== "undefined" ? window.location.href : "",
+            item:
+              typeof window !== "undefined"
+                ? `https://pariwesh.in${window.location.pathname}`
+                : "",
           },
         ],
       }

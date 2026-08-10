@@ -6,4 +6,4 @@ Disallow: /admin/
 Disallow: /profile/
 Disallow: /cart/
 
-Sitemap: https://pariwesh.com/sitemap.xml
+Sitemap: https://pariwesh.in/sitemap.xml

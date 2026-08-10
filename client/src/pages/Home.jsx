@@ -359,13 +359,10 @@ const Home = () => {
       "@context": "https://schema.org",
       "@type": "WebSite",
       name: "Pariwesh",
-      url:
-        typeof window !== "undefined"
-          ? window.location.origin
-          : "https://pariwesh.com",
+      url: "https://pariwesh.in",
       potentialAction: {
         "@type": "SearchAction",
-        target: `${typeof window !== "undefined" ? window.location.origin : "https://pariwesh.com"}/shop?search={search_term_string}`,
+        target: "https://pariwesh.in/shop?search={search_term_string}",
         "query-input": "required name=search_term_string",
       },
     },
@@ -373,14 +370,8 @@ const Home = () => {
       "@context": "https://schema.org",
       "@type": "Organization",
       name: "Pariwesh",
-      url:
-        typeof window !== "undefined"
-          ? window.location.origin
-          : "https://pariwesh.com",
-      logo:
-        typeof window !== "undefined"
-          ? `${window.location.origin}/logo.png`
-          : "https://pariwesh.com/logo.png",
+      url: "https://pariwesh.in",
+      logo: "https://pariwesh.in/logo.png",
       contactPoint: {
         "@type": "ContactPoint",
         telephone: "+918209903441",

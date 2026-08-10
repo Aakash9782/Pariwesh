@@ -6,7 +6,7 @@ import Collection from "../models/Collection.js";
 // @access  Public
 export const getSitemap = async (req, res, next) => {
   try {
-    const rawDomain = process.env.FRONTEND_URL || "https://pariwesh.com";
+    const rawDomain = process.env.FRONTEND_URL || "https://pariwesh.in";
     const domain = rawDomain.trim().replace(/\/$/, "");
 
     // 1. Static URLs
@@ -14,8 +14,8 @@ export const getSitemap = async (req, res, next) => {
       { loc: `${domain}/`, changefreq: "daily", priority: "1.0" },
       { loc: `${domain}/shop`, changefreq: "weekly", priority: "0.8" },
       { loc: `${domain}/collections`, changefreq: "weekly", priority: "0.8" },
-      { loc: `${domain}/about-us`, changefreq: "monthly", priority: "0.5" },
-      { loc: `${domain}/contact-us`, changefreq: "monthly", priority: "0.5" },
+      { loc: `${domain}/about`, changefreq: "monthly", priority: "0.5" },
+      { loc: `${domain}/contact`, changefreq: "monthly", priority: "0.5" },
       {
         loc: `${domain}/privacy-policy`,
         changefreq: "monthly",
@@ -23,12 +23,12 @@ export const getSitemap = async (req, res, next) => {
       },
       { loc: `${domain}/terms`, changefreq: "monthly", priority: "0.3" },
       {
-        loc: `${domain}/shipping-policy`,
+        loc: `${domain}/shipping`,
         changefreq: "monthly",
         priority: "0.3",
       },
       {
-        loc: `${domain}/returns-policy`,
+        loc: `${domain}/returns`,
         changefreq: "monthly",
         priority: "0.3",
       },

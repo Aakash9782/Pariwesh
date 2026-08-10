@@ -279,7 +279,7 @@ export const buildOrderStatusUpdateEmail = (order, settings) => {
   const frontendUrl = (
     settings?.frontendUrl ||
     process.env.FRONTEND_URL ||
-    "https://pariweshcollection.vercel.app"
+    "https://pariwesh.in"
   ).trim();
   const trackUrl = `${frontendUrl}/profile`;
   const shopUrl = `${frontendUrl}/shop`;

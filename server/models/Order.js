@@ -33,6 +33,14 @@ const OrderItemSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  gstRate: {
+    type: Number,
+    default: 0,
+  },
+  gstAmount: {
+    type: Number,
+    default: 0,
+  },
 });
 
 const OrderSchema = new mongoose.Schema(
@@ -64,6 +72,13 @@ const OrderSchema = new mongoose.Schema(
       discount: { type: Number, default: 0 },
       grandTotal: { type: Number, required: true },
       appliedCoupon: { type: String, default: "" },
+      specialOffer: {
+        type: {
+          type: String,
+          enum: ["PREPAID_5", "FIFTH_PURCHASE_15"],
+        },
+        discountPercent: Number,
+      },
     },
     paymentMethod: {
       type: String,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
+import { useSearchParams } from "react-router-dom";
 import PageHeader from "../../components/admin/ui/PageHeader.jsx";
 import Card from "../../components/admin/ui/Card.jsx";
 import Button from "../../components/admin/ui/Button.jsx";
@@ -23,6 +24,7 @@ import {
 
 const ReturnsPage = () => {
   const { showAlert: alert } = useAlert();
+  const [searchParams] = useSearchParams();
 
   const [returns, setReturns] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,8 +32,18 @@ const ReturnsPage = () => {
 
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(
+    searchParams.get("status") || "",
+  );
   const [gradeFilter, setGradeFilter] = useState("");
+
+  // Sync status filter choice if URL searchParams shifts
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (status !== null) {
+      setStatusFilter(status);
+    }
+  }, [searchParams]);
 
   // Rejection & QC & Settlement Form States
   const [rejectionReason, setRejectionReason] = useState("");

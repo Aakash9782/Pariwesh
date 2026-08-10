@@ -192,7 +192,11 @@ const DashboardModule = () => {
         oList.forEach((ord) => {
           const d = new Date(ord.createdAt);
           if (d >= dayStart && d < dayEnd) {
-            sum += ord.pricing?.grandTotal || ord.pricing?.total || ord.totalPrice || 0;
+            sum +=
+              ord.pricing?.grandTotal ||
+              ord.pricing?.total ||
+              ord.totalPrice ||
+              0;
             count++;
           }
         });
@@ -224,7 +228,8 @@ const DashboardModule = () => {
           catTotals[cat] = (catTotals[cat] || 0) + line;
         });
       });
-      const catTotalSum = Object.values(catTotals).reduce((a, b) => a + b, 0) || 1;
+      const catTotalSum =
+        Object.values(catTotals).reduce((a, b) => a + b, 0) || 1;
       const categorySales = Object.entries(catTotals)
         .map(([cat, rev]) => ({
           cat,
@@ -250,10 +255,9 @@ const DashboardModule = () => {
       });
       const momPct =
         lastMonthRev > 0
-          ? (
-              ((monthlyRevenueSum - lastMonthRev) / lastMonthRev) *
-              100
-            ).toFixed(1)
+          ? (((monthlyRevenueSum - lastMonthRev) / lastMonthRev) * 100).toFixed(
+              1,
+            )
           : monthlyRevenueSum > 0
             ? "100.0"
             : "0.0";
@@ -396,7 +400,7 @@ const DashboardModule = () => {
       label: "Refund Requests",
       val: stats.refunds,
       icon: <RiExchangeFundsLine className="text-purple-500" />,
-      path: "/admin/orders?status=Refunded",
+      path: "/admin/returns?status=Return_Requested",
     },
     {
       label: "COD Pending Volume",
@@ -533,7 +537,10 @@ const DashboardModule = () => {
                       title={`₹${d.revenue.toLocaleString("en-IN")} · ${d.orders} orders`}
                     >
                       <span className="absolute -top-5 text-[8px] font-mono text-slate-500 opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
-                        ₹{d.revenue >= 1000 ? `${(d.revenue / 1000).toFixed(1)}k` : d.revenue}
+                        ₹
+                        {d.revenue >= 1000
+                          ? `${(d.revenue / 1000).toFixed(1)}k`
+                          : d.revenue}
                       </span>
                       <div
                         className="w-full rounded-t bg-[#c5a880]/80 group-hover:bg-[#c5a880] transition-all min-h-[4px]"
@@ -560,7 +567,7 @@ const DashboardModule = () => {
             Sales by Category
           </h3>
           <div className="space-y-4 flex-grow flex flex-col justify-center">
-            {(!stats.categorySales || stats.categorySales.length === 0) ? (
+            {!stats.categorySales || stats.categorySales.length === 0 ? (
               <p className="text-xs text-slate-400 italic py-8 text-center">
                 No category sales data yet — place orders to populate
               </p>

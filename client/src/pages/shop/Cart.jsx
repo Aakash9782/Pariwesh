@@ -19,6 +19,7 @@ import { useAlert } from "../../contexts/AlertContext.jsx";
 import { updateProfile } from "../../redux/slices/authSlice.js";
 import { syncCartNow } from "../../services/hydrateCommerce.js";
 import SEO from "../../components/common/SEO.jsx";
+import SpecialOffer from "../../components/SpecialOffer.jsx";
 
 const loadRazorpayScript = () =>
   new Promise((resolve) => {
@@ -55,6 +56,8 @@ const Cart = () => {
   const [discount, setDiscount] = useState(0);
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponError, setCouponError] = useState("");
+  const [selectedSpecialOffer, setSelectedSpecialOffer] = useState(null);
+  const [deliveredCount, setDeliveredCount] = useState(0);
 
   // Checkout flow states
   const [checkoutStep, setCheckoutStep] = useState(isDirectCheckout && !!user);
@@ -80,6 +83,26 @@ const Cart = () => {
         phone: prev.phone || user.phone || "",
       }));
     }
+  }, [user]);
+
+  React.useEffect(() => {
+    const fetchOrderHistory = async () => {
+      if (user?._id) {
+        try {
+          const res = await API.get("/orders");
+          if (res.data && res.data.success) {
+            const fetchedOrders = res.data.data;
+            const count = fetchedOrders.filter(
+              (ord) => ord.orderStatus === "Delivered",
+            ).length;
+            setDeliveredCount(count);
+          }
+        } catch (err) {
+          console.error("Failed to fetch order history for offers:", err);
+        }
+      }
+    };
+    fetchOrderHistory();
   }, [user]);
 
   React.useEffect(() => {
@@ -363,9 +386,16 @@ const Cart = () => {
           subtotal,
           delivery,
           gst,
-          discount,
+          discount: finalDiscount,
           grandTotal,
           appliedCoupon: couponApplied ? coupon.trim().toUpperCase() : "",
+          specialOffer:
+            !couponApplied && selectedSpecialOffer
+              ? {
+                  type: selectedSpecialOffer.type,
+                  discountPercent: selectedSpecialOffer.discountPercent,
+                }
+              : undefined,
         },
         paymentMethod: address.paymentMethod,
         customer: {
@@ -419,8 +449,21 @@ const Cart = () => {
 
   const subtotal = getSubtotal();
   const delivery = subtotal >= 1500 || subtotal === 0 ? 0 : 45;
-  const gst = Math.round(subtotal * 0.05); // 5% GST portion (inclusive in price, sent for Admin ledger only)
-  const grandTotal = subtotal + delivery - discount;
+  const finalDiscount = couponApplied
+    ? discount
+    : selectedSpecialOffer
+      ? Math.round(subtotal * (selectedSpecialOffer.discountPercent / 100))
+      : 0;
+  const discountRatio = subtotal > 0 ? finalDiscount / subtotal : 0;
+  const gst = Math.round(
+    cartItems.reduce((acc, item) => {
+      const itemSubtotal = item.product.price * item.quantity;
+      const discountedItemSubtotal = itemSubtotal * (1 - discountRatio);
+      const itemGstRate = item.product.gst || 0;
+      return acc + discountedItemSubtotal * (itemGstRate / (100 + itemGstRate));
+    }, 0),
+  );
+  const grandTotal = subtotal + delivery - finalDiscount;
 
   if (orderSuccess) {
     return (
@@ -785,6 +828,19 @@ const Cart = () => {
               </div>
             </div>
 
+            {/* Special Offers Section */}
+            {user && (
+              <div className="pt-4 border-t border-borderLight">
+                <SpecialOffer
+                  paymentMethod={address.paymentMethod}
+                  deliveredCount={deliveredCount}
+                  subtotal={subtotal}
+                  couponApplied={couponApplied}
+                  onOfferChange={setSelectedSpecialOffer}
+                />
+              </div>
+            )}
+
             <Button
               type="submit"
               variant="gold"
@@ -858,10 +914,12 @@ const Cart = () => {
                 )}
               </span>
             </div>
-            {discount > 0 && (
+            {finalDiscount > 0 && (
               <div className="flex justify-between text-green-600 bg-success/10 p-2 rounded">
-                <span>Coupon Discount</span>
-                <span className="font-bold">-₹{discount}</span>
+                <span>
+                  {couponApplied ? "Coupon Discount" : "Special Offer Discount"}
+                </span>
+                <span className="font-bold">-₹{finalDiscount}</span>
               </div>
             )}
 

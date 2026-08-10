@@ -75,25 +75,22 @@ const CollectionDetail = () => {
             "@type": "ListItem",
             position: 1,
             name: "Home",
-            item:
-              typeof window !== "undefined"
-                ? window.location.origin
-                : "https://pariwesh.com",
+            item: "https://pariwesh.in",
           },
           {
             "@type": "ListItem",
             position: 2,
             name: "Collections",
-            item:
-              typeof window !== "undefined"
-                ? `${window.location.origin}/collections`
-                : "https://pariwesh.com/collections",
+            item: "https://pariwesh.in/collections",
           },
           {
             "@type": "ListItem",
             position: 3,
             name: collection.name,
-            item: typeof window !== "undefined" ? window.location.href : "",
+            item:
+              typeof window !== "undefined"
+                ? `https://pariwesh.in${window.location.pathname}`
+                : "",
           },
         ],
       }

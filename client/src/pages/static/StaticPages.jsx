@@ -24,7 +24,7 @@ export const About = () => {
     publisher: {
       "@type": "Organization",
       name: "Pariwesh",
-      url: "https://pariwesh.com",
+      url: "https://pariwesh.in",
     },
   };
 

@@ -13,6 +13,8 @@ import {
   RiMoonLine,
   RiPaletteLine,
   RiWhatsappLine,
+  RiInstagramLine,
+  RiFacebookCircleLine,
 } from "react-icons/ri";
 import { logoutSuccess } from "../redux/slices/authSlice.js";
 import { clearCart } from "../redux/slices/cartSlice.js";
@@ -511,6 +513,26 @@ const MainLayout = () => {
               Suits, Girls Kurtas, and Bespoke Collections crafted with fine
               fabrics.
             </p>
+            <div className="flex items-center gap-4 pt-1">
+              <a
+                href="https://www.instagram.com/pariweshofficial/?hl=en"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-textSecondary hover:text-accent-gold transition-colors"
+                aria-label="Instagram"
+              >
+                <RiInstagramLine size={18} />
+              </a>
+              <a
+                href="https://www.facebook.com/pariweshofficial"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-textSecondary hover:text-accent-gold transition-colors"
+                aria-label="Facebook"
+              >
+                <RiFacebookCircleLine size={18} />
+              </a>
+            </div>
           </div>
 
           {/* Quick links */}
