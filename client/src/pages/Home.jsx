@@ -58,6 +58,51 @@ const Home = () => {
   const [productsLoading, setProductsLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(false);
 
+  // Custom dynamic states for homepage elements
+  const [dynCategories, setDynCategories] = useState([
+    {
+      title: "Designer Suits",
+      desc: "Anarkalis & Shararas",
+      image:
+        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=250&auto=format&fit=crop",
+      path: "/shop?category=ethnic",
+    },
+    {
+      title: "Premium Kurtis",
+      desc: "Everyday Tunics",
+      image:
+        "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=250&auto=format&fit=crop",
+      path: "/shop?category=kurtis",
+    },
+    {
+      title: "Co-Ord Sets",
+      desc: "Modern Ethnic",
+      image:
+        "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=250&auto=format&fit=crop",
+      path: "/shop?category=suits",
+    },
+    {
+      title: "Best Sellers",
+      desc: "Top Trending",
+      image:
+        "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=250&auto=format&fit=crop",
+      path: "/shop?tag=Best Seller",
+    },
+    {
+      title: "New Arrivals",
+      desc: "Fresh Designs",
+      image:
+        "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=250&auto=format&fit=crop",
+      path: "/shop?tag=New Arrival",
+    },
+  ]);
+
+  const [dynStoryImage, setDynStoryImage] = useState(
+    "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=800&auto=format&fit=crop",
+  );
+
+  const [dynVibeMoods, setDynVibeMoods] = useState(null);
+
   // Dynamic Flash Sale Countdown State
   const [countdownConfig, setCountdownConfig] = useState({
     active: true,
@@ -224,6 +269,31 @@ const Home = () => {
             endDate: settings.countdownEndDate || "",
             title: settings.countdownTitle || "Limited Collection Closes In:",
           });
+
+          // Fetch new dynamic settings for homepage elements
+          if (settings.homeStoryImage) {
+            setDynStoryImage(settings.homeStoryImage);
+          }
+          if (settings.homeCategories) {
+            try {
+              const parsed = JSON.parse(settings.homeCategories);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setDynCategories(parsed);
+              }
+            } catch (e) {
+              console.error("Failed to parse homeCategories:", e);
+            }
+          }
+          if (settings.homeVibeMoods) {
+            try {
+              const parsed = JSON.parse(settings.homeVibeMoods);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setDynVibeMoods(parsed);
+              }
+            } catch (e) {
+              console.error("Failed to parse homeVibeMoods:", e);
+            }
+          }
         }
       } catch (err) {
         console.error("Error loaded settings:", err);
@@ -266,6 +336,30 @@ const Home = () => {
             : localStorage.getItem("slideBarActive") === "true",
         images: loadedImages.length > 0 ? loadedImages : fallbackImages,
       });
+
+      // Load fallbacks from localStorage for new dynamic settings
+      const localStoryImage = localStorage.getItem("homeStoryImage");
+      if (localStoryImage) {
+        setDynStoryImage(localStoryImage);
+      }
+      const localCategories = localStorage.getItem("homeCategories");
+      if (localCategories) {
+        try {
+          const parsed = JSON.parse(localCategories);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setDynCategories(parsed);
+          }
+        } catch (e) {}
+      }
+      const localVibeMoods = localStorage.getItem("homeVibeMoods");
+      if (localVibeMoods) {
+        try {
+          const parsed = JSON.parse(localVibeMoods);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setDynVibeMoods(parsed);
+          }
+        } catch (e) {}
+      }
     };
 
     fetchSettings();
@@ -583,43 +677,7 @@ const Home = () => {
           </div>
 
           <div className="flex items-center gap-4 md:gap-6 overflow-x-auto pb-4 px-4 sm:px-6 -mx-4 sm:-mx-6 scrollbar-none snap-x select-none">
-            {[
-              {
-                title: "Designer Suits",
-                desc: "Anarkalis & Shararas",
-                image:
-                  "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=250&auto=format&fit=crop",
-                path: "/shop?category=ethnic",
-              },
-              {
-                title: "Premium Kurtis",
-                desc: "Everyday Tunics",
-                image:
-                  "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=250&auto=format&fit=crop",
-                path: "/shop?category=kurtis",
-              },
-              {
-                title: "Co-Ord Sets",
-                desc: "Modern Ethnic",
-                image:
-                  "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=250&auto=format&fit=crop",
-                path: "/shop?category=suits",
-              },
-              {
-                title: "Best Sellers",
-                desc: "Top Trending",
-                image:
-                  "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=250&auto=format&fit=crop",
-                path: "/shop?tag=Best Seller",
-              },
-              {
-                title: "New Arrivals",
-                desc: "Fresh Designs",
-                image:
-                  "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=250&auto=format&fit=crop",
-                path: "/shop?tag=New Arrival",
-              },
-            ].map((cat, idx) => (
+            {dynCategories.map((cat, idx) => (
               <Link
                 key={idx}
                 to={cat.path}
@@ -657,7 +715,7 @@ const Home = () => {
           {/* Left card - Premium promotional visual block */}
           <div className="relative overflow-hidden border border-borderLight min-h-[450px] flex flex-col justify-between rounded-none shadow-sm group">
             <img
-              src="https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=800&auto=format&fit=crop"
+              src={dynStoryImage}
               alt="Atelier Craftsmanship"
               loading="lazy"
               decoding="async"
@@ -791,7 +849,7 @@ const Home = () => {
       </section>
 
       {/* SECTION 2.5: PICK YOUR VIBE (4-Column Style Mood Cards) */}
-      <VibeGrid />
+      <VibeGrid vibeMoods={dynVibeMoods} />
 
       {/* SECTION 3: TRENDING COLLECTION (Interactive Cards Grid) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">

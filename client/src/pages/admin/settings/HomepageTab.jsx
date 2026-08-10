@@ -1,0 +1,295 @@
+import React from "react";
+import Button from "../../../components/admin/ui/Button.jsx";
+import Input from "../../../components/admin/ui/Input.jsx";
+
+const HomepageTab = ({
+  storyImage,
+  setStoryImage,
+  categories,
+  setCategories,
+  vibeMoods,
+  setVibeMoods,
+  handleSaveHomepage,
+}) => {
+  const handleStoryFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setStoryImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCategoryImageChange = (e, index) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const copy = [...categories];
+        copy[index] = { ...copy[index], image: reader.result };
+        setCategories(copy);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCategoryFieldChange = (index, field, value) => {
+    const copy = [...categories];
+    copy[index] = { ...copy[index], [field]: value };
+    setCategories(copy);
+  };
+
+  const handleMoodImageChange = (e, index, imgKey) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const copy = [...vibeMoods];
+        copy[index] = { ...copy[index], [imgKey]: reader.result };
+        setVibeMoods(copy);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleMoodFieldChange = (index, field, value) => {
+    const copy = [...vibeMoods];
+    copy[index] = { ...copy[index], [field]: value };
+    setVibeMoods(copy);
+  };
+
+  return (
+    <form
+      onSubmit={handleSaveHomepage}
+      className="space-y-10 max-w-4xl text-slate-700 font-sans"
+    >
+      {/* STORY IMAGE SECTION */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-bold tracking-widest uppercase text-[#c5a880]">
+          Pariwesh Edit Story Image
+        </h3>
+        <p className="text-[11px] text-slate-500 max-w-xl">
+          This image appears on the left side of "The Pariwesh Edit" section
+          describing the brand's handcrafted story.
+        </p>
+
+        <div className="flex items-start space-x-5">
+          {storyImage ? (
+            <div className="bg-slate-50 border border-slate-200 p-2 rounded-lg shadow-sm w-36 h-48 overflow-hidden flex items-center justify-center shrink-0">
+              <img
+                src={storyImage}
+                className="w-full h-full object-cover"
+                alt="Story preview"
+              />
+            </div>
+          ) : (
+            <div className="w-36 h-48 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-[10px] text-slate-400 italic font-medium shrink-0">
+              No Image Loaded
+            </div>
+          )}
+
+          <label className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[10px] uppercase font-bold tracking-widest text-[#c5a880] py-2 px-4.5 rounded-lg cursor-pointer transition self-end">
+            Choose Photo
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleStoryFileChange}
+              className="hidden"
+            />
+          </label>
+        </div>
+      </div>
+
+      {/* CATEGORY SECTIONS (Boutique Curations) */}
+      <div className="space-y-6 pt-8 border-t border-slate-100">
+        <div>
+          <h3 className="text-sm font-bold tracking-widest uppercase text-[#c5a880]">
+            Boutique Curations (Categories)
+          </h3>
+          <p className="text-[11px] text-slate-500 mt-1">
+            Configure titles, paths, and preview images for the 5 categories on
+            the homepage.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {categories.map((cat, idx) => (
+            <div
+              key={idx}
+              className="p-4 bg-[#FAF9F6] border border-slate-200/80 rounded-xl space-y-4"
+            >
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] uppercase font-black tracking-widest text-[#c5a880]">
+                  Category Item #{idx + 1}
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                {cat.image ? (
+                  <div className="w-16 h-16 rounded-full overflow-hidden border border-slate-200 shrink-0">
+                    <img
+                      src={cat.image}
+                      className="w-full h-full object-cover"
+                      alt={`Cart preview ${idx}`}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center text-[8px] text-slate-400 italic">
+                    No Image
+                  </div>
+                )}
+                <label className="bg-white hover:bg-slate-50 border border-slate-200 text-[8px] uppercase font-black tracking-widest text-slate-600 py-1.5 px-3 rounded-lg cursor-pointer transition">
+                  Change Image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleCategoryImageChange(e, idx)}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="Title"
+                  value={cat.title || ""}
+                  onChange={(e) =>
+                    handleCategoryFieldChange(idx, "title", e.target.value)
+                  }
+                />
+                <Input
+                  label="Navigation URL Path"
+                  value={cat.path || ""}
+                  onChange={(e) =>
+                    handleCategoryFieldChange(idx, "path", e.target.value)
+                  }
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* VIBE GRID SECTIONS (Moods) */}
+      <div className="space-y-6 pt-8 border-t border-slate-100">
+        <div>
+          <h3 className="text-sm font-bold tracking-widest uppercase text-[#c5a880]">
+            Pick Your Vibe (Mood Grids)
+          </h3>
+          <p className="text-[11px] text-slate-500 mt-1">
+            Configure titles, paths, background images, and inset foreground
+            images for the 4 mood blocks.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {vibeMoods.map((mood, idx) => (
+            <div
+              key={idx}
+              className="p-4 bg-[#FAF9F6] border border-slate-200/80 rounded-xl space-y-4"
+            >
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] uppercase font-black tracking-widest text-[#c5a880]">
+                  Vibe Mood #{idx + 1}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Background Image */}
+                <div className="space-y-2">
+                  <label className="text-[9px] uppercase font-bold text-slate-500 block">
+                    Background Image
+                  </label>
+                  {mood.bgImg ? (
+                    <div className="w-full h-24 bg-white border border-slate-200 rounded overflow-hidden flex items-center justify-center">
+                      <img
+                        src={mood.bgImg}
+                        className="w-full h-full object-cover filter grayscale"
+                        alt="BG Preview"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full h-24 bg-slate-100 border border-slate-200 rounded flex items-center justify-center text-[8px] text-slate-400 italic">
+                      No BG
+                    </div>
+                  )}
+                  <label className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-[8px] uppercase font-black tracking-widest text-slate-600 py-1.5 px-3 rounded-lg cursor-pointer transition text-center block">
+                    Upload BG
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleMoodImageChange(e, idx, "bgImg")}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {/* Inset Image */}
+                <div className="space-y-2">
+                  <label className="text-[9px] uppercase font-bold text-slate-500 block">
+                    Foreground Inset Photo
+                  </label>
+                  {mood.insetImg ? (
+                    <div className="w-full h-24 bg-white border border-slate-200 rounded overflow-hidden flex items-center justify-center">
+                      <img
+                        src={mood.insetImg}
+                        className="w-full h-full object-cover"
+                        alt="Inset Preview"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full h-24 bg-slate-100 border border-slate-200 rounded flex items-center justify-center text-[8px] text-slate-400 italic">
+                      No Inset
+                    </div>
+                  )}
+                  <label className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-[8px] uppercase font-black tracking-widest text-slate-600 py-1.5 px-3 rounded-lg cursor-pointer transition text-center block">
+                    Upload Inset
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        handleMoodImageChange(e, idx, "insetImg")
+                      }
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="Title"
+                  value={mood.title || ""}
+                  onChange={(e) =>
+                    handleMoodFieldChange(idx, "title", e.target.value)
+                  }
+                />
+                <Input
+                  label="Navigation URL Path"
+                  value={mood.path || ""}
+                  onChange={(e) =>
+                    handleMoodFieldChange(idx, "path", e.target.value)
+                  }
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="pt-2">
+        <Button
+          type="submit"
+          variant="primary"
+          className="px-6 py-2.5 text-xs uppercase tracking-wider font-bold"
+        >
+          Save Homepage Curations
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+export default HomepageTab;

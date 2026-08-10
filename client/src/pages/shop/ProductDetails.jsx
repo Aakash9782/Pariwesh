@@ -417,6 +417,53 @@ const ProductDetails = () => {
 
           {/* FORM: SIZES & ACTION CONTROLLERS */}
           <div className="space-y-6">
+            {/* Color variants selector */}
+            {product.colorVariants && product.colorVariants.length > 0 && (
+              <div className="space-y-3 pb-2 border-b border-slate-100/50">
+                <div className="text-[10px] uppercase font-extrabold tracking-widest text-slate-500">
+                  Choose your color:{" "}
+                  <span className="text-slate-800 font-bold normal-case ml-1">
+                    {product.color || "Default"}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {product.colorVariants.map((v) => {
+                    const isActive = v.slug === product.slug;
+                    return (
+                      <Link
+                        key={v.slug}
+                        to={`/product/${v.slug}`}
+                        title={v.color}
+                        className={`group relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all p-0.5 ${
+                          isActive
+                            ? "border-slate-900 scale-105 shadow-md shadow-slate-950/10"
+                            : "border-slate-200 hover:border-slate-400"
+                        }`}
+                      >
+                        {v.image ? (
+                          <img
+                            src={getOptimizedImageUrl(v.image)}
+                            alt={v.color}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        ) : (
+                          <span
+                            className="w-full h-full block rounded-full"
+                            style={{ backgroundColor: v.colorHex || "#ccc" }}
+                          />
+                        )}
+
+                        {/* Tooltip on Hover */}
+                        <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-205 z-10 shadow-lg">
+                          {v.color}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Size pick */}
             {product.sizes && product.sizes.length > 0 && (
               <div className="space-y-2.5">

@@ -416,6 +416,56 @@ export const ProductDetailsTab = () => {
             className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent-gold/20 focus:border-accent-gold transition"
           />
         </div>
+
+        {/* Product Color Name */}
+        <div className="flex flex-col">
+          <label className="text-xs font-semibold text-slate-700 block mb-1.5">
+            Product Color Name
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. Bright Violet, Crimson Red"
+            value={form.color || ""}
+            onChange={(e) => setForm({ ...form, color: e.target.value })}
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent-gold/20 focus:border-accent-gold transition"
+          />
+        </div>
+
+        {/* Color HEX Code */}
+        <div className="flex flex-col">
+          <label className="text-xs font-semibold text-slate-700 block mb-1.5">
+            Color HEX Code
+          </label>
+          <div className="flex space-x-2">
+            <input
+              type="color"
+              value={form.colorHex || "#FAFAFA"}
+              onChange={(e) => setForm({ ...form, colorHex: e.target.value })}
+              className="w-10 h-10 border border-slate-200 rounded cursor-pointer p-0.5"
+            />
+            <input
+              type="text"
+              placeholder="#FAFAFA"
+              value={form.colorHex || ""}
+              onChange={(e) => setForm({ ...form, colorHex: e.target.value })}
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent-gold/20 focus:border-accent-gold transition font-mono"
+            />
+          </div>
+        </div>
+
+        {/* Color Group ID */}
+        <div className="flex flex-col md:col-span-2">
+          <label className="text-xs font-semibold text-slate-700 block mb-1.5 font-sans">
+            Color Group ID (to link variants together)
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. chanderi-silk-suit-set"
+            value={form.colorGroup || ""}
+            onChange={(e) => setForm({ ...form, colorGroup: e.target.value })}
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent-gold/20 focus:border-accent-gold transition font-mono"
+          />
+        </div>
       </div>
     </div>
   );

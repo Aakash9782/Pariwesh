@@ -16,6 +16,7 @@ import GeneralTab from "./settings/GeneralTab.jsx";
 import ShippingTab from "./settings/ShippingTab.jsx";
 import SlideshowTab from "./settings/SlideshowTab.jsx";
 import AdminManagementTab from "./settings/AdminManagementTab.jsx";
+import HomepageTab from "./settings/HomepageTab.jsx";
 
 const SettingsPage = () => {
   const { showAlert: alert, showConfirm } = useAlert();
@@ -64,6 +65,42 @@ const SettingsPage = () => {
   const [slideImg4, setSlideImg4] = useState("");
   const [slideImg5, setSlideImg5] = useState("");
 
+  // Custom Dynamic homepage states
+  const [storyImage, setStoryImage] = useState("");
+  const [categories, setCategories] = useState([
+    { title: "Designer Suits", path: "/shop?category=ethnic", image: "" },
+    { title: "Premium Kurtis", path: "/shop?category=kurtis", image: "" },
+    { title: "Co-Ord Sets", path: "/shop?category=suits", image: "" },
+    { title: "Best Sellers", path: "/shop?tag=Best Seller", image: "" },
+    { title: "New Arrivals", path: "/shop?tag=New Arrival", image: "" },
+  ]);
+  const [vibeMoods, setVibeMoods] = useState([
+    {
+      title: "Day To Dusk",
+      path: "/shop?tag=Best Seller",
+      bgImg: "",
+      insetImg: "",
+    },
+    {
+      title: "The Linen Edit",
+      path: "/shop?category=kurtis",
+      bgImg: "",
+      insetImg: "",
+    },
+    {
+      title: "Not So Boring",
+      path: "/shop?category=suits",
+      bgImg: "",
+      insetImg: "",
+    },
+    {
+      title: "Festive Essentials",
+      path: "/shop?category=ethnic",
+      bgImg: "",
+      insetImg: "",
+    },
+  ]);
+
   const fetchSettings = async () => {
     try {
       setSettingsLoading(true);
@@ -101,6 +138,29 @@ const SettingsPage = () => {
         setSlideImg3(data.slideImg3 || "");
         setSlideImg4(data.slideImg4 || "");
         setSlideImg5(data.slideImg5 || "");
+
+        // Load dynamic homepage curations settings
+        setStoryImage(data.homeStoryImage || "");
+        if (data.homeCategories) {
+          try {
+            const parsed = JSON.parse(data.homeCategories);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setCategories(parsed);
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        if (data.homeVibeMoods) {
+          try {
+            const parsed = JSON.parse(data.homeVibeMoods);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setVibeMoods(parsed);
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
       }
     } catch (err) {
       console.error(err);
@@ -200,6 +260,22 @@ const SettingsPage = () => {
       fetchSettings();
     } catch (err) {
       alert("Failed to commit slideshow updates");
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const handleSaveHomepage = async (e) => {
+    e.preventDefault();
+    try {
+      setSettingsLoading(true);
+      await saveSettingKey("homeStoryImage", storyImage);
+      await saveSettingKey("homeCategories", JSON.stringify(categories));
+      await saveSettingKey("homeVibeMoods", JSON.stringify(vibeMoods));
+      alert("Homepage Curations saved successfully!");
+      fetchSettings();
+    } catch (err) {
+      alert("Failed to commit homepage settings");
     } finally {
       setSettingsLoading(false);
     }
@@ -311,6 +387,11 @@ const SettingsPage = () => {
             icon: <RiSettings4Line size={15} />,
           },
           {
+            id: "homepage",
+            label: "Homepage",
+            icon: <RiFolderImageLine size={15} />,
+          },
+          {
             id: "slides",
             label: "Slideshow",
             icon: <RiFolderImageLine size={15} />,
@@ -403,6 +484,19 @@ const SettingsPage = () => {
                 setSlideImg5={setSlideImg5}
                 handleSaveSlideshow={handleSaveSlideshow}
                 handleSlideFileChange={handleSlideFileChange}
+              />
+            )}
+
+            {/* HOMEPAGE CURATIONS SETTINGS */}
+            {activeTab === "homepage" && (
+              <HomepageTab
+                storyImage={storyImage}
+                setStoryImage={setStoryImage}
+                categories={categories}
+                setCategories={setCategories}
+                vibeMoods={vibeMoods}
+                setVibeMoods={setVibeMoods}
+                handleSaveHomepage={handleSaveHomepage}
               />
             )}
 

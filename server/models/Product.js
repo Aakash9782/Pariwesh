@@ -35,12 +35,19 @@ const ProductSchema = new mongoose.Schema(
       type: String,
       default: "Gentle Hand Wash",
     },
+    colorGroup: {
+      type: String,
+      trim: true,
+      index: true,
+    },
     color: {
       type: String,
+      trim: true,
       default: "Ivory",
     },
     colorHex: {
       type: String,
+      trim: true,
       default: "#FAFAFA",
     },
     sizes: {

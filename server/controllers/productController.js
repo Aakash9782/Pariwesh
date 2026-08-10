@@ -151,7 +151,25 @@ export const getProductBySlug = async (req, res, next) => {
       return sendError(res, "Product not found", 404);
     }
 
-    return sendSuccess(res, "Product details retrieved", product);
+    const productObj = product.toObject();
+    if (product.colorGroup) {
+      const variants = await Product.find({
+        colorGroup: product.colorGroup,
+        status: "active",
+      }).select("name slug color colorHex images");
+
+      productObj.colorVariants = variants.map((v) => ({
+        name: v.name,
+        slug: v.slug,
+        color: v.color,
+        colorHex: v.colorHex,
+        image: v.images?.[0] || "",
+      }));
+    } else {
+      productObj.colorVariants = [];
+    }
+
+    return sendSuccess(res, "Product details retrieved", productObj);
   } catch (error) {
     return sendError(res, error.message, 500);
   }
@@ -168,6 +186,7 @@ export const createProduct = async (req, res, next) => {
       category,
       fabric,
       washCare,
+      colorGroup,
       color,
       colorHex,
       sizes,
@@ -247,6 +266,7 @@ export const createProduct = async (req, res, next) => {
       category: category || "suits",
       fabric: fabric || "Pure Cotton",
       washCare: washCare || "Dry Clean Preferred",
+      colorGroup: colorGroup || "",
       color: color || "Multicolor",
       colorHex: colorHex || "#D4AF37",
       sizes: sizes || ["S", "M", "L", "XL"],
@@ -340,6 +360,7 @@ export const updateProduct = async (req, res, next) => {
       category,
       fabric,
       washCare,
+      colorGroup,
       color,
       colorHex,
       sizes,
@@ -418,6 +439,8 @@ export const updateProduct = async (req, res, next) => {
     product.category = category !== undefined ? category : product.category;
     product.fabric = fabric !== undefined ? fabric : product.fabric;
     product.washCare = washCare !== undefined ? washCare : product.washCare;
+    product.colorGroup =
+      colorGroup !== undefined ? colorGroup : product.colorGroup;
     product.color = color !== undefined ? color : product.color;
     product.colorHex = colorHex !== undefined ? colorHex : product.colorHex;
     product.sizes = sizes !== undefined ? sizes : product.sizes;

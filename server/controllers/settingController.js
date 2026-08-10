@@ -31,7 +31,9 @@ export const updateSetting = async (req, res, next) => {
 
     let finalValue = value;
     if (
-      (key === "brandLogoUrl" || key.startsWith("slideImg")) &&
+      (key === "brandLogoUrl" ||
+        key.startsWith("slideImg") ||
+        key === "homeStoryImage") &&
       value &&
       value.startsWith("data:image")
     ) {
@@ -50,6 +52,55 @@ export const updateSetting = async (req, res, next) => {
       } catch (e) {
         console.error(
           "Failed to parse festiveBannerSettings inside settingController:",
+          e,
+        );
+      }
+    } else if (key === "homeCategories" && value) {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) {
+          for (let i = 0; i < parsed.length; i++) {
+            if (parsed[i].image && parsed[i].image.startsWith("data:image")) {
+              parsed[i].image = await uploadBase64Image(
+                parsed[i].image,
+                "pariwesh/branding",
+              );
+            }
+          }
+          finalValue = JSON.stringify(parsed);
+        }
+      } catch (e) {
+        console.error(
+          "Failed to parse homeCategories inside settingController:",
+          e,
+        );
+      }
+    } else if (key === "homeVibeMoods" && value) {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) {
+          for (let i = 0; i < parsed.length; i++) {
+            if (parsed[i].bgImg && parsed[i].bgImg.startsWith("data:image")) {
+              parsed[i].bgImg = await uploadBase64Image(
+                parsed[i].bgImg,
+                "pariwesh/branding",
+              );
+            }
+            if (
+              parsed[i].insetImg &&
+              parsed[i].insetImg.startsWith("data:image")
+            ) {
+              parsed[i].insetImg = await uploadBase64Image(
+                parsed[i].insetImg,
+                "pariwesh/branding",
+              );
+            }
+          }
+          finalValue = JSON.stringify(parsed);
+        }
+      } catch (e) {
+        console.error(
+          "Failed to parse homeVibeMoods inside settingController:",
           e,
         );
       }
