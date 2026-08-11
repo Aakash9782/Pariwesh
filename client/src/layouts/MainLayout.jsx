@@ -22,6 +22,7 @@ import { clearWishlist } from "../redux/slices/wishlistSlice.js";
 import API from "../services/api.js";
 import { useAlert } from "../contexts/AlertContext.jsx";
 import { hydrateCommerce } from "../services/hydrateCommerce.js";
+import Loader from "../components/common/Loader.jsx";
 
 const MainLayout = () => {
   const navigate = useNavigate();
@@ -495,7 +496,9 @@ const MainLayout = () => {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.22, ease: "easeInOut" }}
           >
-            <Outlet />
+            <React.Suspense fallback={<Loader />}>
+              <Outlet />
+            </React.Suspense>
           </motion.div>
         </AnimatePresence>
       </main>

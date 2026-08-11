@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 import {
   RiFilter3Line,
   RiCloseLine,
@@ -360,7 +361,7 @@ const ShopListings = () => {
                         />
                       ) : (
                         <img
-                          src={product.images[0]}
+                          src={optimizeCloudinaryUrl(product.images[0], 600)}
                           alt={product.name}
                           loading="lazy"
                           decoding="async"

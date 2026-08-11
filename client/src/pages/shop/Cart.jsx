@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   RiDeleteBinLine,
@@ -572,7 +573,7 @@ const Cart = () => {
                   {/* Photo & Specs details */}
                   <div className="flex space-x-4 items-center">
                     <img
-                      src={item.product.images[0]}
+                      src={optimizeCloudinaryUrl(item.product.images[0], 250)}
                       alt={item.product.name}
                       className="w-20 h-24 object-cover bg-bgLight rounded border border-borderLight"
                     />

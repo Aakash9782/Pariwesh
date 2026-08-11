@@ -110,10 +110,11 @@ const ProductDetails = () => {
   }, [slug]);
 
   // Cloudinary image optimization utility
-  const getOptimizedImageUrl = (url) => {
+  const getOptimizedImageUrl = (url, width) => {
     if (!url) return "";
     if (url.includes("cloudinary.com")) {
-      return url.replace("/upload/", "/upload/f_auto,q_auto/");
+      const resizeParams = width ? `c_limit,w_${width},` : "";
+      return url.replace("/upload/", `/upload/${resizeParams}f_auto,q_auto/`);
     }
     return url;
   };
@@ -374,7 +375,7 @@ const ProductDetails = () => {
             onPointerLeave={handlePointerLeave}
           >
             <img
-              src={getOptimizedImageUrl(activeImage)}
+              src={getOptimizedImageUrl(activeImage, 1000)}
               alt={product.name}
               className="w-full h-full object-cover transition-all duration-300 select-none"
               draggable="false"
@@ -396,7 +397,7 @@ const ProductDetails = () => {
                   }`}
                 >
                   <img
-                    src={getOptimizedImageUrl(img)}
+                    src={getOptimizedImageUrl(img, 250)}
                     alt={`detail thumbnail ${idx + 1}`}
                     className="w-full h-full object-cover"
                     loading="lazy"
@@ -486,7 +487,7 @@ const ProductDetails = () => {
                       >
                         {v.image ? (
                           <img
-                            src={getOptimizedImageUrl(v.image)}
+                            src={getOptimizedImageUrl(v.image, 150)}
                             alt={v.color}
                             className="w-full h-full object-cover rounded-full"
                           />

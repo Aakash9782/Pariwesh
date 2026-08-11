@@ -876,7 +876,7 @@ const Home = () => {
                     />
                   ) : (
                     <img
-                      src={product.images[0]}
+                      src={optimizeCloudinaryUrl(product.images[0], 600)}
                       alt={product.name}
                       loading="lazy"
                       decoding="async"

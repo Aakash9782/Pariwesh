@@ -7,14 +7,16 @@ import { HelmetProvider } from "react-helmet-async";
 import { store } from "./redux/store.js";
 import MainLayout from "./layouts/MainLayout.jsx";
 import Home from "./pages/Home.jsx";
-import ShopListings from "./pages/shop/ShopListings.jsx";
-import ProductDetails from "./pages/shop/ProductDetails.jsx";
-import Collections from "./pages/shop/Collections.jsx";
-import CollectionDetail from "./pages/shop/CollectionDetail.jsx";
-import Cart from "./pages/shop/Cart.jsx";
-import Wishlist from "./pages/shop/Wishlist.jsx";
-import Login from "./pages/auth/Login.jsx";
-import Profile from "./pages/profile/Profile.jsx";
+const ShopListings = lazy(() => import("./pages/shop/ShopListings.jsx"));
+const ProductDetails = lazy(() => import("./pages/shop/ProductDetails.jsx"));
+const Collections = lazy(() => import("./pages/shop/Collections.jsx"));
+const CollectionDetail = lazy(
+  () => import("./pages/shop/CollectionDetail.jsx"),
+);
+const Cart = lazy(() => import("./pages/shop/Cart.jsx"));
+const Wishlist = lazy(() => import("./pages/shop/Wishlist.jsx"));
+const Login = lazy(() => import("./pages/auth/Login.jsx"));
+const Profile = lazy(() => import("./pages/profile/Profile.jsx"));
 import {
   About,
   Contact,
