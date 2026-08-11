@@ -6,34 +6,26 @@ import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 const VIBE_MOODS = [
   {
     title: "Day To Dusk",
-    bgImg:
-      "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=400&auto=format&fit=crop",
-    insetImg:
-      "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=250&auto=format&fit=crop",
+    bgImg: "/hero.png",
+    insetImg: "/hero.png",
     path: "/shop?tag=Best Seller",
   },
   {
     title: "The Linen Edit",
-    bgImg:
-      "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=400&auto=format&fit=crop",
-    insetImg:
-      "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=250&auto=format&fit=crop",
+    bgImg: "/hero.png",
+    insetImg: "/hero.png",
     path: "/shop?category=kurtis",
   },
   {
     title: "Not So Boring",
-    bgImg:
-      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=400&auto=format&fit=crop",
-    insetImg:
-      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=250&auto=format&fit=crop",
+    bgImg: "/hero.png",
+    insetImg: "/hero.png",
     path: "/shop?category=suits",
   },
   {
     title: "Festive Essentials",
-    bgImg:
-      "https://images.unsplash.com/photo-1612459284970-e8f027596582?q=80&w=400&auto=format&fit=crop",
-    insetImg:
-      "https://images.unsplash.com/photo-1612459284970-e8f027596582?q=80&w=250&auto=format&fit=crop",
+    bgImg: "/hero.png",
+    insetImg: "/hero.png",
     path: "/shop?category=ethnic",
   },
 ];

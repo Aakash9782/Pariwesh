@@ -52,123 +52,121 @@ const getBannerTheme = (themeName) => {
   }
 };
 
-const optimizeCloudinaryUrl = (url) => {
-  if (!url || typeof url !== "string") return url;
-  if (url.includes("res.cloudinary.com")) {
-    return url.replace("/upload/", "/upload/f_auto,q_auto/");
-  }
-  return url;
-};
+import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 
 const PremiumBannerSlider = ({ adConfig, handleCopyCode, copiedCode }) => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const autoplayTimer = useRef(null);
 
-  // Setup dynamic sources matching default theme patterns
-  const adDesktopSrc = optimizeCloudinaryUrl(adConfig.desktopImage);
-  const adTabletSrc =
-    optimizeCloudinaryUrl(adConfig.tabletImage) || adDesktopSrc;
-  const adMobileSrc =
-    optimizeCloudinaryUrl(adConfig.mobileImage) || adTabletSrc;
+  const now = new Date();
 
-  // Build slides collection array
-  const slides = [];
+  // Check global campaign date schedule
+  const globalEnabled =
+    adConfig?.enabled !== false && adConfig?.active !== false;
+  const start = adConfig?.startDate ? new Date(adConfig.startDate) : null;
+  const end = adConfig?.endDate ? new Date(adConfig.endDate) : null;
+  const isDateValid = (!start || now >= start) && (!end || now <= end);
 
-  // Slide 1: Injection of active adConfig options
-  if (adConfig.active && adDesktopSrc) {
-    slides.push({
-      id: "campaign-row",
-      desktopSrc: adDesktopSrc,
-      tabletSrc: adTabletSrc,
-      mobileSrc: adMobileSrc,
-      title: adConfig.title || "GRAND FESTIVE PARIWESH SALE",
-      subtitle: adConfig.subtitle || "Handcrafted Luxury suits up to 40% Off",
-      categoryLabel: "Special Promotion",
-      ctaText: adConfig.primaryButtonText || "Grab Offer",
-      link: adConfig.link || "/shop",
-      code: adConfig.code || "",
-      themeName: adConfig.theme || "royal-gold",
-      isDynamic: true,
-      mobileObjectPosition: "center",
-    });
+  // Build/parse slides matching active states & priorities
+  let campaignSlides = [];
+  if (globalEnabled && isDateValid) {
+    if (adConfig?.slides && Array.isArray(adConfig.slides)) {
+      campaignSlides = adConfig.slides
+        .filter((s) => s.enabled !== false)
+        .map((s) => ({
+          id: s.id || `slide-${s.priority || 1}-${s.title}`,
+          desktopSrc: optimizeCloudinaryUrl(s.desktopImage || "/hero.png"),
+          tabletSrc:
+            optimizeCloudinaryUrl(s.tabletImage) ||
+            optimizeCloudinaryUrl(s.desktopImage || "/hero.png"),
+          mobileSrc:
+            optimizeCloudinaryUrl(s.mobileImage) ||
+            optimizeCloudinaryUrl(s.tabletImage) ||
+            optimizeCloudinaryUrl(s.desktopImage || "/hero.png"),
+          title: s.title || "GRAND FESTIVE PARIWESH SALE",
+          subtitle: s.subtitle || "",
+          categoryLabel: s.badge || "Special Promotion",
+          ctaText: s.ctaText || "Explore Collection",
+          link: s.ctaLink || "/shop",
+          code: s.promoCode || "",
+          themeName: s.themeName || "royal-gold",
+          isDynamic: true,
+          mobileObjectPosition: s.imagePositionMobile || "center",
+          desktopObjectPosition: s.imagePositionDesktop || "center",
+          priority: s.priority || 1,
+        }));
+    } else {
+      // Legacy fallback structure parsing
+      const adDesktopSrc = optimizeCloudinaryUrl(
+        adConfig?.desktopImage || adConfig?.bannerImage,
+      );
+      if (adDesktopSrc) {
+        campaignSlides.push({
+          id: "legacy-campaign-row",
+          desktopSrc: adDesktopSrc,
+          tabletSrc:
+            optimizeCloudinaryUrl(adConfig?.tabletImage) || adDesktopSrc,
+          mobileSrc:
+            optimizeCloudinaryUrl(adConfig?.mobileImage) || adDesktopSrc,
+          title: adConfig?.title || "GRAND FESTIVE PARIWESH SALE",
+          subtitle:
+            adConfig?.subtitle || "Handcrafted Luxury suits up to 40% Off",
+          categoryLabel: "Special Promotion",
+          ctaText: adConfig?.primaryButtonText || "Grab Offer",
+          link: adConfig?.link || "/shop",
+          code: adConfig?.code || "",
+          themeName: adConfig?.theme || "royal-gold",
+          isDynamic: true,
+          mobileObjectPosition: "center",
+          desktopObjectPosition: "center",
+          priority: adConfig?.priority || 1,
+        });
+      }
+    }
   }
 
-  // Slides 2-4: Hand-crafted premium collection slides
-  slides.push(
-    {
-      id: "slide-chanderi",
-      desktopSrc:
-        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop",
-      tabletSrc:
-        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop",
-      mobileSrc:
-        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop",
-      title: "CHANDERI & ZARI EDIT",
-      subtitle: "Hand-spun metallic embroidery on premium silk bases.",
-      categoryLabel: "New Arrivals",
-      ctaText: "Discover Couture",
-      link: "/shop",
-      themeName: "rose-crimson",
-      isDynamic: false,
-      mobileObjectPosition: "center 20%",
-    },
-    {
-      id: "slide-prints",
-      desktopSrc:
-        "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=1200&auto=format&fit=crop",
-      tabletSrc:
-        "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=800&auto=format&fit=crop",
-      mobileSrc:
-        "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=600&auto=format&fit=crop",
-      title: "VINTAGE BLOCK PRINTS",
-      subtitle: "Organic plant dyes pressed by master artisans of Rajasthan.",
-      categoryLabel: "Artisan Series",
-      ctaText: "Shop Collection",
-      link: "/shop",
-      themeName: "royal-emerald",
-      isDynamic: false,
-      mobileObjectPosition: "center 25%",
-    },
-    {
-      id: "slide-muse",
-      desktopSrc:
-        "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=1200&auto=format&fit=crop",
-      tabletSrc:
-        "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=800&auto=format&fit=crop",
-      mobileSrc:
-        "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop",
-      title: "THE MUSE EDIT",
-      subtitle:
-        "Elevated casual kurtis and luxury sets tailored with modern grace.",
-      categoryLabel: "Curated Classics",
-      ctaText: "View All Styles",
-      link: "/shop",
-      themeName: "royal-gold",
-      isDynamic: false,
-      mobileObjectPosition: "center 25%",
-    },
-  );
+  // Sort by priority/order upward
+  campaignSlides.sort((a, b) => a.priority - b.priority);
+
+  // Monitor preloaded slides to avoid fetching all images on startup
+  const [loadedIndices, setLoadedIndices] = useState(new Set([0]));
+
+  useEffect(() => {
+    if (campaignSlides.length > 0) {
+      setLoadedIndices((prev) => {
+        const nextSet = new Set(prev);
+        nextSet.add(activeSlide);
+        if (campaignSlides.length > 1) {
+          nextSet.add((activeSlide + 1) % campaignSlides.length);
+        }
+        if (campaignSlides.length > 2) {
+          nextSet.add((activeSlide + 2) % campaignSlides.length);
+        }
+        return nextSet;
+      });
+    }
+  }, [activeSlide, campaignSlides.length]);
 
   // Setup loop timer config
   useEffect(() => {
-    if (slides.length <= 1 || isHovered) {
+    if (campaignSlides.length <= 1 || isHovered) {
       if (autoplayTimer.current) clearInterval(autoplayTimer.current);
       return;
     }
 
     autoplayTimer.current = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % slides.length);
+      setActiveSlide((prev) => (prev + 1) % campaignSlides.length);
     }, 6000);
 
     return () => {
       if (autoplayTimer.current) clearInterval(autoplayTimer.current);
     };
-  }, [slides.length, isHovered]);
+  }, [campaignSlides.length, isHovered]);
 
-  if (slides.length === 0) return null;
+  if (campaignSlides.length === 0) return null;
 
-  const currentSlide = slides[activeSlide];
+  const currentSlide = campaignSlides[activeSlide];
   const theme = getBannerTheme(currentSlide.themeName);
 
   return (
@@ -180,63 +178,74 @@ const PremiumBannerSlider = ({ adConfig, handleCopyCode, copiedCode }) => {
       <div
         className={`relative h-[80vw] md:h-auto md:min-h-[450px] overflow-hidden rounded-none border-x-0 border-y border-slate-800 shadow-2xl flex items-center transition-colors duration-500 ${theme.wrapper}`}
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentSlide.id}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
-            className="absolute inset-0 w-full h-full"
-          >
-            {/* 1. Desktop Blur Backdrop - Displayed ONLY on Desktop (md and above) */}
-            <div className="hidden md:block absolute inset-0 overflow-hidden">
-              <img
-                src={currentSlide.desktopSrc}
-                alt=""
-                className="w-full h-full object-cover blur-3xl scale-110 opacity-70"
-                aria-hidden="true"
-              />
-              {/* Smooth visual gradient */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-black/85 z-5" />
-              <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-neutral-950/20 to-transparent z-5" />
-            </div>
+        {campaignSlides.map((slide, idx) => {
+          const isCurrentActive = idx === activeSlide;
+          const isMounted = loadedIndices.has(idx);
 
-            {/* 2. Desktop Foreground Image - Contain Aspect Frame on the right */}
-            <div className="hidden md:flex absolute right-0 top-0 bottom-0 w-[55%] z-10 p-6 lg:p-10 pr-12 lg:pr-16 items-center justify-center">
-              <img
-                src={currentSlide.desktopSrc}
-                alt={currentSlide.title}
-                className="max-h-[90%] max-w-full object-contain rounded-sm shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/5"
-              />
-            </div>
+          if (!isMounted) return null;
 
-            {/* 3. Mobile Picture Image Cover Layout - Displayed ONLY on Mobile */}
-            <picture className="absolute inset-0 w-full h-full md:hidden">
-              {currentSlide.mobileSrc && (
-                <source
-                  media="(max-width: 639px)"
-                  srcSet={currentSlide.mobileSrc}
+          return (
+            <div
+              key={slide.id}
+              className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
+                isCurrentActive
+                  ? "opacity-100 pointer-events-auto z-1"
+                  : "opacity-0 pointer-events-none z-0"
+              }`}
+            >
+              {/* 1. Desktop Blur Backdrop */}
+              <div className="hidden md:block absolute inset-0 overflow-hidden">
+                <img
+                  src={slide.desktopSrc}
+                  alt=""
+                  className="w-full h-full object-cover blur-3xl scale-110 opacity-70"
+                  aria-hidden="true"
+                  loading={isCurrentActive ? "eager" : "lazy"}
+                  {...(isCurrentActive ? { fetchPriority: "high" } : {})}
                 />
-              )}
-              {currentSlide.tabletSrc && (
-                <source
-                  media="(max-width: 1023px)"
-                  srcSet={currentSlide.tabletSrc}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-black/85 z-5" />
+                <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-neutral-950/20 to-transparent z-5" />
+              </div>
+
+              {/* 2. Desktop Foreground Image */}
+              <div className="hidden md:flex absolute right-0 top-0 bottom-0 w-[55%] z-10 p-6 lg:p-10 pr-12 lg:pr-16 items-center justify-center">
+                <img
+                  src={slide.desktopSrc}
+                  alt={slide.title}
+                  className="max-h-[90%] max-w-full object-contain rounded-sm shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/5"
+                  style={{
+                    objectPosition: slide.desktopObjectPosition || "center",
+                  }}
+                  loading={isCurrentActive ? "eager" : "lazy"}
+                  {...(isCurrentActive ? { fetchPriority: "high" } : {})}
                 />
-              )}
-              <img
-                src={currentSlide.desktopSrc}
-                alt={currentSlide.title}
-                className="w-full h-full object-cover brightness-[0.65]"
-                style={{
-                  objectPosition: currentSlide.mobileObjectPosition || "center",
-                }}
-                loading="eager"
-              />
-            </picture>
-          </motion.div>
-        </AnimatePresence>
+              </div>
+
+              {/* 3. Mobile Picture Image Cover Layout */}
+              <picture className="absolute inset-0 w-full h-full md:hidden">
+                {slide.mobileSrc && (
+                  <source media="(max-width: 639px)" srcSet={slide.mobileSrc} />
+                )}
+                {slide.tabletSrc && (
+                  <source
+                    media="(max-width: 1023px)"
+                    srcSet={slide.tabletSrc}
+                  />
+                )}
+                <img
+                  src={slide.desktopSrc}
+                  alt={slide.title}
+                  className="w-full h-full object-cover brightness-[0.65]"
+                  style={{
+                    objectPosition: slide.mobileObjectPosition || "center",
+                  }}
+                  loading={isCurrentActive ? "eager" : "lazy"}
+                  {...(isCurrentActive ? { fetchPriority: "high" } : {})}
+                />
+              </picture>
+            </div>
+          );
+        })}
 
         {/* Shimmer Overlay - Mobile ONLY */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/35 md:hidden z-1 pointer-events-none"></div>
@@ -314,9 +323,9 @@ const PremiumBannerSlider = ({ adConfig, handleCopyCode, copiedCode }) => {
         </div>
 
         {/* 5. Pagination Buttons */}
-        {slides.length > 1 && (
+        {campaignSlides.length > 1 && (
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
-            {slides.map((_, idx) => (
+            {campaignSlides.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveSlide(idx)}

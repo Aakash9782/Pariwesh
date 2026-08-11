@@ -256,22 +256,11 @@ const MainLayout = () => {
           {/* Elegant Center Logo */}
           <div className="absolute left-1/2 transform -translate-x-1/2 md:static md:transform-none flex justify-center">
             <Link to="/" className="flex items-center">
-              {logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt="PARIWESH Logo"
-                  className="h-10 md:h-12 w-auto object-contain max-w-[110px] xs:max-w-[130px] md:max-w-[200px]"
-                />
-              ) : (
-                <>
-                  <span className="text-xl md:text-2xl font-display font-medium tracking-[0.2em] text-textPrimary uppercase">
-                    PARIWESH
-                  </span>
-                  <span className="text-accent-gold text-2xl font-extrabold -ml-1">
-                    .
-                  </span>
-                </>
-              )}
+              <img
+                src={logoUrl || "/logo.png"}
+                alt="PARIWESH Logo"
+                className="h-10 md:h-12 w-auto object-contain max-w-[110px] xs:max-w-[130px] md:max-w-[200px]"
+              />
             </Link>
           </div>
 

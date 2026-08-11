@@ -117,12 +117,12 @@ const EthnicNouns = [
 ];
 
 const imagePool = [
-  "https://images.unsplash.com/photo-1610030469668-93535c17b6b3?w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=800&auto=format&fit=crop",
+  "/hero.png",
+  "/hero.png",
+  "/hero.png",
+  "/hero.png",
+  "/hero.png",
+  "/hero.png",
 ];
 
 const seedDatabase = async () => {

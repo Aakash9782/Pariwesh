@@ -82,7 +82,7 @@ const runTest = async () => {
           quantity: 2,
           size: "M",
           color: "Ivory",
-          image: "https://images.unsplash.com/photo-1609357605129-26f69add5d6e",
+          image: "/hero.png",
         },
       ],
       shippingAddress: {

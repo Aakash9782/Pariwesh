@@ -40,22 +40,29 @@ const MarketingPage = () => {
   // Banner Campaign schedules states
   const [bannerSettings, setBannerSettings] = useState({
     enabled: true,
-    bannerTitle: "GRAND FESTIVE PARIWESH SALE",
-    subtitle: "Handcrafted Luxury suits up to 40% Off",
-    primaryButtonText: "Explore Collection",
-    discountTag: "LEHERGOLD15",
+    startDate: "",
+    endDate: "",
     countdownTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
       .toISOString()
       .slice(0, 16),
-    bannerImage:
-      "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=1200",
-    desktopImage: "",
-    tabletImage: "",
-    mobileImage: "",
-    startDate: "",
-    endDate: "",
-    priority: 1,
-    link: "/shop",
+    slides: [
+      {
+        id: "slide_1",
+        enabled: true,
+        desktopImage: "/hero.png",
+        tabletImage: "",
+        mobileImage: "",
+        title: "GRAND FESTIVE PARIWESH SALE",
+        subtitle: "Handcrafted Luxury suits up to 40% Off",
+        badge: "Special Promotion",
+        ctaText: "Explore Collection",
+        ctaLink: "/shop",
+        promoCode: "LEHERGOLD15",
+        priority: 1,
+        imagePositionDesktop: "center",
+        imagePositionMobile: "center",
+      },
+    ],
   });
   const [settingsLoading, setSettingsLoading] = useState(true);
 
@@ -83,10 +90,48 @@ const MarketingPage = () => {
       if (res.data?.success && res.data.data?.festiveBannerSettings) {
         try {
           const parsed = JSON.parse(res.data.data.festiveBannerSettings);
-          setBannerSettings((prev) => ({
-            ...prev,
-            ...parsed,
-          }));
+
+          let slides = parsed.slides;
+          if (!slides || !Array.isArray(slides)) {
+            slides = [
+              {
+                id: "slide_1",
+                enabled:
+                  parsed.enabled !== undefined
+                    ? parsed.enabled === true || parsed.enabled === "true"
+                    : true,
+                desktopImage:
+                  parsed.desktopImage || parsed.bannerImage || "/hero.png",
+                tabletImage: parsed.tabletImage || "",
+                mobileImage: parsed.mobileImage || "",
+                title: parsed.bannerTitle || "GRAND FESTIVE PARIWESH SALE",
+                subtitle:
+                  parsed.subtitle || "Handcrafted Luxury suits up to 40% Off",
+                badge: "Special Promotion",
+                ctaText: parsed.primaryButtonText || "Explore Collection",
+                ctaLink: parsed.link || "/shop",
+                promoCode: parsed.discountTag || "LEHERGOLD15",
+                priority: parsed.priority || 1,
+                imagePositionDesktop: parsed.imagePositionDesktop || "center",
+                imagePositionMobile: parsed.imagePositionMobile || "center",
+              },
+            ];
+          }
+
+          setBannerSettings({
+            enabled:
+              parsed.enabled !== undefined
+                ? parsed.enabled === true || parsed.enabled === "true"
+                : true,
+            startDate: parsed.startDate || "",
+            endDate: parsed.endDate || "",
+            countdownTime:
+              parsed.countdownTime ||
+              new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .slice(0, 16),
+            slides: slides,
+          });
         } catch (e) {
           console.error("Settings JSON parsing error, using default seeds", e);
         }
@@ -174,26 +219,29 @@ const MarketingPage = () => {
     }
   };
 
-  // File selector image loader for Banner campaign Device types
-  const handleFeaturedImageUpload = async (file, deviceType) => {
+  // File selector image loader for dynamic slide and devices
+  const handleSlideImageUpload = async (file, slideIndex, deviceType) => {
     try {
       const reader = new FileReader();
       reader.onloadend = async () => {
         try {
           const base64Data = reader.result;
           const res = await API.post("/settings", {
-            key: `slideImg_campaign_${deviceType}`,
+            key: `slideImg_temp_${Date.now()}_${deviceType}`,
             value: base64Data,
           });
           if (res.data?.success && res.data.data?.value) {
             const uploadedUrl = res.data.data.value;
-            setBannerSettings((prev) => ({
-              ...prev,
-              [`${deviceType}Image`]: uploadedUrl,
-              ...(deviceType === "desktop" ? { bannerImage: uploadedUrl } : {}),
-            }));
+            setBannerSettings((prev) => {
+              const updatedSlides = [...prev.slides];
+              updatedSlides[slideIndex] = {
+                ...updatedSlides[slideIndex],
+                [`${deviceType}Image`]: uploadedUrl,
+              };
+              return { ...prev, slides: updatedSlides };
+            });
             alert(
-              `${deviceType.charAt(0).toUpperCase() + deviceType.slice(1)} banner image uploaded!`,
+              `${deviceType.charAt(0).toUpperCase() + deviceType.slice(1)} image uploaded!`,
             );
           }
         } catch (err) {
@@ -207,13 +255,59 @@ const MarketingPage = () => {
     }
   };
 
+  const handleUpdateSlideField = (index, field, value) => {
+    setBannerSettings((prev) => {
+      const updatedSlides = [...prev.slides];
+      updatedSlides[index] = {
+        ...updatedSlides[index],
+        [field]: value,
+      };
+      return { ...prev, slides: updatedSlides };
+    });
+  };
+
+  const handleAddSlide = () => {
+    setBannerSettings((prev) => ({
+      ...prev,
+      slides: [
+        ...prev.slides,
+        {
+          id: `slide_${Date.now()}`,
+          enabled: true,
+          desktopImage: "/hero.png",
+          tabletImage: "",
+          mobileImage: "",
+          title: "NEW CAMPAIGN BANNER",
+          subtitle: "Discover our premium handcrafted series",
+          badge: "Special Promotion",
+          ctaText: "Discover Couture",
+          ctaLink: "/shop",
+          promoCode: "PARIWESH10",
+          priority: prev.slides.length + 1,
+          imagePositionDesktop: "center",
+          imagePositionMobile: "center",
+        },
+      ],
+    }));
+  };
+
+  const handleDeleteSlide = (index) => {
+    setBannerSettings((prev) => {
+      const updatedSlides = prev.slides.filter((_, idx) => idx !== index);
+      return { ...prev, slides: updatedSlides };
+    });
+  };
+
   // Commit Banner updates to backend Settings key/value
   const handleSaveBannerCampaign = async () => {
     try {
-      // First save festiveBannerSettings JSON string
-      const jsonSettings = JSON.stringify(bannerSettings);
+      const settingsToSave = {
+        ...bannerSettings,
+        enabled: Boolean(bannerSettings.enabled),
+      };
 
-      // Send settings update
+      const jsonSettings = JSON.stringify(settingsToSave);
+
       await API.post("/settings", {
         key: "festiveBannerSettings",
         value: jsonSettings,
@@ -248,7 +342,7 @@ const MarketingPage = () => {
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={bannerSettings.enabled}
+                checked={Boolean(bannerSettings.enabled)}
                 onChange={(e) =>
                   setBannerSettings({
                     ...bannerSettings,
@@ -290,79 +384,7 @@ const MarketingPage = () => {
               <SkeletonLoader className="h-12 w-full mt-4 animate-pulse rounded" />
             </div>
           ) : (
-            <div className="space-y-4">
-              <Input
-                label="Campaign Title / Title Header"
-                value={bannerSettings.bannerTitle || ""}
-                onChange={(e) =>
-                  setBannerSettings({
-                    ...bannerSettings,
-                    bannerTitle: e.target.value,
-                  })
-                }
-              />
-
-              <Input
-                label="Campaign Subtitle / Description"
-                value={bannerSettings.subtitle || ""}
-                onChange={(e) =>
-                  setBannerSettings({
-                    ...bannerSettings,
-                    subtitle: e.target.value,
-                  })
-                }
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="CTA Button Text"
-                  value={bannerSettings.primaryButtonText || ""}
-                  onChange={(e) =>
-                    setBannerSettings({
-                      ...bannerSettings,
-                      primaryButtonText: e.target.value,
-                    })
-                  }
-                />
-                <Input
-                  label="CTA Target Link"
-                  value={bannerSettings.link || "/shop"}
-                  onChange={(e) =>
-                    setBannerSettings({
-                      ...bannerSettings,
-                      link: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Discount Promo Code"
-                  type="text"
-                  value={bannerSettings.discountTag || ""}
-                  onChange={(e) =>
-                    setBannerSettings({
-                      ...bannerSettings,
-                      discountTag: e.target.value.toUpperCase(),
-                    })
-                  }
-                  className="font-mono uppercase"
-                />
-                <Input
-                  label="Display Priority"
-                  type="number"
-                  min="1"
-                  value={bannerSettings.priority || 1}
-                  onChange={(e) =>
-                    setBannerSettings({
-                      ...bannerSettings,
-                      priority: Number(e.target.value),
-                    })
-                  }
-                />
-              </div>
-
+            <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
@@ -382,7 +404,7 @@ const MarketingPage = () => {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                    Campaign End Date / Timer limit
+                    Campaign End Date
                   </label>
                   <input
                     type="datetime-local"
@@ -415,132 +437,336 @@ const MarketingPage = () => {
                 />
               </div>
 
-              {/* Dynamic Devices Specific Banner Image Uploader */}
-              <div className="space-y-4 border-t border-slate-200 pt-4">
-                <label className="text-xs font-bold text-[#c5a880] uppercase tracking-wider block">
-                  Campaign Devices Banner Media uploads (JPG, PNG, WebP)
-                </label>
-
-                {/* Desktop Upload Block */}
-                <div className="bg-white p-3 rounded border border-slate-200 space-y-2.5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-slate-700">
-                      Desktop Banner (1920x700)
-                    </span>
-                    {bannerSettings.desktopImage ||
-                    bannerSettings.bannerImage ? (
-                      <span className="text-[9px] text-[#c5a880] font-bold bg-[#c5a880]/10 px-2 py-0.5 rounded border border-[#c5a880]/15">
-                        Configured
-                      </span>
-                    ) : (
-                      <span className="text-[9px] text-slate-400 italic">
-                        Not set
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    {(bannerSettings.desktopImage ||
-                      bannerSettings.bannerImage) && (
-                      <img
-                        src={
-                          bannerSettings.desktopImage ||
-                          bannerSettings.bannerImage
-                        }
-                        className="w-20 h-10 object-cover border border-slate-200 rounded"
-                        alt=""
-                      />
-                    )}
-                    <label className="bg-[#FAF9F6] hover:bg-slate-50 border border-slate-200 text-[10px] uppercase font-bold tracking-wider text-[#c5a880] py-1.5 px-3 rounded cursor-pointer transition">
-                      Choose Desktop Image
-                      <input
-                        type="file"
-                        accept="image/jpeg, image/png, image/webp"
-                        onChange={(e) =>
-                          handleFeaturedImageUpload(
-                            e.target.files[0],
-                            "desktop",
-                          )
-                        }
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
+              {/* Slider management */}
+              <div className="border-t border-slate-200 pt-4 space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-bold text-[#c5a880] uppercase tracking-wider">
+                    Banner Slides ({bannerSettings.slides?.length || 0})
+                  </h4>
+                  <Button
+                    onClick={handleAddSlide}
+                    variant="outline"
+                    size="sm"
+                    className="text-[10px] py-1 px-2 border-[#c5a880]/30 text-[#c5a880] hover:bg-[#c5a880]/15 flex items-center space-x-1"
+                  >
+                    <RiAddCircleLine size={14} />
+                    <span>Add Slide</span>
+                  </Button>
                 </div>
 
-                {/* Tablet Upload Block */}
-                <div className="bg-white p-3 rounded border border-slate-200 space-y-2.5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-slate-700">
-                      Tablet Banner (1024x600)
-                    </span>
-                    {bannerSettings.tabletImage ? (
-                      <span className="text-[9px] text-[#c5a880] font-bold bg-[#c5a880]/10 px-2 py-0.5 rounded border border-[#c5a880]/15">
-                        Configured
-                      </span>
-                    ) : (
-                      <span className="text-[9px] text-slate-400 italic">
-                        Not set (Falls back to Desktop)
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    {bannerSettings.tabletImage && (
-                      <img
-                        src={bannerSettings.tabletImage}
-                        className="w-20 h-10 object-cover border border-slate-200 rounded"
-                        alt=""
-                      />
-                    )}
-                    <label className="bg-[#FAF9F6] hover:bg-slate-50 border border-slate-200 text-[10px] uppercase font-bold tracking-wider text-[#c5a880] py-1.5 px-3 rounded cursor-pointer transition">
-                      Choose Tablet Image
-                      <input
-                        type="file"
-                        accept="image/jpeg, image/png, image/webp"
-                        onChange={(e) =>
-                          handleFeaturedImageUpload(e.target.files[0], "tablet")
-                        }
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                </div>
+                <div className="space-y-4">
+                  {(bannerSettings.slides || []).map((slide, index) => (
+                    <div
+                      key={slide.id || index}
+                      className="bg-white border border-slate-200 rounded-lg p-4 space-y-4 relative shadow-sm hover:shadow transition"
+                    >
+                      <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                        <span className="text-xs font-bold text-slate-705 uppercase">
+                          Slide #{index + 1}
+                        </span>
+                        <div className="flex items-center space-x-3">
+                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={slide.enabled !== false}
+                              onChange={(e) =>
+                                handleUpdateSlideField(
+                                  index,
+                                  "enabled",
+                                  e.target.checked,
+                                )
+                              }
+                              className="rounded text-[#c5a880] focus:ring-[#c5a880] border-slate-200 w-3.5 h-3.5"
+                            />
+                            <span className="text-[10px] font-bold text-slate-500">
+                              Active
+                            </span>
+                          </label>
+                          <button
+                            onClick={() => handleDeleteSlide(index)}
+                            className="text-slate-400 hover:text-rose-600 transition"
+                            type="button"
+                            title="Delete Slide"
+                          >
+                            <RiDeleteBinLine size={14} />
+                          </button>
+                        </div>
+                      </div>
 
-                {/* Mobile Upload Block */}
-                <div className="bg-white p-3 rounded border border-slate-200 space-y-2.5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-slate-700">
-                      Mobile Banner (430x700)
-                    </span>
-                    {bannerSettings.mobileImage ? (
-                      <span className="text-[9px] text-[#c5a880] font-bold bg-[#c5a880]/10 px-2 py-0.5 rounded border border-[#c5a880]/15">
-                        Configured
-                      </span>
-                    ) : (
-                      <span className="text-[9px] text-slate-400 italic">
-                        Not set (Falls back to Tablet/Desktop)
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    {bannerSettings.mobileImage && (
-                      <img
-                        src={bannerSettings.mobileImage}
-                        className="w-20 h-10 object-cover border border-slate-200 rounded"
-                        alt=""
-                      />
-                    )}
-                    <label className="bg-[#FAF9F6] hover:bg-slate-50 border border-slate-200 text-[10px] uppercase font-bold tracking-wider text-[#c5a880] py-1.5 px-3 rounded cursor-pointer transition">
-                      Choose Mobile Image
-                      <input
-                        type="file"
-                        accept="image/jpeg, image/png, image/webp"
-                        onChange={(e) =>
-                          handleFeaturedImageUpload(e.target.files[0], "mobile")
-                        }
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Input
+                          label="Title"
+                          value={slide.title || ""}
+                          onChange={(e) =>
+                            handleUpdateSlideField(
+                              index,
+                              "title",
+                              e.target.value,
+                            )
+                          }
+                        />
+                        <Input
+                          label="Subtitle"
+                          value={slide.subtitle || ""}
+                          onChange={(e) =>
+                            handleUpdateSlideField(
+                              index,
+                              "subtitle",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <Input
+                          label="Badge Label"
+                          value={slide.badge || ""}
+                          onChange={(e) =>
+                            handleUpdateSlideField(
+                              index,
+                              "badge",
+                              e.target.value,
+                            )
+                          }
+                        />
+                        <Input
+                          label="CTA Text"
+                          value={slide.ctaText || ""}
+                          onChange={(e) =>
+                            handleUpdateSlideField(
+                              index,
+                              "ctaText",
+                              e.target.value,
+                            )
+                          }
+                        />
+                        <Input
+                          label="CTA Link"
+                          value={slide.ctaLink || ""}
+                          onChange={(e) =>
+                            handleUpdateSlideField(
+                              index,
+                              "ctaLink",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <Input
+                          label="Promo Tag"
+                          value={slide.promoCode || ""}
+                          onChange={(e) =>
+                            handleUpdateSlideField(
+                              index,
+                              "promoCode",
+                              e.target.value,
+                            )
+                          }
+                          className="font-mono uppercase"
+                        />
+                        <Input
+                          label="Display Priority"
+                          type="number"
+                          min="1"
+                          value={slide.priority || 1}
+                          onChange={(e) =>
+                            handleUpdateSlideField(
+                              index,
+                              "priority",
+                              Number(e.target.value),
+                            )
+                          }
+                        />
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                            Desktop Focus
+                          </label>
+                          <select
+                            value={slide.imagePositionDesktop || "center"}
+                            onChange={(e) =>
+                              handleUpdateSlideField(
+                                index,
+                                "imagePositionDesktop",
+                                e.target.value,
+                              )
+                            }
+                            className="w-full bg-white border border-slate-205 text-xs rounded p-2 text-slate-800 focus:outline-[#c5a880] focus:ring-1 focus:ring-[#c5a880]"
+                          >
+                            <option value="center">Center</option>
+                            <option value="top">Top</option>
+                            <option value="bottom">Bottom</option>
+                            <option value="left">Left</option>
+                            <option value="right">Right</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 pt-3 border-t border-slate-100">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#c5a880] block">
+                          Slide Media (Desktop / Tablet / Mobile)
+                        </span>
+
+                        {/* Desktop Image upload */}
+                        <div className="flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-100">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-[10px] font-bold text-slate-600 w-16">
+                              Desktop:
+                            </span>
+                            {slide.desktopImage ? (
+                              <img
+                                src={slide.desktopImage}
+                                className="w-12 h-6 object-cover border rounded border-slate-200"
+                                alt=""
+                              />
+                            ) : (
+                              <span className="text-[9px] text-slate-400 italic">
+                                Not Uploaded
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <label className="bg-white hover:bg-slate-50 border border-slate-200 text-[9px] uppercase font-bold tracking-wider text-[#c5a880] py-1 px-2.5 rounded cursor-pointer transition">
+                              Change
+                              <input
+                                type="file"
+                                accept="image/jpeg, image/png, image/webp"
+                                onChange={(e) =>
+                                  handleSlideImageUpload(
+                                    e.target.files[0],
+                                    index,
+                                    "desktop",
+                                  )
+                                }
+                                className="hidden"
+                              />
+                            </label>
+                            {slide.desktopImage && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleUpdateSlideField(
+                                    index,
+                                    "desktopImage",
+                                    "",
+                                  )
+                                }
+                                className="text-[9px] font-bold text-rose-500 hover:text-rose-700 uppercase"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Tablet Image upload */}
+                        <div className="flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-100">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-[10px] font-bold text-slate-600 w-16">
+                              Tablet:
+                            </span>
+                            {slide.tabletImage ? (
+                              <img
+                                src={slide.tabletImage}
+                                className="w-12 h-6 object-cover border rounded border-slate-200"
+                                alt=""
+                              />
+                            ) : (
+                              <span className="text-[9px] text-slate-400 italic">
+                                Falls back to Desktop
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <label className="bg-white hover:bg-slate-50 border border-slate-200 text-[9px] uppercase font-bold tracking-wider text-[#c5a880] py-1 px-2.5 rounded cursor-pointer transition">
+                              Change
+                              <input
+                                type="file"
+                                accept="image/jpeg, image/png, image/webp"
+                                onChange={(e) =>
+                                  handleSlideImageUpload(
+                                    e.target.files[0],
+                                    index,
+                                    "tablet",
+                                  )
+                                }
+                                className="hidden"
+                              />
+                            </label>
+                            {slide.tabletImage && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleUpdateSlideField(
+                                    index,
+                                    "tabletImage",
+                                    "",
+                                  )
+                                }
+                                className="text-[9px] font-bold text-rose-500 hover:text-rose-700 uppercase"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Mobile Image upload */}
+                        <div className="flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-100">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-[10px] font-bold text-slate-600 w-16">
+                              Mobile:
+                            </span>
+                            {slide.mobileImage ? (
+                              <img
+                                src={slide.mobileImage}
+                                className="w-12 h-6 object-cover border rounded border-slate-200"
+                                alt=""
+                              />
+                            ) : (
+                              <span className="text-[9px] text-slate-400 italic">
+                                Falls back to Tablet
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <label className="bg-white hover:bg-slate-50 border border-slate-200 text-[9px] uppercase font-bold tracking-wider text-[#c5a880] py-1 px-2.5 rounded cursor-pointer transition">
+                              Change
+                              <input
+                                type="file"
+                                accept="image/jpeg, image/png, image/webp"
+                                onChange={(e) =>
+                                  handleSlideImageUpload(
+                                    e.target.files[0],
+                                    index,
+                                    "mobile",
+                                  )
+                                }
+                                className="hidden"
+                              />
+                            </label>
+                            {slide.mobileImage && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleUpdateSlideField(
+                                    index,
+                                    "mobileImage",
+                                    "",
+                                  )
+                                }
+                                className="text-[9px] font-bold text-rose-500 hover:text-rose-700 uppercase"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -563,98 +789,98 @@ const MarketingPage = () => {
             highlightCoupons ? "ring-2 ring-[#c5a880] shadow-lg" : ""
           }`}
         >
-        <Card className="p-6 space-y-5 bg-[#FAF9F6] border-slate-200 h-fit">
-          <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-            <h3 className="text-sm font-semibold tracking-wide uppercase text-[#c5a880] flex items-center">
-              <RiCoupon3Line className="mr-2" /> active checkout discount
-              coupons
-            </h3>
-            <Button
-              onClick={() => setShowCouponModal(true)}
-              variant="outline"
-              size="sm"
-              className="text-xs text-[#c5a880] border-[#c5a880]/30 hover:bg-[#c5a880]/10 flex items-center space-x-1.5"
-            >
-              <RiAddCircleLine size={16} />
-              <span>Create Coupon</span>
-            </Button>
-          </div>
+          <Card className="p-6 space-y-5 bg-[#FAF9F6] border-slate-200 h-fit">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+              <h3 className="text-sm font-semibold tracking-wide uppercase text-[#c5a880] flex items-center">
+                <RiCoupon3Line className="mr-2" /> active checkout discount
+                coupons
+              </h3>
+              <Button
+                onClick={() => setShowCouponModal(true)}
+                variant="outline"
+                size="sm"
+                className="text-xs text-[#c5a880] border-[#c5a880]/30 hover:bg-[#c5a880]/10 flex items-center space-x-1.5"
+              >
+                <RiAddCircleLine size={16} />
+                <span>Create Coupon</span>
+              </Button>
+            </div>
 
-          <div className="space-y-3 overflow-y-auto max-h-[620px] pr-1">
-            {couponsLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-white border border-slate-200 p-4.5 rounded-lg flex items-center justify-between"
-                  >
-                    <div className="space-y-2 w-2/3">
-                      <div className="flex items-center space-x-3">
-                        <SkeletonLoader className="h-5 w-24 rounded animate-pulse" />
-                        <SkeletonLoader className="h-4.5 w-12 rounded animate-pulse" />
+            <div className="space-y-3 overflow-y-auto max-h-[620px] pr-1">
+              {couponsLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-white border border-slate-200 p-4.5 rounded-lg flex items-center justify-between"
+                    >
+                      <div className="space-y-2 w-2/3">
+                        <div className="flex items-center space-x-3">
+                          <SkeletonLoader className="h-5 w-24 rounded animate-pulse" />
+                          <SkeletonLoader className="h-4.5 w-12 rounded animate-pulse" />
+                        </div>
+                        <SkeletonLoader className="h-3.5 w-40 rounded animate-pulse" />
+                        <SkeletonLoader className="h-3 w-28 rounded animate-pulse" />
                       </div>
-                      <SkeletonLoader className="h-3.5 w-40 rounded animate-pulse" />
-                      <SkeletonLoader className="h-3 w-28 rounded animate-pulse" />
+                      <SkeletonLoader className="h-8 w-8 rounded animate-pulse animate-pulse" />
                     </div>
-                    <SkeletonLoader className="h-8 w-8 rounded animate-pulse animate-pulse" />
-                  </div>
-                ))}
-              </div>
-            ) : coupons.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-6 text-center">
-                No active discount coupons found.
-              </p>
-            ) : (
-              coupons.map((cop, idx) => (
-                <div
-                  key={idx}
-                  className="bg-white border border-slate-200 p-4 rounded-lg flex items-center justify-between shadow-sm hover:border-[#c5a880]/40 transition"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm font-bold tracking-widest font-mono text-slate-800 uppercase">
-                        {cop.code}
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 rounded text-[8px] font-extrabold uppercase ${
-                          cop.status === "Active"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                            : "bg-slate-100 text-slate-500 border border-slate-200"
-                        }`}
-                      >
-                        {cop.status === "Active" ? "Live" : "Inactive"}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600">
-                      Discount:{" "}
-                      <span className="font-semibold text-slate-900">
-                        {cop.discountType === "Flat"
-                          ? `₹${cop.value} off`
-                          : `${cop.value}% off`}
-                      </span>
-                    </p>
-                    <p className="text-[10px] text-slate-500">
-                      Used {cop.ordersUsed || 0}/{cop.usageLimit || "∞"} times ·{" "}
-                      {cop.userLimit || 1}× per customer
-                    </p>
-                    {cop.expiryDate && (
-                      <p className="text-[9px] text-slate-500 flex items-center font-mono py-0.5">
-                        <RiTimeLine className="mr-1" /> Expr:{" "}
-                        {new Date(cop.expiryDate).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleDeleteCoupon(cop._id, cop.code)}
-                    className="text-slate-400 hover:text-rose-600 p-2 rounded hover:bg-rose-50 transition"
-                  >
-                    <RiDeleteBinLine size={16} />
-                  </button>
+                  ))}
                 </div>
-              ))
-            )}
-          </div>
-        </Card>
+              ) : coupons.length === 0 ? (
+                <p className="text-xs text-slate-500 italic py-6 text-center">
+                  No active discount coupons found.
+                </p>
+              ) : (
+                coupons.map((cop, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-white border border-slate-200 p-4 rounded-lg flex items-center justify-between shadow-sm hover:border-[#c5a880]/40 transition"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-sm font-bold tracking-widest font-mono text-slate-800 uppercase">
+                          {cop.code}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[8px] font-extrabold uppercase ${
+                            cop.status === "Active"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                              : "bg-slate-100 text-slate-500 border border-slate-200"
+                          }`}
+                        >
+                          {cop.status === "Active" ? "Live" : "Inactive"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600">
+                        Discount:{" "}
+                        <span className="font-semibold text-slate-900">
+                          {cop.discountType === "Flat"
+                            ? `₹${cop.value} off`
+                            : `${cop.value}% off`}
+                        </span>
+                      </p>
+                      <p className="text-[10px] text-slate-500">
+                        Used {cop.ordersUsed || 0}/{cop.usageLimit || "∞"} times
+                        · {cop.userLimit || 1}× per customer
+                      </p>
+                      {cop.expiryDate && (
+                        <p className="text-[9px] text-slate-500 flex items-center font-mono py-0.5">
+                          <RiTimeLine className="mr-1" /> Expr:{" "}
+                          {new Date(cop.expiryDate).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDeleteCoupon(cop._id, cop.code)}
+                      className="text-slate-400 hover:text-rose-600 p-2 rounded hover:bg-rose-50 transition"
+                    >
+                      <RiDeleteBinLine size={16} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
         </div>
       </div>
 

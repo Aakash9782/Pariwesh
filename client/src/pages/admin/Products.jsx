@@ -759,9 +759,7 @@ const ProductsPage = () => {
                 : "suits",
               mrp: Number(cells[3]) || 1999,
               price: Number(cells[4]) || 1499,
-              images: [
-                "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=650",
-              ],
+              images: ["/hero.png"],
             };
             await API.post("/products", rowProduct);
             successCount++;

@@ -68,11 +68,11 @@ const Home = () => {
       localStorage.getItem("slideImg5"),
     ].filter(Boolean);
     const fallbackImages = [
-      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=1200&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=1200&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=1200&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1612459284970-e8f027596582?q=80&w=1200&auto=format&fit=crop",
+      "/hero.png",
+      "/hero.png",
+      "/hero.png",
+      "/hero.png",
+      "/hero.png",
     ];
     return {
       active:
@@ -103,46 +103,38 @@ const Home = () => {
       {
         title: "Designer Suits",
         desc: "Anarkalis & Shararas",
-        image:
-          "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=250&auto=format&fit=crop",
+        image: "/hero.png",
         path: "/shop?category=ethnic",
       },
       {
         title: "Premium Kurtis",
         desc: "Everyday Tunics",
-        image:
-          "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=250&auto=format&fit=crop",
+        image: "/hero.png",
         path: "/shop?category=kurtis",
       },
       {
         title: "Co-Ord Sets",
         desc: "Modern Ethnic",
-        image:
-          "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=250&auto=format&fit=crop",
+        image: "/hero.png",
         path: "/shop?category=suits",
       },
       {
         title: "Best Sellers",
         desc: "Top Trending",
-        image:
-          "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=250&auto=format&fit=crop",
+        image: "/hero.png",
         path: "/shop?tag=Best Seller",
       },
       {
         title: "New Arrivals",
         desc: "Fresh Designs",
-        image:
-          "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=250&auto=format&fit=crop",
+        image: "/hero.png",
         path: "/shop?tag=New Arrival",
       },
     ];
   });
 
   const [dynStoryImage, setDynStoryImage] = useState(() => {
-    return (
-      localStorage.getItem("homeStoryImage") ||
-      "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=800&auto=format&fit=crop"
-    );
+    return localStorage.getItem("homeStoryImage") || "/hero.png";
   });
 
   const [dynVibeMoods, setDynVibeMoods] = useState(() => {
@@ -196,9 +188,7 @@ const Home = () => {
                   ? p.images
                   : p.image
                     ? [p.image]
-                    : [
-                        "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop",
-                      ];
+                    : ["/hero.png"];
               return {
                 _id: p._id,
                 name: p.name,
@@ -290,11 +280,11 @@ const Home = () => {
           setAdConfig(adState);
 
           const fallbackImages = [
-            "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=1200&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1612459284970-e8f027596582?q=80&w=1200&auto=format&fit=crop",
+            "/hero.png",
+            "/hero.png",
+            "/hero.png",
+            "/hero.png",
+            "/hero.png",
           ];
           const loadedImages = [
             settings.slideImg1,
