@@ -41,6 +41,44 @@ const ProductDetails = () => {
   const [addedPopup, setAddedPopup] = useState(false);
   const [fetching, setFetching] = useState(true);
 
+  // Gesture Drag/Swipe Gestures for Product Image Gallery
+  const [pointerStart, setPointerStart] = useState(null);
+
+  const handlePointerDown = (e) => {
+    setPointerStart(e.clientX);
+  };
+
+  const handlePointerUp = (e) => {
+    if (pointerStart === null) return;
+    const distance = pointerStart - e.clientX;
+    const minSwipeDistance = 50;
+
+    if (
+      Math.abs(distance) > minSwipeDistance &&
+      product?.images &&
+      product.images.length > 1
+    ) {
+      const currentIndex = product.images.indexOf(activeImage);
+      if (currentIndex !== -1) {
+        if (distance > 0) {
+          // Swipe Left -> Next Image
+          const nextIndex = (currentIndex + 1) % product.images.length;
+          setActiveImage(product.images[nextIndex]);
+        } else {
+          // Swipe Right -> Previous Image
+          const prevIndex =
+            (currentIndex - 1 + product.images.length) % product.images.length;
+          setActiveImage(product.images[prevIndex]);
+        }
+      }
+    }
+    setPointerStart(null);
+  };
+
+  const handlePointerLeave = () => {
+    setPointerStart(null);
+  };
+
   // Custom UI Expandable States
   const [descExpanded, setDescExpanded] = useState(false);
   const [shippingOpen, setShippingOpen] = useState(false);
@@ -329,11 +367,17 @@ const ProductDetails = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
         {/* LEFT COLUMN: GALLERIES CONTAINER - Sticky on Desktop */}
         <div className="lg:col-span-7 space-y-4 lg:sticky lg:top-24 self-start">
-          <div className="aspect-[3/4] bg-slate-50 overflow-hidden border border-slate-100 rounded-xl relative shadow-sm">
+          <div
+            className="aspect-[3/4] bg-slate-50 overflow-hidden border border-slate-100 rounded-xl relative shadow-sm cursor-grab active:cursor-grabbing touch-pan-y"
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerLeave}
+          >
             <img
               src={getOptimizedImageUrl(activeImage)}
               alt={product.name}
-              className="w-full h-full object-cover transition-all duration-300"
+              className="w-full h-full object-cover transition-all duration-300 select-none"
+              draggable="false"
               fetchPriority="high"
             />
           </div>

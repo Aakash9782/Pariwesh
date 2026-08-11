@@ -3,15 +3,30 @@ import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import SEO from "../components/common/SEO.jsx";
 import Icon from "../theme/icons.jsx";
+import PremiumBannerSlider from "../components/home/PremiumBannerSlider.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import HeroSlider from "../components/home/HeroSlider.jsx";
 import VibeGrid from "../components/home/VibeGrid.jsx";
-import { ProductSkeleton } from "../components/common/Skeleton.jsx";
+import Skeleton, { ProductSkeleton } from "../components/common/Skeleton.jsx";
+import { optimizeCloudinaryUrl } from "../utils/cloudinary.js";
 import { addToCart } from "../redux/slices/cartSlice.js";
 import { toggleWishlistProduct } from "../redux/slices/wishlistSlice.js";
 import API from "../services/api.js";
 import { useAlert } from "../contexts/AlertContext.jsx";
 import { syncCartNow, syncWishlistNow } from "../services/hydrateCommerce.js";
+
+const safeSetItem = (key, value) => {
+  try {
+    if (value && typeof value === "string") {
+      if (value.startsWith("data:image/") || value.includes("data:image/")) {
+        return;
+      }
+    }
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.warn(`localStorage setItem failed for key "${key}":`, e);
+  }
+};
 
 const Home = () => {
   const { showAlert } = useAlert();
@@ -40,15 +55,32 @@ const Home = () => {
     theme: "royal-gold",
   });
 
-  const [sliderConfig, setSliderConfig] = useState({
-    active: true,
-    images: [
+  const [settingsLoading, setSettingsLoading] = useState(() => {
+    return !localStorage.getItem("homeCategories");
+  });
+
+  const [sliderConfig, setSliderConfig] = useState(() => {
+    const loadedImages = [
+      localStorage.getItem("slideImg1"),
+      localStorage.getItem("slideImg2"),
+      localStorage.getItem("slideImg3"),
+      localStorage.getItem("slideImg4"),
+      localStorage.getItem("slideImg5"),
+    ].filter(Boolean);
+    const fallbackImages = [
       "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=1200&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=1200&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=1200&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1612459284970-e8f027596582?q=80&w=1200&auto=format&fit=crop",
-    ],
+    ];
+    return {
+      active:
+        localStorage.getItem("slideBarActive") === null
+          ? true
+          : localStorage.getItem("slideBarActive") === "true",
+      images: loadedImages.length > 0 ? loadedImages : fallbackImages,
+    };
   });
 
   const [activeSlide, setActiveSlide] = useState(0);
@@ -59,49 +91,70 @@ const Home = () => {
   const [copiedCode, setCopiedCode] = useState(false);
 
   // Custom dynamic states for homepage elements
-  const [dynCategories, setDynCategories] = useState([
-    {
-      title: "Designer Suits",
-      desc: "Anarkalis & Shararas",
-      image:
-        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=250&auto=format&fit=crop",
-      path: "/shop?category=ethnic",
-    },
-    {
-      title: "Premium Kurtis",
-      desc: "Everyday Tunics",
-      image:
-        "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=250&auto=format&fit=crop",
-      path: "/shop?category=kurtis",
-    },
-    {
-      title: "Co-Ord Sets",
-      desc: "Modern Ethnic",
-      image:
-        "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=250&auto=format&fit=crop",
-      path: "/shop?category=suits",
-    },
-    {
-      title: "Best Sellers",
-      desc: "Top Trending",
-      image:
-        "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=250&auto=format&fit=crop",
-      path: "/shop?tag=Best Seller",
-    },
-    {
-      title: "New Arrivals",
-      desc: "Fresh Designs",
-      image:
-        "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=250&auto=format&fit=crop",
-      path: "/shop?tag=New Arrival",
-    },
-  ]);
+  const [dynCategories, setDynCategories] = useState(() => {
+    const cached = localStorage.getItem("homeCategories");
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return [
+      {
+        title: "Designer Suits",
+        desc: "Anarkalis & Shararas",
+        image:
+          "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=250&auto=format&fit=crop",
+        path: "/shop?category=ethnic",
+      },
+      {
+        title: "Premium Kurtis",
+        desc: "Everyday Tunics",
+        image:
+          "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=250&auto=format&fit=crop",
+        path: "/shop?category=kurtis",
+      },
+      {
+        title: "Co-Ord Sets",
+        desc: "Modern Ethnic",
+        image:
+          "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=250&auto=format&fit=crop",
+        path: "/shop?category=suits",
+      },
+      {
+        title: "Best Sellers",
+        desc: "Top Trending",
+        image:
+          "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=250&auto=format&fit=crop",
+        path: "/shop?tag=Best Seller",
+      },
+      {
+        title: "New Arrivals",
+        desc: "Fresh Designs",
+        image:
+          "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=250&auto=format&fit=crop",
+        path: "/shop?tag=New Arrival",
+      },
+    ];
+  });
 
-  const [dynStoryImage, setDynStoryImage] = useState(
-    "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=800&auto=format&fit=crop",
-  );
+  const [dynStoryImage, setDynStoryImage] = useState(() => {
+    return (
+      localStorage.getItem("homeStoryImage") ||
+      "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=800&auto=format&fit=crop"
+    );
+  });
 
-  const [dynVibeMoods, setDynVibeMoods] = useState(null);
+  const [dynVibeMoods, setDynVibeMoods] = useState(() => {
+    const cached = localStorage.getItem("homeVibeMoods");
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return null;
+  });
 
   // Dynamic Flash Sale Countdown State
   const [countdownConfig, setCountdownConfig] = useState({
@@ -260,6 +313,19 @@ const Home = () => {
             images: loadedImages.length > 0 ? loadedImages : fallbackImages,
           });
 
+          // Sync slideshow images to localStorage
+          safeSetItem(
+            "slideBarActive",
+            settings.slideBarActive === undefined
+              ? "true"
+              : String(settings.slideBarActive),
+          );
+          safeSetItem("slideImg1", settings.slideImg1 || "");
+          safeSetItem("slideImg2", settings.slideImg2 || "");
+          safeSetItem("slideImg3", settings.slideImg3 || "");
+          safeSetItem("slideImg4", settings.slideImg4 || "");
+          safeSetItem("slideImg5", settings.slideImg5 || "");
+
           setCountdownConfig({
             active:
               settings.countdownActive === undefined
@@ -273,12 +339,14 @@ const Home = () => {
           // Fetch new dynamic settings for homepage elements
           if (settings.homeStoryImage) {
             setDynStoryImage(settings.homeStoryImage);
+            safeSetItem("homeStoryImage", settings.homeStoryImage);
           }
           if (settings.homeCategories) {
             try {
               const parsed = JSON.parse(settings.homeCategories);
               if (Array.isArray(parsed) && parsed.length > 0) {
                 setDynCategories(parsed);
+                safeSetItem("homeCategories", settings.homeCategories);
               }
             } catch (e) {
               console.error("Failed to parse homeCategories:", e);
@@ -289,6 +357,7 @@ const Home = () => {
               const parsed = JSON.parse(settings.homeVibeMoods);
               if (Array.isArray(parsed) && parsed.length > 0) {
                 setDynVibeMoods(parsed);
+                safeSetItem("homeVibeMoods", settings.homeVibeMoods);
               }
             } catch (e) {
               console.error("Failed to parse homeVibeMoods:", e);
@@ -298,6 +367,8 @@ const Home = () => {
       } catch (err) {
         console.error("Error loaded settings:", err);
         if (!cancelled) applyLocalSettingsFallback();
+      } finally {
+        if (!cancelled) setSettingsLoading(false);
       }
     };
 
@@ -360,6 +431,7 @@ const Home = () => {
           }
         } catch (e) {}
       }
+      setSettingsLoading(false);
     };
 
     fetchSettings();
@@ -482,168 +554,12 @@ const Home = () => {
         keywords="Pariwesh, Ethnic Wear, Suit Sets, Kurtis, Traditional Indian Wear, Luxury Crafts, Designer Kurtas"
         structuredData={websiteSchema}
       />
-      {/* Dynamic Festive Offer Banner Row */}
-      {adConfig.active &&
-        (() => {
-          const getBannerTheme = () => {
-            switch (adConfig.theme) {
-              case "royal-gold":
-                return {
-                  wrapper:
-                    "bg-[linear-gradient(135deg,#0a0702_0%,#1c1407_30%,#3d2b0e_50%,#1c1407_70%,#0a0702_100%)] border-amber-500/35 text-amber-100",
-                  badge: "bg-amber-500/20 text-amber-250 border-amber-500/35",
-                  glow: "from-amber-400/25 to-transparent",
-                  mandala: "text-amber-500",
-                  btnGrab:
-                    "bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-neutral-950 shadow-[0_0_15px_rgba(245,158,11,0.25)]",
-                  btnCoupon:
-                    "bg-amber-950/40 border-amber-500/30 text-amber-205 hover:border-amber-450 hover:bg-amber-950/60",
-                  sparkle: "text-amber-400",
-                };
-              case "emerald-green":
-                return {
-                  wrapper:
-                    "bg-[linear-gradient(135deg,#010704_0%,#051c11_30%,#0e4226_50%,#051c11_70%,#010704_100%)] border-emerald-500/35 text-emerald-100",
-                  badge:
-                    "bg-emerald-500/20 text-emerald-250 border-emerald-500/35",
-                  glow: "from-emerald-400/25 to-transparent",
-                  mandala: "text-emerald-500",
-                  btnGrab:
-                    "bg-gradient-to-r from-emerald-400 to-emerald-600 hover:from-emerald-300 hover:to-emerald-500 text-neutral-950 shadow-[0_0_15px_rgba(16,185,129,0.25)]",
-                  btnCoupon:
-                    "bg-emerald-950/40 border-emerald-500/30 text-emerald-205 hover:border-emerald-450 hover:bg-emerald-950/60",
-                  sparkle: "text-emerald-400",
-                };
-              case "ruby-red":
-                return {
-                  wrapper:
-                    "bg-[linear-gradient(135deg,#0a0104_0%,#240510_30%,#540d23_50%,#240510_70%,#0a0104_100%)] border-rose-500/35 text-rose-100",
-                  badge: "bg-rose-500/20 text-rose-250 border-rose-500/35",
-                  glow: "from-rose-450/25 to-transparent",
-                  mandala: "text-rose-550",
-                  btnGrab:
-                    "bg-gradient-to-r from-rose-400 to-rose-600 hover:from-rose-300 hover:to-rose-500 text-neutral-950 shadow-[0_0_15px_rgba(244,63,94,0.25)]",
-                  btnCoupon:
-                    "bg-rose-955/40 border-rose-500/30 text-rose-205 hover:border-rose-450 hover:bg-rose-955/60",
-                  sparkle: "text-rose-400",
-                };
-              default: // velvet-purple
-                return {
-                  wrapper:
-                    "bg-[linear-gradient(135deg,#04010a_0%,#140529_30%,#390e66_50%,#140529_70%,#04010a_100%)] border-purple-500/35 text-purple-100",
-                  badge:
-                    "bg-purple-500/20 text-purple-250 border-purple-500/35",
-                  glow: "from-purple-400/25 to-transparent",
-                  mandala: "text-purple-500",
-                  btnGrab:
-                    "bg-gradient-to-r from-purple-400 to-purple-600 hover:from-purple-300 hover:to-purple-500 text-neutral-950 shadow-[0_0_15px_rgba(168,85,247,0.25)]",
-                  btnCoupon:
-                    "bg-purple-955/40 border-purple-500/30 text-purple-205 hover:border-purple-450 hover:bg-purple-955/60",
-                  sparkle: "text-purple-400",
-                };
-            }
-          };
-
-          const theme = getBannerTheme();
-
-          const optimizeCloudinaryUrl = (url) => {
-            if (!url || typeof url !== "string") return url;
-            if (url.includes("res.cloudinary.com")) {
-              return url.replace("/upload/", "/upload/f_auto,q_auto/");
-            }
-            return url;
-          };
-
-          const desktopSrc = optimizeCloudinaryUrl(adConfig.desktopImage);
-          const tabletSrc =
-            optimizeCloudinaryUrl(adConfig.tabletImage) || desktopSrc;
-          const mobileSrc =
-            optimizeCloudinaryUrl(adConfig.mobileImage) || tabletSrc;
-
-          if (!desktopSrc) {
-            return null;
-          }
-
-          return (
-            <section className="w-full animate-fade-in relative z-10">
-              <div className="relative min-h-[300px] md:min-h-[450px] overflow-hidden rounded-none border-x-0 border-y border-slate-800 shadow-2xl flex items-center">
-                {/* Media Responsive Picture element */}
-                <picture className="absolute inset-0 w-full h-full">
-                  {mobileSrc && (
-                    <source media="(max-width: 639px)" srcSet={mobileSrc} />
-                  )}
-                  {tabletSrc && (
-                    <source media="(max-width: 1023px)" srcSet={tabletSrc} />
-                  )}
-                  <img
-                    src={desktopSrc}
-                    alt={adConfig.title || "Promotional Campaign"}
-                    className="w-full h-full object-cover select-none"
-                    loading="eager"
-                  />
-                </picture>
-
-                {/* Dark Shimmer overlay to protect text contrast */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/35 md:from-black/80 md:via-black/45 md:to-transparent z-1 pointer-events-none"></div>
-
-                <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 py-10 md:py-16">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 text-left">
-                    <div className="space-y-3 lg:max-w-3xl">
-                      <span className="inline-flex items-center gap-1.5 text-[9px] uppercase font-black tracking-[0.2em] px-3 py-1 rounded-sm border border-accent-gold/45 text-accent-gold bg-black/60 backdrop-blur-md">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent-gold animate-ping"></span>
-                        Special Promotion
-                      </span>
-                      <h2 className="text-2xl md:text-5xl font-display font-extrabold uppercase tracking-wider drop-shadow-md text-white">
-                        {adConfig.title}
-                      </h2>
-                      <p className="text-xs md:text-sm text-slate-200/90 font-medium font-sans leading-relaxed tracking-wide max-w-2xl">
-                        {adConfig.subtitle}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-4 lg:self-center font-sans">
-                      {adConfig.code && (
-                        <div className="flex flex-col">
-                          <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold mb-1.5">
-                            Promo Code
-                          </span>
-                          <button
-                            onClick={handleCopyCode}
-                            title="Click to copy coupon code"
-                            className={`px-4 py-2.5 border rounded-sm font-mono text-xs tracking-widest font-black flex items-center gap-2 overflow-hidden transition-all duration-300 relative ${theme.btnCoupon}`}
-                          >
-                            {copiedCode ? (
-                              <span className="text-green-400 flex items-center gap-1.5 animate-bounce">
-                                ✔ COPIED!
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1.5">
-                                ✨ {adConfig.code.toUpperCase()}
-                              </span>
-                            )}
-                          </button>
-                        </div>
-                      )}
-
-                      <div className="flex flex-col">
-                        <span className="text-[9px] uppercase tracking-widest text-[#000000]/0 font-bold mb-1.5 pointer-events-none hidden sm:block">
-                          Shop
-                        </span>
-                        <Link
-                          to={adConfig.link}
-                          className={`font-black text-[10px] uppercase tracking-widest px-6 py-3.5 rounded-sm transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105 active:scale-95 ${theme.btnGrab}`}
-                        >
-                          {adConfig.primaryButtonText || "Grab Offer"}{" "}
-                          <Icon name="ArrowRight" size={12} />
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          );
-        })()}
+      {/* Premium Dynamic / Static Secondary Banner Slider */}
+      <PremiumBannerSlider
+        adConfig={adConfig}
+        handleCopyCode={handleCopyCode}
+        copiedCode={copiedCode}
+      />
 
       {/* SECTION 1: HERO SPOTLIGHT SLIDER (Vibrant premium hero layout) */}
       <HeroSlider
@@ -677,34 +593,50 @@ const Home = () => {
           </div>
 
           <div className="flex items-center gap-4 md:gap-6 overflow-x-auto pb-4 px-4 sm:px-6 -mx-4 sm:-mx-6 scrollbar-none snap-x select-none">
-            {dynCategories.map((cat, idx) => (
-              <Link
-                key={idx}
-                to={cat.path}
-                className="snap-start flex flex-col items-center space-y-3 group min-w-[100px] sm:min-w-[130px] text-center"
-              >
-                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[2px] transition-transform duration-300 group-hover:scale-105 border border-accent-gold/40 group-hover:border-accent-gold shadow-md">
-                  <div className="w-full h-full rounded-full overflow-hidden relative">
-                    <img
-                      src={cat.image}
-                      alt={cat.title}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover group-hover:scale-[1.12] transition-transform duration-500 ease-out"
+            {settingsLoading
+              ? Array.from({ length: 5 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col items-center space-y-3 min-w-[100px] sm:min-w-[130px]"
+                  >
+                    <Skeleton
+                      variant="circle"
+                      className="w-20 h-20 sm:w-24 sm:h-24 border border-accent-gold/20"
                     />
-                    <div className="absolute inset-0 bg-secondary/10 group-hover:bg-transparent transition-colors duration-300"></div>
+                    <div className="space-y-1.5 w-16 flex flex-col items-center">
+                      <Skeleton className="h-2.5 w-full" />
+                      <Skeleton className="h-2 w-2/3" />
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-0.5">
-                  <h4 className="text-[10px] xs:text-[11px] sm:text-xs font-semibold text-textPrimary uppercase tracking-wider group-hover:text-[#8a1c14] transition-colors">
-                    {cat.title}
-                  </h4>
-                  <span className="text-[8px] xs:text-[9px] text-[#8a1c14] italic group-hover:underline">
-                    Explore
-                  </span>
-                </div>
-              </Link>
-            ))}
+                ))
+              : dynCategories.map((cat, idx) => (
+                  <Link
+                    key={idx}
+                    to={cat.path}
+                    className="snap-start flex flex-col items-center space-y-3 group min-w-[100px] sm:min-w-[130px] text-center"
+                  >
+                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[2px] transition-transform duration-300 group-hover:scale-105 border border-accent-gold/40 group-hover:border-accent-gold shadow-md">
+                      <div className="w-full h-full rounded-full overflow-hidden relative">
+                        <img
+                          src={optimizeCloudinaryUrl(cat.image)}
+                          alt={cat.title}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover group-hover:scale-[1.12] transition-transform duration-500 ease-out"
+                        />
+                        <div className="absolute inset-0 bg-secondary/10 group-hover:bg-transparent transition-colors duration-300"></div>
+                      </div>
+                    </div>
+                    <div className="space-y-0.5">
+                      <h4 className="text-[10px] xs:text-[11px] sm:text-xs font-semibold text-textPrimary uppercase tracking-wider group-hover:text-[#8a1c14] transition-colors">
+                        {cat.title}
+                      </h4>
+                      <span className="text-[8px] xs:text-[9px] text-[#8a1c14] italic group-hover:underline">
+                        Explore
+                      </span>
+                    </div>
+                  </Link>
+                ))}
           </div>
         </div>
       </section>
@@ -714,13 +646,17 @@ const Home = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
           {/* Left card - Premium promotional visual block */}
           <div className="relative overflow-hidden border border-borderLight min-h-[450px] flex flex-col justify-between rounded-none shadow-sm group">
-            <img
-              src={dynStoryImage}
-              alt="Atelier Craftsmanship"
-              loading="lazy"
-              decoding="async"
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
+            {settingsLoading ? (
+              <Skeleton className="absolute inset-0 w-full h-full rounded-none" />
+            ) : (
+              <img
+                src={optimizeCloudinaryUrl(dynStoryImage)}
+                alt="Atelier Craftsmanship"
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/30 flex flex-col justify-between p-8 md:p-12 text-white">
               <div className="space-y-2 text-left">
                 <span className="text-[9px] text-accent-gold uppercase tracking-[0.3em] font-black block">
@@ -849,7 +785,7 @@ const Home = () => {
       </section>
 
       {/* SECTION 2.5: PICK YOUR VIBE (4-Column Style Mood Cards) */}
-      <VibeGrid vibeMoods={dynVibeMoods} />
+      <VibeGrid vibeMoods={dynVibeMoods} settingsLoading={settingsLoading} />
 
       {/* SECTION 3: TRENDING COLLECTION (Interactive Cards Grid) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
