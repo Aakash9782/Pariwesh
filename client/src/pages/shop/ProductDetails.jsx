@@ -236,7 +236,11 @@ const ProductDetails = () => {
       }),
     );
     syncCartNow();
-    navigate("/cart?checkout=true");
+    navigate(
+      `/cart?checkout=true&buyNow=true&productId=${product._id}&size=${selectedSize}&color=${encodeURIComponent(
+        product.color || "Default",
+      )}&qty=${quantity}`,
+    );
   };
 
   const handleWishlistToggle = () => {

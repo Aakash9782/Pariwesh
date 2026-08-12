@@ -14,6 +14,7 @@ import {
   updateQuantityInCart,
   removeFromCart,
   clearCart,
+  removePurchasedItems,
 } from "../../redux/slices/cartSlice.js";
 import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
@@ -51,6 +52,44 @@ const Cart = () => {
     [location.search],
   );
   const isDirectCheckout = queryParams.get("checkout") === "true";
+
+  // Buy Now Search and parsing logic
+  const isBuyNow = queryParams.get("buyNow") === "true";
+  const buyNowProductId = queryParams.get("productId");
+  const buyNowSize = queryParams.get("size");
+  const buyNowColor = queryParams.get("color");
+  const buyNowQty = Number(queryParams.get("qty")) || 1;
+
+  const getItemKey = (item) => {
+    const pId = item.product?._id || item.product;
+    const size = item.variant?.size || "M";
+    const color = item.variant?.color || "Default";
+    return `${pId}_${size}_${color}`;
+  };
+
+  const buyNowKey = React.useMemo(() => {
+    if (isBuyNow && buyNowProductId) {
+      return `${buyNowProductId}_${buyNowSize || "M"}_${buyNowColor || "Default"}`;
+    }
+    return null;
+  }, [isBuyNow, buyNowProductId, buyNowSize, buyNowColor]);
+
+  const [selectedKeys, setSelectedKeys] = useState([]);
+
+  React.useEffect(() => {
+    if (isBuyNow && buyNowKey) {
+      setSelectedKeys([buyNowKey]);
+    } else if (!isBuyNow) {
+      setSelectedKeys(cartItems.map(getItemKey));
+    }
+  }, [isBuyNow, buyNowKey, cartItems.length]);
+
+  const selectedItems = React.useMemo(() => {
+    return cartItems.filter((item) => {
+      const key = getItemKey(item);
+      return isBuyNow ? key === buyNowKey : selectedKeys.includes(key);
+    });
+  }, [cartItems, isBuyNow, buyNowKey, selectedKeys]);
 
   // States code
   const [coupon, setCoupon] = useState("");
@@ -109,18 +148,22 @@ const Cart = () => {
   React.useEffect(() => {
     if (isDirectCheckout && cartItems.length > 0) {
       if (!user) {
-        navigate("/login?redirect=cart");
+        navigate(
+          "/login?redirect=" +
+            encodeURIComponent(location.pathname + location.search),
+        );
       } else {
         setCheckoutStep(true);
       }
     }
-  }, [isDirectCheckout, cartItems.length, user, navigate]);
+  }, [isDirectCheckout, cartItems.length, user, navigate, location]);
 
   const getSubtotal = () => {
-    return cartItems.reduce(
-      (acc, item) => acc + item.product.price * item.quantity,
-      0,
-    );
+    return selectedItems.reduce((acc, item) => {
+      const qty =
+        isBuyNow && getItemKey(item) === buyNowKey ? buyNowQty : item.quantity;
+      return acc + item.product.price * qty;
+    }, 0);
   };
 
   const handleQtyChange = (productId, variant, newQty) => {
@@ -188,12 +231,24 @@ const Cart = () => {
     }
   }, [orderSuccess]);
 
-  const finalizeOrderSuccess = async (orderId, paid = false) => {
+  const finalizeOrderSuccess = async (
+    orderId,
+    paid = false,
+    purchased = null,
+  ) => {
     setPlacedOrderId(orderId);
     setPaymentConfirmed(paid);
     setOrderSuccess(true);
-    dispatch(clearCart());
-    syncCartNow();
+
+    const shouldClear = paid || address.paymentMethod === "COD";
+    if (shouldClear) {
+      if (purchased && purchased.length > 0) {
+        dispatch(removePurchasedItems(purchased));
+      } else {
+        dispatch(clearCart());
+      }
+      syncCartNow();
+    }
 
     if (user && address.fullName && address.fullName !== user.name) {
       try {
@@ -240,14 +295,14 @@ const Cart = () => {
     }
   };
 
-  const openRazorpayCheckout = async (checkout, orderId) => {
+  const openRazorpayCheckout = async (checkout, orderId, purchasedItems) => {
     const ok = await loadRazorpayScript();
     if (!ok || !window.Razorpay) {
       showAlert(
         `Order ${orderId} placed but Razorpay SDK failed to load. Payment is Pending.`,
         "Payment SDK Error",
       );
-      await finalizeOrderSuccess(orderId, false);
+      await finalizeOrderSuccess(orderId, false, purchasedItems);
       return;
     }
 
@@ -270,14 +325,14 @@ const Cart = () => {
               razorpay_signature: response.razorpay_signature,
             });
             if (verifyRes.data?.success) {
-              await finalizeOrderSuccess(orderId, true);
+              await finalizeOrderSuccess(orderId, true, purchasedItems);
               resolve(true);
             } else {
               showAlert(
                 verifyRes.data?.message || "Payment verification failed",
                 "Payment Failed",
               );
-              await finalizeOrderSuccess(orderId, false);
+              await finalizeOrderSuccess(orderId, false, purchasedItems);
               resolve(false);
             }
           } catch (err) {
@@ -298,7 +353,7 @@ const Cart = () => {
                 /* ignore */
               }
             }
-            await finalizeOrderSuccess(orderId, false);
+            await finalizeOrderSuccess(orderId, false, purchasedItems);
             resolve(false);
           }
         },
@@ -316,7 +371,7 @@ const Cart = () => {
             } catch (_) {
               /* ignore */
             }
-            await finalizeOrderSuccess(orderId, false);
+            await finalizeOrderSuccess(orderId, false, purchasedItems);
             resolve(false);
           },
         },
@@ -369,16 +424,22 @@ const Cart = () => {
         }
       }
 
-      const orderItemsPayload = cartItems.map((item) => ({
-        productId: item.product._id,
-        name: item.product.name,
-        sku: item.product.sku,
-        price: item.product.price,
-        quantity: item.quantity,
-        size: item.variant.size,
-        color: item.variant.color,
-        image: item.product.images[0],
-      }));
+      const orderItemsPayload = selectedItems.map((item) => {
+        const qty =
+          isBuyNow && getItemKey(item) === buyNowKey
+            ? buyNowQty
+            : item.quantity;
+        return {
+          productId: item.product._id,
+          name: item.product.name,
+          sku: item.product.sku,
+          price: item.product.price,
+          quantity: qty,
+          size: item.variant.size,
+          color: item.variant.color,
+          image: item.product.images[0],
+        };
+      });
 
       const payload = {
         items: orderItemsPayload,
@@ -414,7 +475,11 @@ const Cart = () => {
         const orderId = orderData.orderId;
 
         if (address.paymentMethod === "ONLINE" && orderData.razorpayCheckout) {
-          await openRazorpayCheckout(orderData.razorpayCheckout, orderId);
+          await openRazorpayCheckout(
+            orderData.razorpayCheckout,
+            orderId,
+            orderItemsPayload,
+          );
         } else {
           if (
             address.paymentMethod === "ONLINE" &&
@@ -426,7 +491,7 @@ const Cart = () => {
               "Payment Pending",
             );
           }
-          await finalizeOrderSuccess(orderId, false);
+          await finalizeOrderSuccess(orderId, false, orderItemsPayload);
         }
       } else {
         showAlert("Failed to place order. Please try again.", "Order Failed");
@@ -457,8 +522,10 @@ const Cart = () => {
       : 0;
   const discountRatio = subtotal > 0 ? finalDiscount / subtotal : 0;
   const gst = Math.round(
-    cartItems.reduce((acc, item) => {
-      const itemSubtotal = item.product.price * item.quantity;
+    selectedItems.reduce((acc, item) => {
+      const qty =
+        isBuyNow && getItemKey(item) === buyNowKey ? buyNowQty : item.quantity;
+      const itemSubtotal = item.product.price * qty;
       const discountedItemSubtotal = itemSubtotal * (1 - discountRatio);
       const itemGstRate = item.product.gst || 0;
       return acc + discountedItemSubtotal * (itemGstRate / (100 + itemGstRate));
@@ -564,84 +631,137 @@ const Cart = () => {
             <h3 className="text-xs font-display font-bold uppercase tracking-wider text-textPrimary pb-4 border-b border-borderLight">
               Selected Ensembles
             </h3>
-            <div className="divide-y divide-borderLight">
-              {cartItems.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
-                >
-                  {/* Photo & Specs details */}
-                  <div className="flex space-x-4 items-center">
-                    <img
-                      src={optimizeCloudinaryUrl(item.product.images[0], 250)}
-                      alt={item.product.name}
-                      className="w-20 h-24 object-cover bg-bgLight rounded border border-borderLight"
-                    />
-                    <div className="space-y-1 min-w-0 flex-1">
-                      <h4
-                        className="text-sm font-semibold text-textPrimary leading-snug truncate"
-                        title={item.product.name}
-                      >
-                        {item.product.name}
-                      </h4>
-                      <p className="text-[10px] text-textSecondary uppercase font-medium">
-                        Size:{" "}
-                        <span className="text-textPrimary font-bold">
-                          {item.variant.size}
-                        </span>{" "}
-                        | Color:{" "}
-                        <span className="text-textPrimary font-bold">
-                          {item.variant.color}
-                        </span>
-                      </p>
-                      <p className="text-xs font-bold text-textPrimary">
-                        ₹{item.product.price}
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Quantity and absolute actions triggers */}
-                  <div className="flex items-center space-x-6 w-full sm:w-auto justify-between sm:justify-end">
-                    <div className="inline-flex border border-borderLight rounded-sm bg-bgLight">
-                      <button
-                        onClick={() =>
-                          handleQtyChange(
-                            item.product._id,
-                            item.variant,
-                            item.quantity - 1,
-                          )
-                        }
-                        className="px-3 py-1.5 hover:bg-borderLight/30 text-xs font-bold text-textPrimary"
-                      >
-                        -
-                      </button>
-                      <span className="px-4 py-1.5 text-xs font-bold text-textPrimary">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() =>
-                          handleQtyChange(
-                            item.product._id,
-                            item.variant,
-                            item.quantity + 1,
-                          )
-                        }
-                        className="px-3 py-1.5 hover:bg-borderLight/30 text-xs font-bold text-textPrimary"
-                      >
-                        +
-                      </button>
+            {isBuyNow && (
+              <div className="bg-accent-gold/10 border border-accent-gold/20 p-4 rounded-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs mb-4">
+                <span className="text-textPrimary font-medium">
+                  You are checking out using <strong>Buy It Now</strong>. Only
+                  the selected single item will be purchased.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate(
+                      "/cart" + (isDirectCheckout ? "?checkout=true" : ""),
+                    );
+                  }}
+                  className="text-accent-gold font-bold hover:underline whitespace-nowrap"
+                >
+                  Cancel Buy Now / Use Full Cart
+                </button>
+              </div>
+            )}
+
+            <div className="divide-y divide-borderLight">
+              {cartItems.map((item, idx) => {
+                const key = getItemKey(item);
+                const isSelected = selectedKeys.includes(key);
+                const isItemBuyNow = isBuyNow && key === buyNowKey;
+                const displayQty = isItemBuyNow ? buyNowQty : item.quantity;
+                return (
+                  <div
+                    key={idx}
+                    className="py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
+                  >
+                    {/* Checkbox Selector & Photo & Specs details */}
+                    <div className="flex space-x-4 items-center flex-1 min-w-0">
+                      <div className="flex items-center shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          disabled={isBuyNow}
+                          onChange={() => {
+                            setSelectedKeys((prev) =>
+                              prev.includes(key)
+                                ? prev.filter((k) => k !== key)
+                                : [...prev, key],
+                            );
+                          }}
+                          className="w-4 h-4 text-accent-gold border-borderLight bg-bgLight rounded focus:ring-accent-gold accent-accent-gold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                      </div>
+                      <img
+                        src={optimizeCloudinaryUrl(item.product.images[0], 250)}
+                        alt={item.product.name}
+                        className="w-20 h-24 object-cover bg-bgLight rounded border border-borderLight shrink-0"
+                      />
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <h4
+                          className="text-sm font-semibold text-textPrimary leading-snug truncate"
+                          title={item.product.name}
+                        >
+                          {item.product.name}
+                        </h4>
+                        <p className="text-[10px] text-textSecondary uppercase font-medium">
+                          Size:{" "}
+                          <span className="text-textPrimary font-bold">
+                            {item.variant.size}
+                          </span>{" "}
+                          | Color:{" "}
+                          <span className="text-textPrimary font-bold">
+                            {item.variant.color}
+                          </span>
+                        </p>
+                        <p className="text-xs font-bold text-textPrimary">
+                          ₹{item.product.price}
+                        </p>
+                      </div>
                     </div>
-                    <button
-                      onClick={() =>
-                        handleRemove(item.product._id, item.variant)
-                      }
-                      className="text-textSecondary hover:text-danger hover:scale-110 transition-all p-2 rounded-full hover:bg-danger/10"
-                    >
-                      <RiDeleteBinLine size={18} />
-                    </button>
+
+                    {/* Quantity and Actions */}
+                    <div className="flex items-center space-x-6 w-full sm:w-auto justify-between sm:justify-end">
+                      {isBuyNow ? (
+                        <div className="text-xs font-medium text-textSecondary bg-bgLight px-3 py-1.5 border border-borderLight rounded-sm">
+                          Quantity:{" "}
+                          <span className="text-textPrimary font-bold">
+                            {displayQty}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="inline-flex border border-borderLight rounded-sm bg-bgLight">
+                          <button
+                            onClick={() =>
+                              handleQtyChange(
+                                item.product._id,
+                                item.variant,
+                                item.quantity - 1,
+                              )
+                            }
+                            className="px-3 py-1.5 hover:bg-borderLight/30 text-xs font-bold text-textPrimary"
+                          >
+                            -
+                          </button>
+                          <span className="px-4 py-1.5 text-xs font-bold text-textPrimary">
+                            {displayQty}
+                          </span>
+                          <button
+                            onClick={() =>
+                              handleQtyChange(
+                                item.product._id,
+                                item.variant,
+                                item.quantity + 1,
+                              )
+                            }
+                            className="px-3 py-1.5 hover:bg-borderLight/30 text-xs font-bold text-textPrimary"
+                          >
+                            +
+                          </button>
+                        </div>
+                      )}
+                      {!isBuyNow && (
+                        <button
+                          onClick={() =>
+                            handleRemove(item.product._id, item.variant)
+                          }
+                          className="text-textSecondary hover:text-danger hover:scale-110 transition-all p-2 rounded-full hover:bg-danger/10"
+                        >
+                          <RiDeleteBinLine size={18} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ) : (
