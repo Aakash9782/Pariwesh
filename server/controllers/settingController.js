@@ -59,6 +59,13 @@ export const updateSetting = async (req, res, next) => {
       value.startsWith("data:image")
     ) {
       finalValue = await uploadBase64Image(value, "pariwesh/branding");
+      if (finalValue && finalValue.startsWith("data:image/")) {
+        return sendError(
+          res,
+          "Cloudinary image upload failed. Storing raw Base64 data is not allowed in production to prevent bandwidth bloat.",
+          400,
+        );
+      }
     } else if (key === "festiveBannerSettings" && value) {
       try {
         let parsed = typeof value === "object" ? value : JSON.parse(value);
@@ -67,6 +74,13 @@ export const updateSetting = async (req, res, next) => {
             parsed.bannerImage,
             "pariwesh/branding",
           );
+          if (parsed.bannerImage.startsWith("data:image/")) {
+            return sendError(
+              res,
+              "Cloudinary upload failed for bannerImage.",
+              400,
+            );
+          }
         }
         if (
           parsed.desktopImage &&
@@ -76,18 +90,39 @@ export const updateSetting = async (req, res, next) => {
             parsed.desktopImage,
             "pariwesh/branding",
           );
+          if (parsed.desktopImage.startsWith("data:image/")) {
+            return sendError(
+              res,
+              "Cloudinary upload failed for desktopImage.",
+              400,
+            );
+          }
         }
         if (parsed.tabletImage && parsed.tabletImage.startsWith("data:image")) {
           parsed.tabletImage = await uploadBase64Image(
             parsed.tabletImage,
             "pariwesh/branding",
           );
+          if (parsed.tabletImage.startsWith("data:image/")) {
+            return sendError(
+              res,
+              "Cloudinary upload failed for tabletImage.",
+              400,
+            );
+          }
         }
         if (parsed.mobileImage && parsed.mobileImage.startsWith("data:image")) {
           parsed.mobileImage = await uploadBase64Image(
             parsed.mobileImage,
             "pariwesh/branding",
           );
+          if (parsed.mobileImage.startsWith("data:image/")) {
+            return sendError(
+              res,
+              "Cloudinary upload failed for mobileImage.",
+              400,
+            );
+          }
         }
         if (parsed.slides && Array.isArray(parsed.slides)) {
           for (let i = 0; i < parsed.slides.length; i++) {
@@ -100,6 +135,13 @@ export const updateSetting = async (req, res, next) => {
                 slide.desktopImage,
                 "pariwesh/branding",
               );
+              if (slide.desktopImage.startsWith("data:image/")) {
+                return sendError(
+                  res,
+                  `Cloudinary upload failed for slide ${i + 1} desktopImage.`,
+                  400,
+                );
+              }
             }
             if (
               slide.tabletImage &&
@@ -109,6 +151,13 @@ export const updateSetting = async (req, res, next) => {
                 slide.tabletImage,
                 "pariwesh/branding",
               );
+              if (slide.tabletImage.startsWith("data:image/")) {
+                return sendError(
+                  res,
+                  `Cloudinary upload failed for slide ${i + 1} tabletImage.`,
+                  400,
+                );
+              }
             }
             if (
               slide.mobileImage &&
@@ -118,6 +167,13 @@ export const updateSetting = async (req, res, next) => {
                 slide.mobileImage,
                 "pariwesh/branding",
               );
+              if (slide.mobileImage.startsWith("data:image/")) {
+                return sendError(
+                  res,
+                  `Cloudinary upload failed for slide ${i + 1} mobileImage.`,
+                  400,
+                );
+              }
             }
           }
         }
@@ -139,6 +195,13 @@ export const updateSetting = async (req, res, next) => {
                 parsed[i].image,
                 "pariwesh/branding",
               );
+              if (parsed[i].image.startsWith("data:image/")) {
+                return sendError(
+                  res,
+                  `Cloudinary upload failed for category ${i + 1} image.`,
+                  400,
+                );
+              }
             }
           }
           finalValue = JSON.stringify(parsed);
@@ -159,6 +222,13 @@ export const updateSetting = async (req, res, next) => {
                 parsed[i].bgImg,
                 "pariwesh/branding",
               );
+              if (parsed[i].bgImg.startsWith("data:image/")) {
+                return sendError(
+                  res,
+                  `Cloudinary upload failed for vibe mood ${i + 1} background image.`,
+                  400,
+                );
+              }
             }
             if (
               parsed[i].insetImg &&
@@ -168,6 +238,13 @@ export const updateSetting = async (req, res, next) => {
                 parsed[i].insetImg,
                 "pariwesh/branding",
               );
+              if (parsed[i].insetImg.startsWith("data:image/")) {
+                return sendError(
+                  res,
+                  `Cloudinary upload failed for vibe mood ${i + 1} inset image.`,
+                  400,
+                );
+              }
             }
           }
           finalValue = JSON.stringify(parsed);

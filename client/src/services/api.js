@@ -93,3 +93,39 @@ API.interceptors.response.use(
 );
 
 export default API;
+
+// Shared Promise-Cache for "/settings" request to eliminate redundant network fetches
+let settingsPromise = null;
+
+const originalGet = API.get;
+API.get = function (url, config) {
+  const normalizedUrl = url ? url.split("?")[0].replace(/\/$/, "") : "";
+  if (normalizedUrl === "/settings" || normalizedUrl === "settings") {
+    if (!settingsPromise) {
+      settingsPromise = originalGet.call(API, url, config).catch((err) => {
+        settingsPromise = null; // Evict cache on failed fetches
+        throw err;
+      });
+    }
+    return settingsPromise;
+  }
+  return originalGet.call(API, url, config);
+};
+
+const originalPost = API.post;
+API.post = function (url, data, config) {
+  const normalizedUrl = url ? url.split("?")[0].replace(/\/$/, "") : "";
+  if (normalizedUrl === "/settings" || normalizedUrl === "settings") {
+    settingsPromise = null; // Evict cache on setting updates
+  }
+  return originalPost.call(API, url, data, config);
+};
+
+const originalPut = API.put;
+API.put = function (url, data, config) {
+  const normalizedUrl = url ? url.split("?")[0].replace(/\/$/, "") : "";
+  if (normalizedUrl === "/settings" || normalizedUrl === "settings") {
+    settingsPromise = null;
+  }
+  return originalPut.call(API, url, data, config);
+};
