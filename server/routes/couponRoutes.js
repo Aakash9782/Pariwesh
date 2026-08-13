@@ -4,6 +4,8 @@ import {
   validateCoupon,
   createCoupon,
   deleteCoupon,
+  getActiveOffers,
+  updateCoupon,
 } from "../controllers/couponController.js";
 import { protect, authorize } from "../middleware/auth.js";
 
@@ -15,7 +17,11 @@ router
   .post(protect, authorize("admin"), createCoupon);
 
 router.route("/validate").post(validateCoupon);
+router.route("/active-offers").get(getActiveOffers);
 
-router.route("/:code").delete(protect, authorize("admin"), deleteCoupon);
+router
+  .route("/:code")
+  .put(protect, authorize("admin"), updateCoupon)
+  .delete(protect, authorize("admin"), deleteCoupon);
 
 export default router;

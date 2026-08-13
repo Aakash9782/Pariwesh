@@ -18,6 +18,47 @@ const CouponSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    name: {
+      type: String,
+    },
+    description: {
+      type: String,
+    },
+    minQuantity: {
+      type: Number,
+      default: 0,
+    },
+    minAmount: {
+      type: Number,
+      default: 0,
+    },
+    maxDiscount: {
+      type: Number,
+    },
+    startDate: {
+      type: Date,
+    },
+    priority: {
+      type: Number,
+      default: 1,
+    },
+    canCombine: {
+      type: Boolean,
+      default: false,
+    },
+    isSpecialOffer: {
+      type: Boolean,
+      default: false,
+    },
+    offerType: {
+      type: String,
+      enum: ["BUY_X_GET_Y", "PREPAID", "SURPRISE_GIFT", "STANDARD"],
+      default: "STANDARD",
+    },
+    giftValue: {
+      type: Number,
+      default: 0,
+    },
     status: {
       type: String,
       enum: ["Active", "Inactive"],

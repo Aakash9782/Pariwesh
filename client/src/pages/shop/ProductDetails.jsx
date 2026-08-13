@@ -40,6 +40,16 @@ const ProductDetails = () => {
   const [loading, setLoading] = useState(false);
   const [addedPopup, setAddedPopup] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [activeOffers, setActiveOffers] = useState([]);
+  const [copiedCode, setCopiedCode] = useState("");
+
+  const handleCopyCode = (code) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => {
+      setCopiedCode("");
+    }, 2000);
+  };
 
   // Gesture Drag/Swipe Gestures for Product Image Gallery
   const [pointerStart, setPointerStart] = useState(null);
@@ -106,7 +116,18 @@ const ProductDetails = () => {
         setFetching(false);
       }
     };
+    const fetchOffers = async () => {
+      try {
+        const res = await API.get("/coupons/active-offers");
+        if (res.data && res.data.success) {
+          setActiveOffers(res.data.data || []);
+        }
+      } catch (err) {
+        console.error("Failed fetching active offers:", err);
+      }
+    };
     fetchProductDetails();
+    fetchOffers();
   }, [slug]);
 
   // Cloudinary image optimization utility
@@ -634,6 +655,68 @@ const ProductDetails = () => {
               </div>
             </div>
           </div>
+
+          {/* Special Offers Section */}
+          {activeOffers && activeOffers.length > 0 && (
+            <div className="border-t border-slate-100 pt-6 space-y-4">
+              <div className="flex items-center space-x-2 text-[#c5a880] pb-1">
+                <span className="text-xs font-display font-bold uppercase tracking-widest">
+                  🎁 Special Offers Available
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {activeOffers
+                  .filter((off) => off.status === "Active")
+                  .map((off) => {
+                    const isGift = off.offerType === "SURPRISE_GIFT";
+                    const isPrepaid = off.offerType === "PREPAID";
+
+                    return (
+                      <div
+                        key={off._id || off.code}
+                        className="border border-[#c5a880]/20 p-3.5 bg-slate-50/50 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition"
+                      >
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs font-bold text-slate-800">
+                              {isPrepaid ? "💳 " : isGift ? "🎁 " : "🛍 "}
+                              {off.name || `${off.offerType} Offer`}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-500 leading-relaxed">
+                            {off.description ||
+                              `Get discount with code ${off.code}`}
+                          </p>
+                        </div>
+                        {off.code &&
+                          off.offerType !== "PREPAID" &&
+                          off.offerType !== "SURPRISE_GIFT" && (
+                            <div className="flex items-center space-x-2 self-end sm:self-auto">
+                              <span className="px-2 py-1 bg-white border border-slate-200 font-mono text-[10px] font-bold text-slate-700 uppercase rounded tracking-wider">
+                                {off.code}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyCode(off.code)}
+                                className="text-[9px] font-extrabold uppercase tracking-wider text-accent-gold hover:text-yellow-600 border border-accent-gold/20 hover:border-yellow-600 bg-white py-1 px-2.5 rounded transition shadow-sm"
+                              >
+                                {copiedCode === off.code ? "Copied ✓" : "Copy"}
+                              </button>
+                            </div>
+                          )}
+                        {isPrepaid && (
+                          <div className="self-end sm:self-auto">
+                            <span className="text-[8.5px] uppercase font-bold tracking-wider text-slate-500 bg-slate-200/50 px-2 py-1 rounded">
+                              Pay Online
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
 
           {/* Guarantee Badges */}
           <div className="border-t border-slate-100 pt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-[10px] text-slate-500 tracking-wider uppercase font-extrabold">

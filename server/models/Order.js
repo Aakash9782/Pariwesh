@@ -75,9 +75,13 @@ const OrderSchema = new mongoose.Schema(
       specialOffer: {
         type: {
           type: String,
-          enum: ["PREPAID_5", "FIFTH_PURCHASE_15"],
         },
         discountPercent: Number,
+      },
+      surpriseGift: {
+        name: String,
+        description: String,
+        giftValue: Number,
       },
     },
     paymentMethod: {

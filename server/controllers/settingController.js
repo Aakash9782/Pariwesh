@@ -23,43 +23,6 @@ export const getSettings = async (req, res, next) => {
       console.error("Auto-copy of hero image failed:", copyErr.message);
     }
 
-    // 2. Prune DB Unsplash URLs from settings & products
-    try {
-      const settingsList = await Setting.find({});
-      for (let set of settingsList) {
-        if (
-          typeof set.value === "string" &&
-          set.value.includes("unsplash.com")
-        ) {
-          let val = set.value;
-          val = val.replace(
-            /https:\/\/images\.unsplash\.com\/[a-zA-Z0-9\-\_\.\?\&\=\%\/]+/g,
-            "/hero.png",
-          );
-          set.value = val;
-          await set.save();
-        }
-      }
-
-      const productsList = await Product.find({});
-      for (let prod of productsList) {
-        let changed = false;
-        const newImages = prod.images.map((img) => {
-          if (typeof img === "string" && img.includes("unsplash.com")) {
-            changed = true;
-            return "/hero.png";
-          }
-          return img;
-        });
-        if (changed) {
-          prod.images = newImages;
-          await prod.save();
-        }
-      }
-    } catch (cleanupErr) {
-      console.error("Database unsplash cleanup error:", cleanupErr.message);
-    }
-
     const settingsList = await Setting.find({});
     const settings = {};
     settingsList.forEach((set) => {

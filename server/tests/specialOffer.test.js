@@ -267,4 +267,139 @@ describe("Special Offer Backend Validation and Pricing Rules", () => {
     assert.equal(res.body.data.pricing.appliedCoupon, "FESTIVE10");
     assert.equal(res.body.data.pricing.specialOffer, undefined);
   });
+
+  it("should enforce minQuantity coupon validation and throw error if not met", async () => {
+    mockCoupon = {
+      code: "SUMMER10",
+      discountType: "Percentage",
+      value: 10,
+      status: "Active",
+      minQuantity: 2,
+      ordersUsed: 0,
+      save: async () => {},
+    };
+
+    const req = getBaseReq("COD");
+    req.body.pricing.appliedCoupon = "SUMMER10";
+    req.body.items[0].quantity = 1; // 1 item < minQuantity 2
+    req.body.pricing.discount = 200;
+    req.body.pricing.grandTotal = 1800;
+    const res = makeMockRes();
+
+    await createOrder(req, res);
+
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.success, false);
+    assert.ok(res.body.message.includes("requires a minimum of 2 items"));
+  });
+
+  it("should allow minQuantity coupon validation if quantity is met", async () => {
+    mockCoupon = {
+      code: "SUMMER10",
+      discountType: "Percentage",
+      value: 10,
+      status: "Active",
+      minQuantity: 2,
+      ordersUsed: 0,
+      save: async () => {},
+    };
+
+    const req = getBaseReq("COD");
+    req.body.pricing.appliedCoupon = "SUMMER10";
+    req.body.items[0].quantity = 2; // matches minQuantity 2
+    req.body.pricing.subtotal = 4000;
+    req.body.pricing.discount = 400;
+    req.body.pricing.grandTotal = 3600;
+    const res = makeMockRes();
+
+    await createOrder(req, res);
+
+    assert.equal(res.statusCode, 201);
+    assert.equal(res.body.success, true);
+    assert.equal(res.body.data.pricing.discount, 400);
+  });
+
+  it("should enforce minAmount coupon validation and throw error if subtotal not met", async () => {
+    mockCoupon = {
+      code: "GIFT5000",
+      discountType: "Flat",
+      value: 0,
+      status: "Active",
+      minAmount: 5000,
+      ordersUsed: 0,
+      save: async () => {},
+    };
+
+    const req = getBaseReq("COD");
+    req.body.pricing.appliedCoupon = "GIFT5000";
+    req.body.pricing.subtotal = 2000; // subtotal 2000 < minAmount 5000
+    req.body.pricing.discount = 0;
+    req.body.pricing.grandTotal = 2000;
+    const res = makeMockRes();
+
+    await createOrder(req, res);
+
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.success, false);
+    assert.ok(
+      res.body.message.includes("requires a minimum order amount of ₹5000"),
+    );
+  });
+
+  it("should cap percentage discounts at maxDiscount successfully", async () => {
+    mockCoupon = {
+      code: "BIGSAVE",
+      discountType: "Percentage",
+      value: 50, // 50%
+      status: "Active",
+      maxDiscount: 500, // max 500 off
+      ordersUsed: 0,
+      save: async () => {},
+    };
+
+    const req = getBaseReq("COD");
+    req.body.pricing.appliedCoupon = "BIGSAVE";
+    req.body.pricing.subtotal = 2000; // 50% is 1000, capped to 500
+    req.body.pricing.discount = 500;
+    req.body.pricing.grandTotal = 1500;
+    const res = makeMockRes();
+
+    await createOrder(req, res);
+
+    assert.equal(res.statusCode, 201);
+    assert.equal(res.body.success, true);
+    assert.equal(res.body.data.pricing.discount, 500);
+  });
+
+  it("should automatically bundle active surprise gift if order subtotal satisfies threshold criteria", async () => {
+    const originalCouponFindOne = Coupon.findOne;
+    Coupon.findOne = async (filter) => {
+      if (filter.offerType === "SURPRISE_GIFT" && filter.status === "Active") {
+        return {
+          code: "GIFT5000",
+          name: "SURPRISE GIFT",
+          description:
+            "Shop for ₹5,000+ and unlock a surprise gift worth ₹2,000",
+          giftValue: 2000,
+          minAmount: 5000,
+        };
+      }
+      return null;
+    };
+
+    const req = getBaseReq("COD");
+    req.body.items[0].quantity = 3;
+    req.body.pricing.subtotal = 6000;
+    req.body.pricing.grandTotal = 6000;
+    const res = makeMockRes();
+
+    await createOrder(req, res);
+
+    Coupon.findOne = originalCouponFindOne; // restore quickly
+
+    assert.equal(res.statusCode, 201);
+    assert.equal(res.body.success, true);
+    assert.ok(res.body.data.pricing.surpriseGift);
+    assert.equal(res.body.data.pricing.surpriseGift.giftValue, 2000);
+  });
 });

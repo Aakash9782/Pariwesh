@@ -103,9 +103,11 @@ export const createOrder = async (req, res, next) => {
     // 2. Validate coupon validity if applied
     let couponInstance = null;
     let couponDiscount = 0;
+    const totalQty = items.reduce((sum, i) => sum + Number(i.quantity), 0);
+
     if (pricing && pricing.appliedCoupon) {
       couponInstance = await Coupon.findOne({
-        code: pricing.appliedCoupon.toUpperCase(),
+        code: pricing.appliedCoupon.toUpperCase().trim(),
       });
       if (!couponInstance) {
         return sendError(res, "Invalid coupon code applied to order", 400);
@@ -113,11 +115,19 @@ export const createOrder = async (req, res, next) => {
       if (couponInstance.status !== "Active") {
         return sendError(res, "This coupon is currently inactive", 400);
       }
+
+      const now = new Date();
       if (
         couponInstance.expiryDate &&
-        new Date(couponInstance.expiryDate) < new Date()
+        new Date(couponInstance.expiryDate) < now
       ) {
         return sendError(res, "This coupon code has expired", 400);
+      }
+      if (
+        couponInstance.startDate &&
+        new Date(couponInstance.startDate) > now
+      ) {
+        return sendError(res, "This coupon code is not active yet", 400);
       }
       if (
         couponInstance.usageLimit &&
@@ -129,6 +139,28 @@ export const createOrder = async (req, res, next) => {
           400,
         );
       }
+
+      // Quantity validation
+      if (couponInstance.minQuantity && totalQty < couponInstance.minQuantity) {
+        return sendError(
+          res,
+          `This coupon requires a minimum of ${couponInstance.minQuantity} items`,
+          400,
+        );
+      }
+
+      // Amount validation
+      if (
+        couponInstance.minAmount &&
+        calculatedSubtotal < couponInstance.minAmount
+      ) {
+        return sendError(
+          res,
+          `This coupon requires a minimum order amount of ₹${couponInstance.minAmount}`,
+          400,
+        );
+      }
+
       const phone = req.user.phone || customer?.phone || shippingAddress?.phone;
       if (phone) {
         const userUsage = couponInstance.usedBy?.find((u) => u.phone === phone);
@@ -148,6 +180,9 @@ export const createOrder = async (req, res, next) => {
         couponDiscount = Math.round(
           Number(calculatedSubtotal) * (couponInstance.value / 100),
         );
+        if (couponInstance.maxDiscount && couponInstance.maxDiscount > 0) {
+          couponDiscount = Math.min(couponDiscount, couponInstance.maxDiscount);
+        }
       } else {
         couponDiscount = Math.min(
           couponInstance.value,
@@ -203,6 +238,20 @@ export const createOrder = async (req, res, next) => {
       };
     }
 
+    // Check for Surprise Gift eligibility
+    let appliedGiftSnapshot = undefined;
+    const giftCoupon = await Coupon.findOne({
+      offerType: "SURPRISE_GIFT",
+      status: "Active",
+    });
+    if (giftCoupon && calculatedSubtotal >= giftCoupon.minAmount) {
+      appliedGiftSnapshot = {
+        name: giftCoupon.name,
+        description: giftCoupon.description,
+        giftValue: giftCoupon.giftValue,
+      };
+    }
+
     // Recalculate inclusive GST dynamically on the discounted amount
     const discountRatio =
       calculatedSubtotal > 0 ? finalDiscount / calculatedSubtotal : 0;
@@ -242,6 +291,7 @@ export const createOrder = async (req, res, next) => {
           ? pricing.appliedCoupon.toUpperCase()
           : "",
       specialOffer: appliedOffer || undefined,
+      surpriseGift: appliedGiftSnapshot,
     };
 
     // Auto-generate human readable Order ID
@@ -304,6 +354,9 @@ export const createOrder = async (req, res, next) => {
         couponInstance.ordersUsed = (couponInstance.ordersUsed || 0) + 1;
         const phone = boundCustomer.phone || shippingAddress?.phone;
         if (phone) {
+          if (!couponInstance.usedBy) {
+            couponInstance.usedBy = [];
+          }
           const usedIndex = couponInstance.usedBy.findIndex(
             (u) => u.phone === phone,
           );
