@@ -102,6 +102,34 @@ const ProductSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    fit: {
+      type: String,
+      default: "",
+    },
+    pattern: {
+      type: String,
+      default: "",
+    },
+    neckline: {
+      type: String,
+      default: "",
+    },
+    sleeveLength: {
+      type: String,
+      default: "",
+    },
+    occasion: {
+      type: String,
+      default: "",
+    },
+    bottomType: {
+      type: String,
+      default: "",
+    },
+    setContents: {
+      type: [String],
+      default: [],
+    },
     countryOfOrigin: {
       type: String,
       default: "India",

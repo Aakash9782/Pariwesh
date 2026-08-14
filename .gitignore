@@ -42,3 +42,14 @@ server/*.txt
 server/products_backup.json
 client/*.txt
 
+# Audit Scripts and Reports
+server/production_audit.js
+server/production_audit_report.json
+server/production_reset_prep.js
+server/production_reset_live.js
+server/production_reset_final.js
+
+
+
+
+

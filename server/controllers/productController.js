@@ -207,11 +207,24 @@ export const createProduct = async (req, res, next) => {
       canonicalUrl,
       ogImage,
       status,
+      // New clothing specs
+      fit,
+      pattern,
+      neckline,
+      sleeveLength,
+      occasion,
+      bottomType,
+      setContents,
     } = req.body;
 
     if (!name || !sku || !mrp || !price) {
       return sendError(res, "Please fill in all mandatory product fields", 400);
     }
+
+    // Auto-generate stable and immutable colorGroup if not supplied
+    const stableColorGroup =
+      colorGroup ||
+      `cg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Prepare images array
     let productImages = [];
@@ -253,7 +266,7 @@ export const createProduct = async (req, res, next) => {
       category: category || "suits",
       fabric: fabric || "Pure Cotton",
       washCare: washCare || "Dry Clean Preferred",
-      colorGroup: colorGroup || "",
+      colorGroup: stableColorGroup,
       color: color || "Multicolor",
       colorHex: colorHex || "#D4AF37",
       sizes: sizes || ["S", "M", "L", "XL"],
@@ -287,6 +300,14 @@ export const createProduct = async (req, res, next) => {
       canonicalUrl: canonicalUrl || "",
       ogImage: ogImage || "",
       status: status || "active",
+      // New Clothing spec fields
+      fit: fit || "",
+      pattern: pattern || "",
+      neckline: neckline || "",
+      sleeveLength: sleeveLength || "",
+      occasion: occasion || "",
+      bottomType: bottomType || "",
+      setContents: setContents || [],
     });
 
     await logActivity(
@@ -382,6 +403,14 @@ export const updateProduct = async (req, res, next) => {
       canonicalUrl,
       ogImage,
       status,
+      // New clothing specs
+      fit,
+      pattern,
+      neckline,
+      sleeveLength,
+      occasion,
+      bottomType,
+      setContents,
     } = req.body;
 
     const product = await Product.findById(id);
@@ -426,8 +455,11 @@ export const updateProduct = async (req, res, next) => {
     product.category = category !== undefined ? category : product.category;
     product.fabric = fabric !== undefined ? fabric : product.fabric;
     product.washCare = washCare !== undefined ? washCare : product.washCare;
+    // Stable colorGroup immutability: do not mutate if it exists. If empty (legacy), initialize.
     product.colorGroup =
-      colorGroup !== undefined ? colorGroup : product.colorGroup;
+      product.colorGroup ||
+      colorGroup ||
+      `cg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     product.color = color !== undefined ? color : product.color;
     product.colorHex = colorHex !== undefined ? colorHex : product.colorHex;
     product.sizes = sizes !== undefined ? sizes : product.sizes;
@@ -472,6 +504,15 @@ export const updateProduct = async (req, res, next) => {
     if (metaKeywords !== undefined) product.metaKeywords = metaKeywords;
     if (canonicalUrl !== undefined) product.canonicalUrl = canonicalUrl;
     if (ogImage !== undefined) product.ogImage = ogImage;
+
+    // Subeffect spec updates
+    if (fit !== undefined) product.fit = fit;
+    if (pattern !== undefined) product.pattern = pattern;
+    if (neckline !== undefined) product.neckline = neckline;
+    if (sleeveLength !== undefined) product.sleeveLength = sleeveLength;
+    if (occasion !== undefined) product.occasion = occasion;
+    if (bottomType !== undefined) product.bottomType = bottomType;
+    if (setContents !== undefined) product.setContents = setContents;
     if (status !== undefined) product.status = status;
 
     if (name) {
@@ -501,6 +542,23 @@ export const updateProduct = async (req, res, next) => {
         400,
       );
     }
+    return sendError(res, error.message, 500);
+  }
+};
+
+// @desc    Get products by color group
+// @route   GET /api/v1/products/color-group/:groupId
+// @access  Public
+export const getProductsByColorGroup = async (req, res, next) => {
+  try {
+    const { groupId } = req.params;
+    const products = await Product.find({ colorGroup: groupId });
+    return sendSuccess(
+      res,
+      "Sibling variants retrieved successfully",
+      products,
+    );
+  } catch (error) {
     return sendError(res, error.message, 500);
   }
 };

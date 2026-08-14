@@ -843,8 +843,9 @@ const OrdersPage = () => {
                           <p className="font-semibold text-slate-800">
                             {item.name}
                           </p>
-                          <p className="text-[10px] text-slate-505 text-slate-500 font-mono mt-0.5">
-                            SKU: {item.sku} | Size: {item.size}
+                          <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                            Color: {item.color || "N/A"} | SKU: {item.sku} |
+                            Size: {item.size}
                           </p>
                         </div>
                       </div>

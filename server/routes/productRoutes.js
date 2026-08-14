@@ -5,10 +5,13 @@ import {
   createProduct,
   deleteProduct,
   updateProduct,
+  getProductsByColorGroup,
 } from "../controllers/productController.js";
 import { protect, authorize } from "../middleware/auth.js";
 
 const router = express.Router();
+
+router.route("/color-group/:groupId").get(getProductsByColorGroup);
 
 router
   .route("/")

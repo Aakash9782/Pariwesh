@@ -102,6 +102,14 @@ const ProductsPage = () => {
     description: "",
     status: "active",
     slug: "",
+    // New clothing specs
+    fit: "",
+    pattern: "",
+    neckline: "",
+    sleeveLength: "",
+    occasion: "",
+    bottomType: "",
+    setContents: [],
   };
   const [form, setForm] = useState(initialFormState);
 
@@ -585,6 +593,14 @@ const ProductsPage = () => {
       description: prod.description || "",
       status: prod.status || "active",
       slug: prod.slug || "",
+      // New clothing specs
+      fit: prod.fit || "",
+      pattern: prod.pattern || "",
+      neckline: prod.neckline || "",
+      sleeveLength: prod.sleeveLength || "",
+      occasion: prod.occasion || "",
+      bottomType: prod.bottomType || "",
+      setContents: prod.setContents || [],
     });
     setActiveTab("basic");
     setShowFormModal(true);

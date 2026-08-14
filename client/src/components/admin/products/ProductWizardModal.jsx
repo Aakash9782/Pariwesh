@@ -84,6 +84,8 @@ const ProductWizardModal = ({
     handleUrlImageAdd,
     dragOver,
     setDragOver,
+    editProduct,
+    setEditProduct,
   };
 
   const steps = [

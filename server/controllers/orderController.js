@@ -71,7 +71,28 @@ export const createOrder = async (req, res, next) => {
       if (!product) {
         return sendError(res, `Product not found: ${item.name}`, 404);
       }
+
+      // Secure Active State check
+      if (product.status && product.status !== "active") {
+        return sendError(
+          res,
+          `Product is currently inactive: ${product.name}`,
+          400,
+        );
+      }
+
       const size = item.size || "M";
+
+      // Secure Size Availability check
+      if (!product.sizes || !product.sizes.includes(size)) {
+        return sendError(
+          res,
+          `Size ${size} is not available for product: ${product.name}`,
+          400,
+        );
+      }
+
+      // Stock check
       const available =
         product.sizesStock && product.get(`sizesStock.${size}`) !== undefined
           ? Number(product.get(`sizesStock.${size}`))
@@ -83,17 +104,19 @@ export const createOrder = async (req, res, next) => {
           400,
         );
       }
+
+      // Secure pricing & total computation (strictly from database price)
       const itemSubtotal = product.price * Number(item.quantity);
       calculatedSubtotal += itemSubtotal;
 
       validatedItems.push({
         productId: product._id.toString(),
         name: product.name,
-        sku: product.sku,
-        price: product.price,
+        sku: product.sku, // strictly from database sku
+        price: product.price, // strictly from database price
         quantity: Number(item.quantity),
         size,
-        color: item.color || product.color || "",
+        color: product.color || "", // strictly from database color, not client parameter
         image: item.image || (product.images && product.images[0]) || "",
         gstRate: product.gst || 0,
         gstAmount: 0, // Will be computed after finalDiscount is determined
