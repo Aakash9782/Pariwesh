@@ -12,6 +12,10 @@ import {
   RiExchangeLine,
   RiArrowRightSLine,
   RiStarFill,
+  RiShirtLine,
+  RiScissorsLine,
+  RiGlobeLine,
+  RiScalesLine,
 } from "react-icons/ri";
 import Button from "../../components/common/Button.jsx";
 import Skeleton from "../../components/common/Skeleton.jsx";
@@ -93,6 +97,18 @@ const ProductDetails = () => {
   const [descExpanded, setDescExpanded] = useState(false);
   const [shippingOpen, setShippingOpen] = useState(false);
   const [returnsOpen, setReturnsOpen] = useState(false);
+  const [specsOpen, setSpecsOpen] = useState({
+    fabric: false,
+    material: false,
+    washCare: false,
+    origin: false,
+    weight: false,
+    returnPolicy: false,
+  });
+
+  const toggleSpec = (key) => {
+    setSpecsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   useEffect(() => {
     const fetchProductDetails = async () => {
@@ -555,21 +571,15 @@ const ProductDetails = () => {
                           key={sz}
                           type="button"
                           onClick={() => setSelectedSize(sz)}
-                          className={`w-11 h-11 border text-xs font-bold transition-all relative ${
+                          className={`w-11 h-11 border text-xs font-semibold tracking-wider transition-all relative ${
                             selectedSize === sz
-                              ? "border-slate-900 bg-slate-900 text-white shadow-md shadow-slate-900/10"
+                              ? "border-accent-gold bg-accent-gold text-white shadow-md shadow-accent-gold/15"
                               : isOutOfStock
-                                ? "border-dashed border-red-200 text-red-405 text-red-400 bg-red-50/20 hover:border-red-300"
-                                : "border-slate-200 text-slate-700 hover:border-slate-500 hover:bg-slate-50"
+                                ? "border-slate-200 text-slate-300 bg-slate-50/50 cursor-not-allowed relative overflow-hidden after:content-[''] after:absolute after:inset-y-0 after:left-1/2 after:w-[1px] after:bg-slate-200 after:-rotate-45 after:scale-y-[1.4]"
+                                : "border-slate-200 text-slate-700 hover:border-accent-gold hover:bg-slate-50"
                           }`}
                         >
                           {sz}
-                          {isOutOfStock && (
-                            <span
-                              className="absolute -top-0.5 -right-0.5 bg-red-500 w-2 h-2 rounded-full ring-2 ring-white"
-                              title="Out of Stock"
-                            ></span>
-                          )}
                         </button>
                       );
                     })}
@@ -618,7 +628,7 @@ const ProductDetails = () => {
                 loading={loading}
                 variant="outline"
                 size="lg"
-                className="w-full rounded-xl py-3.5 text-[11px] uppercase tracking-wider font-extrabold flex items-center justify-center space-x-2 transition-all hover:bg-slate-50 border-slate-250 border-slate-200"
+                className="w-full rounded-sm py-3.5 text-[11px] uppercase tracking-wider font-extrabold flex items-center justify-center space-x-2 transition-all"
               >
                 <RiShoppingBagLine size={16} />
                 <span>Add to Bag</span>
@@ -629,7 +639,7 @@ const ProductDetails = () => {
                   onClick={handleBuyNow}
                   variant="gold"
                   size="lg"
-                  className="flex-grow font-extrabold rounded-xl py-3.5 text-[11px] uppercase tracking-wider transition-all hover:bg-yellow-500"
+                  className="flex-grow font-extrabold rounded-sm py-3.5 text-[11px] uppercase tracking-wider transition-all"
                 >
                   <span>Buy It Now</span>
                 </Button>
@@ -637,7 +647,7 @@ const ProductDetails = () => {
                 <button
                   type="button"
                   onClick={handleWishlistToggle}
-                  className={`w-12 h-12 shrink-0 rounded-xl border flex items-center justify-center transition active:scale-95 shadow-sm ${
+                  className={`w-12 h-12 shrink-0 rounded-sm border flex items-center justify-center transition active:scale-95 shadow-sm ${
                     isWishlisted
                       ? "border-red-200 bg-red-50 text-red-500"
                       : "border-slate-200 hover:border-slate-400 hover:bg-slate-50 text-slate-700 bg-white"
@@ -816,70 +826,165 @@ const ProductDetails = () => {
           </div>
         </div>
 
-        {/* Right Column: Equal height attributes/spec cards */}
+        {/* Right Column: Collapsible technical specifications folders */}
         <div className="lg:col-span-6 space-y-4">
           <h3 className="text-xs font-bold uppercase text-slate-900 tracking-widest mb-4">
             Technical Specifications
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="space-y-2.5">
             {product.fabric && (
-              <div className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-4.5 flex flex-col justify-between min-h-[96px] hover:bg-slate-50 transition duration-200">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
-                  Fabric Type
-                </span>
-                <span className="text-xs font-semibold text-slate-800 block mt-2 break-words">
-                  {product.fabric}
-                </span>
+              <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => toggleSpec("fabric")}
+                  className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 transition duration-150"
+                >
+                  <span className="flex items-center space-x-2.5">
+                    <RiShirtLine className="text-accent-gold" size={17} />
+                    <span>Fabric Type</span>
+                  </span>
+                  <RiArrowRightSLine
+                    className={`text-slate-400 transition duration-200 transform ${
+                      specsOpen.fabric ? "rotate-90" : ""
+                    }`}
+                    size={18}
+                  />
+                </button>
+                {specsOpen.fabric && (
+                  <div className="px-4 pb-4 pt-1.5 text-[11px] text-slate-500 leading-relaxed font-sans border-t border-slate-100/50 animate-fade-in text-left">
+                    {product.fabric}
+                  </div>
+                )}
               </div>
             )}
+
             {product.material && (
-              <div className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-4.5 flex flex-col justify-between min-h-[96px] hover:bg-slate-50 transition duration-200">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
-                  Material
-                </span>
-                <span className="text-xs font-semibold text-slate-800 block mt-2 break-words">
-                  {product.material}
-                </span>
+              <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => toggleSpec("material")}
+                  className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 transition duration-150"
+                >
+                  <span className="flex items-center space-x-2.5">
+                    <RiScissorsLine className="text-accent-gold" size={17} />
+                    <span>Material Composition</span>
+                  </span>
+                  <RiArrowRightSLine
+                    className={`text-slate-400 transition duration-200 transform ${
+                      specsOpen.material ? "rotate-90" : ""
+                    }`}
+                    size={18}
+                  />
+                </button>
+                {specsOpen.material && (
+                  <div className="px-4 pb-4 pt-1.5 text-[11px] text-slate-500 leading-relaxed font-sans border-t border-slate-100/50 animate-fade-in text-left">
+                    {product.material}
+                  </div>
+                )}
               </div>
             )}
+
             {product.washCare && (
-              <div className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-4.5 flex flex-col justify-between min-h-[96px] hover:bg-slate-50 transition duration-200">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
-                  Wash Care
-                </span>
-                <span className="text-xs font-semibold text-slate-800 block mt-2 break-words">
-                  {product.washCare}
-                </span>
+              <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => toggleSpec("washCare")}
+                  className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 transition duration-150"
+                >
+                  <span className="flex items-center space-x-2.5">
+                    <RiRefreshLine className="text-accent-gold" size={17} />
+                    <span>Wash & Garment Care</span>
+                  </span>
+                  <RiArrowRightSLine
+                    className={`text-slate-400 transition duration-200 transform ${
+                      specsOpen.washCare ? "rotate-90" : ""
+                    }`}
+                    size={18}
+                  />
+                </button>
+                {specsOpen.washCare && (
+                  <div className="px-4 pb-4 pt-1.5 text-[11px] text-slate-500 leading-relaxed font-sans border-t border-slate-100/50 animate-fade-in text-left">
+                    {product.washCare}
+                  </div>
+                )}
               </div>
             )}
+
             {product.countryOfOrigin && (
-              <div className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-4.5 flex flex-col justify-between min-h-[96px] hover:bg-slate-50 transition duration-200">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
-                  Country of Origin
-                </span>
-                <span className="text-xs font-semibold text-slate-800 block mt-2 break-words">
-                  {product.countryOfOrigin}
-                </span>
+              <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => toggleSpec("origin")}
+                  className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 transition duration-150"
+                >
+                  <span className="flex items-center space-x-2.5">
+                    <RiGlobeLine className="text-accent-gold" size={17} />
+                    <span>Country of Origin</span>
+                  </span>
+                  <RiArrowRightSLine
+                    className={`text-slate-400 transition duration-200 transform ${
+                      specsOpen.origin ? "rotate-90" : ""
+                    }`}
+                    size={18}
+                  />
+                </button>
+                {specsOpen.origin && (
+                  <div className="px-4 pb-4 pt-1.5 text-[11px] text-slate-500 leading-relaxed font-sans border-t border-slate-100/50 animate-fade-in text-left">
+                    {product.countryOfOrigin}
+                  </div>
+                )}
               </div>
             )}
+
             {product.shippingWeight && (
-              <div className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-4.5 flex flex-col justify-between min-h-[96px] hover:bg-slate-50 transition duration-200">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
-                  Shipping Weight
-                </span>
-                <span className="text-xs font-semibold text-slate-800 block mt-2 break-words">
-                  {product.shippingWeight}
-                </span>
+              <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => toggleSpec("weight")}
+                  className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 transition duration-150"
+                >
+                  <span className="flex items-center space-x-2.5">
+                    <RiScalesLine className="text-accent-gold" size={17} />
+                    <span>Package Weight</span>
+                  </span>
+                  <RiArrowRightSLine
+                    className={`text-slate-400 transition duration-200 transform ${
+                      specsOpen.weight ? "rotate-90" : ""
+                    }`}
+                    size={18}
+                  />
+                </button>
+                {specsOpen.weight && (
+                  <div className="px-4 pb-4 pt-1.5 text-[11px] text-slate-500 leading-relaxed font-sans border-t border-slate-100/50 animate-fade-in text-left">
+                    {product.shippingWeight}
+                  </div>
+                )}
               </div>
             )}
+
             {product.returnDays && (
-              <div className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-4.5 flex flex-col justify-between min-h-[96px] hover:bg-slate-50 transition duration-200">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
-                  Return Policy
-                </span>
-                <span className="text-xs font-semibold text-slate-800 block mt-2 break-words">
-                  {product.returnDays} Days Returns
-                </span>
+              <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => toggleSpec("returnPolicy")}
+                  className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 transition duration-150"
+                >
+                  <span className="flex items-center space-x-2.5">
+                    <RiExchangeLine className="text-accent-gold" size={17} />
+                    <span>Return Policy Window</span>
+                  </span>
+                  <RiArrowRightSLine
+                    className={`text-slate-400 transition duration-200 transform ${
+                      specsOpen.returnPolicy ? "rotate-90" : ""
+                    }`}
+                    size={18}
+                  />
+                </button>
+                {specsOpen.returnPolicy && (
+                  <div className="px-4 pb-4 pt-1.5 text-[11px] text-slate-500 leading-relaxed font-sans border-t border-slate-100/50 animate-fade-in text-left">
+                    {product.returnDays} Days Returns
+                  </div>
+                )}
               </div>
             )}
           </div>

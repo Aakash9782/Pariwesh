@@ -163,6 +163,45 @@ const GeneralTab = ({
           />
         </div>
       </div>
+      {/* Announcement Bar Section */}
+      <div className="pt-6 border-t border-slate-200 space-y-4">
+        <h3 className="text-xs font-bold tracking-widest uppercase text-[#c5a880] flex items-center">
+          Top Rotating Announcement Bar
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="block text-xs font-semibold text-slate-700">
+              Announcement Bar Status (ON/OFF)
+            </label>
+            <select
+              value={generalForm.announcementActive}
+              onChange={(e) =>
+                setGeneralForm({
+                  ...generalForm,
+                  announcementActive: e.target.value,
+                })
+              }
+              className="w-full h-10 px-3 bg-white border border-slate-200 rounded-md text-xs text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880]"
+            >
+              <option value="true">
+                ON (Show announcement scrolling marquee)
+              </option>
+              <option value="false">OFF (Hide marquee)</option>
+            </select>
+          </div>
+          <Input
+            label="Announcement Banner Text"
+            value={generalForm.announcementText}
+            onChange={(e) =>
+              setGeneralForm({
+                ...generalForm,
+                announcementText: e.target.value,
+              })
+            }
+            placeholder="e.g. Free shipping on orders above ₹1500"
+          />
+        </div>
+      </div>
 
       <div className="pt-2">
         <Button

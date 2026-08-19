@@ -48,6 +48,9 @@ const SettingsPage = () => {
     countdownActive: "true",
     countdownTitle: "Limited Collection Closes In:",
     countdownEndDate: "",
+    announcementText:
+      "✨ USE CODE PARIWESHGOLD TO GET 15% OFF + FREE SHIPPING ON APPAREL ABOVE ₹1500 ✨",
+    announcementActive: "true",
   });
 
   // Shipping & Payment configs
@@ -122,6 +125,13 @@ const SettingsPage = () => {
           countdownTitle:
             data.countdownTitle || "Limited Collection Closes In:",
           countdownEndDate: data.countdownEndDate || "",
+          announcementText:
+            data.announcementText ||
+            "✨ USE CODE PARIWESHGOLD TO GET 15% OFF + FREE SHIPPING ON APPAREL ABOVE ₹1500 ✨",
+          announcementActive:
+            data.announcementActive === undefined
+              ? "true"
+              : String(data.announcementActive),
         });
         setShippingForm({
           codEnabled: data.codEnabled || "true",
@@ -224,6 +234,16 @@ const SettingsPage = () => {
           saveSettingKey(key, val),
         ),
       );
+      localStorage.setItem("brandLogoUrl", generalForm.brandLogoUrl || "");
+      localStorage.setItem(
+        "announcementText",
+        generalForm.announcementText || "",
+      );
+      localStorage.setItem(
+        "announcementActive",
+        generalForm.announcementActive || "true",
+      );
+      window.dispatchEvent(new Event("settings-updated"));
       alert("General system parameters saved successfully!");
       fetchSettings();
     } catch (err) {

@@ -49,7 +49,7 @@ textarea {
   --glass-border: rgba(24, 24, 27, 0.08);
 
   /* Shapes & Corners (Border Radius) */
-  --radius-button: 9999px;
+  --radius-button: 0.25rem;
   --radius-input: 0.125rem;
   --radius-card: 0.125rem;
   --radius-modal: 0.125rem;

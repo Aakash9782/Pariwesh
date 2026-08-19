@@ -54,6 +54,31 @@ const MainLayout = () => {
   const wishlistProducts = useSelector((state) => state.wishlist.products);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
+  const isLinkActive = (path) => {
+    const currentPathname = location.pathname;
+    const currentSearch = location.search;
+
+    if (path === "/") {
+      return currentPathname === "/";
+    }
+
+    if (path.includes("?")) {
+      const [pathBase, pathQuery] = path.split("?");
+      if (currentPathname !== pathBase) return false;
+      const linkParams = new URLSearchParams(pathQuery);
+      const currentParams = new URLSearchParams(currentSearch);
+      for (const [key, val] of linkParams.entries()) {
+        if (currentParams.get(key) !== val) return false;
+      }
+      return true;
+    } else {
+      if (path === "/shop") {
+        return currentPathname === "/shop" && currentSearch === "";
+      }
+      return currentPathname === path;
+    }
+  };
+
   React.useEffect(() => {
     if (isAuthenticated) {
       hydrateCommerce();
@@ -344,15 +369,22 @@ const MainLayout = () => {
         {/* Tier 2: Horizontal Navigation bar (Desktop only) */}
         <div className="hidden md:block border-t border-borderLight py-3.5 bg-primary/95 backdrop-blur-md overflow-x-auto scrollbar-none">
           <nav className="max-w-7xl mx-auto px-4 flex items-center justify-start lg:justify-center gap-x-3 lg:gap-x-6 xl:gap-x-8 gap-y-2 whitespace-nowrap">
-            {navLinks.map((link, idx) => (
-              <Link
-                key={idx}
-                to={link.path}
-                className="whitespace-nowrap text-[9px] lg:text-[10px] xl:text-[11px] font-semibold text-textPrimary hover:text-accent-gold tracking-[0.1em] xl:tracking-[0.18em] uppercase transition-colors duration-300 relative after:content-[''] after:absolute after:-bottom-1.5 after:left-0 after:w-0 after:h-[1.5px] after:bg-accent-gold hover:after:w-full after:transition-all after:duration-300"
-              >
-                {link.title}
-              </Link>
-            ))}
+            {navLinks.map((link, idx) => {
+              const active = isLinkActive(link.path);
+              return (
+                <Link
+                  key={idx}
+                  to={link.path}
+                  className={`whitespace-nowrap text-[9px] lg:text-[10px] xl:text-[11px] font-semibold tracking-[0.1em] xl:tracking-[0.18em] uppercase transition-colors duration-300 relative after:content-[''] after:absolute after:-bottom-1.5 after:left-0 after:h-[1.5px] after:bg-accent-gold after:transition-all after:duration-300 ${
+                    active
+                      ? "text-accent-gold after:w-full"
+                      : "text-textPrimary hover:text-accent-gold after:w-0 hover:after:w-full"
+                  }`}
+                >
+                  {link.title}
+                </Link>
+              );
+            })}
           </nav>
         </div>
       </header>
@@ -622,17 +654,20 @@ const MainLayout = () => {
               Subscribe to unlock early access to sales events and custom coupon
               codes.
             </p>
-            <form onSubmit={handleJoinClub} className="flex">
+            <form
+              onSubmit={handleJoinClub}
+              className="flex gap-x-2 border-b border-borderLight/30 pb-1"
+            >
               <input
                 type="email"
                 placeholder="Enter email..."
                 value={subscriberEmail}
                 onChange={(e) => setSubscriberEmail(e.target.value)}
-                className="bg-bgLight text-textPrimary px-3 py-2 text-base md:text-xs rounded-l focus:outline-none w-full"
+                className="bg-transparent text-primary placeholder-textSecondary px-1 py-2 text-base md:text-sm focus:outline-none w-full font-sans border-0"
               />
               <button
                 type="submit"
-                className="bg-accent-gold hover:bg-accent-goldHover text-secondary px-4 py-2 text-xs font-semibold rounded-r transition-colors shrink-0"
+                className="hover:text-accent-gold text-primary px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0 font-display bg-transparent border-0 outline-none"
               >
                 Join
               </button>

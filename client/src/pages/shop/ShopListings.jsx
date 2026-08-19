@@ -165,7 +165,7 @@ const ShopListings = () => {
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-100 pb-6 mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-display font-medium text-textPrimary uppercase tracking-wider">
+          <h1 className="text-3xl font-serif font-medium text-textPrimary uppercase tracking-wider">
             Collections Catalog
           </h1>
           <p className="text-xs text-textSecondary mt-1">
@@ -224,9 +224,9 @@ const ShopListings = () => {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`text-left text-xs capitalize ${
+                  className={`text-left text-xs capitalize transition-colors duration-200 ${
                     selectedCategory === cat
-                      ? "text-accent-gold font-bold"
+                      ? "text-accent-gold font-semibold"
                       : "text-textPrimary hover:text-accent-gold"
                   }`}
                 >
@@ -246,10 +246,10 @@ const ShopListings = () => {
                 <button
                   key={color}
                   onClick={() => setSelectedColor(color)}
-                  className={`px-3 py-1.5 rounded-full border text-[10px] ${
+                  className={`px-3 py-1.5 rounded-full border text-[10px] transition-all duration-200 ${
                     selectedColor === color
-                      ? "border-accent-gold bg-accent-gold/10 text-accent-gold font-bold"
-                      : "border-gray-200 text-textPrimary hover:border-textSecondary"
+                      ? "border-accent-gold bg-accent-gold/10 text-accent-gold font-semibold"
+                      : "border-gray-200 text-textPrimary hover:border-accent-gold"
                   }`}
                 >
                   {color}
@@ -268,10 +268,10 @@ const ShopListings = () => {
                 <button
                   key={size}
                   onClick={() => setSelectedSize(size)}
-                  className={`py-2 text-[10px] text-center border font-semibold ${
+                  className={`py-2 text-[10px] text-center border font-semibold transition-all duration-200 ${
                     selectedSize === size
-                      ? "border-secondary bg-secondary text-primary font-bold"
-                      : "border-gray-200 text-textPrimary hover:border-textSecondary"
+                      ? "border-accent-gold bg-accent-gold text-white font-bold"
+                      : "border-gray-200 text-textPrimary hover:border-accent-gold"
                   }`}
                 >
                   {size}
@@ -399,22 +399,30 @@ const ShopListings = () => {
                         </h3>
                       </div>
 
-                      <div className="flex items-center space-x-2 text-xs">
-                        <span className="text-textSecondary line-through font-medium">
-                          ₹{product.mrp}
-                        </span>
-                        <span className="text-secondary font-bold">
+                      <div className="flex items-center gap-x-2 text-xs">
+                        <span className="text-textPrimary font-bold">
                           ₹{product.price}
                         </span>
-                      </div>
-
-                      <div className="pt-0.5">
-                        <span className="bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-900/30 text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-sm font-bold inline-block">
-                          {Math.round(
-                            ((product.mrp - product.price) / product.mrp) * 100,
-                          )}
-                          % OFF
-                        </span>
+                        {product.mrp > product.price && (
+                          <>
+                            <span className="text-textSecondary line-through text-[11px]">
+                              ₹{product.mrp}
+                            </span>
+                            <span className="text-[10px] font-bold text-[#c5a880] uppercase tracking-wider">
+                              (
+                              {Math.round(
+                                ((product.mrp - product.price) / product.mrp) *
+                                  105 ||
+                                  Math.round(
+                                    ((product.mrp - product.price) /
+                                      product.mrp) *
+                                      100,
+                                  ),
+                              )}
+                              % OFF)
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

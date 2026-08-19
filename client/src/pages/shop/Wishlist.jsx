@@ -60,7 +60,7 @@ const Wishlist = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-3xl font-display font-medium uppercase tracking-wider text-textPrimary mb-10">
+      <h1 className="text-3xl font-serif font-medium uppercase tracking-wider text-textPrimary mb-10">
         My Wishlist Ensembles
       </h1>
 
@@ -113,13 +113,24 @@ const Wishlist = () => {
                 <h3 className="text-xs font-semibold text-textPrimary leading-snug group-hover:text-accent-gold transition-colors line-clamp-2">
                   <Link to={`/product/${product.slug}`}>{product.name}</Link>
                 </h3>
-                <div className="flex items-center space-x-2 text-xs pt-1">
-                  <span className="text-textSecondary line-through font-medium">
-                    ₹{product.mrp}
-                  </span>
-                  <span className="text-secondary font-bold">
+                <div className="flex items-center gap-x-2 text-xs pt-1">
+                  <span className="text-textPrimary font-bold">
                     ₹{product.price}
                   </span>
+                  {product.mrp > product.price && (
+                    <>
+                      <span className="text-textSecondary line-through text-[11px]">
+                        ₹{product.mrp}
+                      </span>
+                      <span className="text-[10px] font-bold text-[#c5a880] uppercase tracking-wider">
+                        (
+                        {Math.round(
+                          ((product.mrp - product.price) / product.mrp) * 100,
+                        )}
+                        % OFF)
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 
