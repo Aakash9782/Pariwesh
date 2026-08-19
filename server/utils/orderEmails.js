@@ -5,11 +5,40 @@ import {
   buildPaymentFailedEmail,
   buildOrderShippedEmail,
   buildOrderStatusUpdateEmail,
+  buildAdminOrderNotificationEmail,
 } from "./emailTemplates.js";
 import Setting from "../models/Setting.js";
+import { getAdminEmails } from "./phone.js";
 
 const recipientFor = (order) =>
   order?.customer?.email || order?.shippingAddress?.email || "";
+
+export const emailAdminOrderNotification = async (order) => {
+  try {
+    const adminEmails = getAdminEmails();
+    if (!adminEmails || adminEmails.length === 0) {
+      console.warn(
+        "[Mail] Admin order notification skipped — no admin email configured",
+      );
+      return;
+    }
+
+    const { subject, html } = buildAdminOrderNotificationEmail(order);
+    await Promise.all(
+      adminEmails.map((email) =>
+        sendMail({
+          to: email,
+          subject,
+          html,
+          type: "admin_order_notification",
+          meta: { orderId: order?.orderId },
+        }),
+      ),
+    );
+  } catch (err) {
+    console.error("[Mail] admin order notification email error:", err);
+  }
+};
 
 export const emailOrderPlaced = async (order) => {
   const to = recipientFor(order);
@@ -28,6 +57,13 @@ export const emailOrderPlaced = async (order) => {
     type: "order_placed",
     meta: { orderId: order?.orderId },
   });
+
+  // Notify admin for COD order immediately on placement
+  if (order?.paymentMethod === "COD") {
+    emailAdminOrderNotification(order).catch((err) =>
+      console.error("[Mail] admin order notification error for COD:", err),
+    );
+  }
 };
 
 export const emailPaymentSuccess = async (order) => {
@@ -41,6 +77,11 @@ export const emailPaymentSuccess = async (order) => {
     type: "payment_success",
     meta: { orderId: order?.orderId },
   });
+
+  // Notify admin for ONLINE order on payment confirmation/success
+  emailAdminOrderNotification(order).catch((err) =>
+    console.error("[Mail] admin order notification error for ONLINE:", err),
+  );
 };
 
 export const emailPaymentFailed = async (order, reason) => {

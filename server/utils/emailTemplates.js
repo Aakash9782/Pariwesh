@@ -480,3 +480,23 @@ export const buildOtpEmail = ({ name, otp, expiresMinutes = 10 }) => ({
     footerNote: "PARIWESH never asks for your OTP by phone or chat.",
   }),
 });
+
+export const buildAdminOrderNotificationEmail = (order) => {
+  const bodyHtml = `
+    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:${brand.muted};font-family:Arial,Helvetica,sans-serif;">
+      Hello Admin,<br/><br/>
+      A new order <strong style="color:${brand.dark};">${escapeHtml(order.orderId)}</strong> has been placed successfully by the customer.
+    </p>
+    ${orderDetailsBlock(order)}
+  `;
+  return {
+    subject: `[New Order] ${order.orderId} Confirmed (${order.paymentMethod})`,
+    html: wrapLayout({
+      title: "New Order Confirmed",
+      eyebrow: "Admin notification",
+      bodyHtml,
+      footerNote:
+        "This email was automatically generated for the PARIWESH Administrators.",
+    }),
+  };
+};
