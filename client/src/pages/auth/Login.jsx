@@ -12,7 +12,6 @@ import Button from "../../components/common/Button.jsx";
 import Input from "../../components/form/Input.jsx";
 import { authSuccess } from "../../redux/slices/authSlice.js";
 import API from "../../services/api.js";
-import { hydrateCommerce } from "../../services/hydrateCommerce.js";
 import SEO from "../../components/common/SEO.jsx";
 
 const OTP_LENGTH = 6;
@@ -165,7 +164,6 @@ const Login = () => {
 
       if (data.token && data.user) {
         dispatch(authSuccess({ user: data.user, token: data.token }));
-        await hydrateCommerce();
         resolveRedirect(data.user);
         return;
       }
@@ -220,7 +218,6 @@ const Login = () => {
         const { token, user } = res.data.data;
         clearResendTimer();
         dispatch(authSuccess({ user, token }));
-        await hydrateCommerce();
         resolveRedirect(user);
       } else {
         setError(res.data?.message || "Verification failed");

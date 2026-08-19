@@ -7,6 +7,7 @@ import {
   RiDeleteBin7Line,
 } from "react-icons/ri";
 import Button from "../../components/common/Button.jsx";
+import ProductImageSlider from "../../components/common/ProductImageSlider.jsx";
 import { addToCart } from "../../redux/slices/cartSlice.js";
 import { toggleWishlistProduct } from "../../redux/slices/wishlistSlice.js";
 import {
@@ -87,10 +88,9 @@ const Wishlist = () => {
                 to={`/product/${product.slug}`}
                 className="block w-full h-full"
               >
-                <img
-                  src={product.images[0]}
+                <ProductImageSlider
+                  images={product.images}
                   alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-[1.15] transform-gpu transition-transform duration-[800ms] ease-out origin-top"
                 />
 
                 {/* Arch outline SVG overlay */}

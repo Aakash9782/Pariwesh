@@ -11,6 +11,7 @@ import {
   RiArrowUpDownLine,
 } from "react-icons/ri";
 import Button from "../../components/common/Button.jsx";
+import ProductImageSlider from "../../components/common/ProductImageSlider.jsx";
 import { ProductSkeleton } from "../../components/common/Skeleton.jsx";
 import { toggleWishlistProduct } from "../../redux/slices/wishlistSlice.js";
 import API from "../../services/api.js";
@@ -360,12 +361,9 @@ const ShopListings = () => {
                           playsInline
                         />
                       ) : (
-                        <img
-                          src={optimizeCloudinaryUrl(product.images[0], 600)}
+                        <ProductImageSlider
+                          images={product.images}
                           alt={product.name}
-                          loading="lazy"
-                          decoding="async"
-                          className="w-full h-full object-cover group-hover:scale-[1.15] transform-gpu transition-transform duration-[800ms] ease-out origin-top"
                         />
                       )}
 

@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { logoutSuccess } from "./authSlice.js";
 
 const savedWishlist = localStorage.getItem("wishlist")
   ? JSON.parse(localStorage.getItem("wishlist"))
@@ -32,6 +33,12 @@ const wishlistSlice = createSlice({
       state.products = [];
       localStorage.removeItem("wishlist");
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(logoutSuccess, (state) => {
+      state.products = [];
+      localStorage.removeItem("wishlist");
+    });
   },
 });
 

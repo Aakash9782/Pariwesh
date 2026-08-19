@@ -282,6 +282,10 @@ const MainLayout = () => {
             {/* Cart Link (Always Visible) */}
             <Link
               to="/cart"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/cart");
+              }}
               className="hover:text-accent-gold transition-colors relative"
             >
               <RiShoppingBagLine size={22} />

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import SEO from "../components/common/SEO.jsx";
+import ProductImageSlider from "../components/common/ProductImageSlider.jsx";
 import Icon from "../theme/icons.jsx";
 import PremiumBannerSlider from "../components/home/PremiumBannerSlider.jsx";
 import { motion, AnimatePresence } from "framer-motion";
@@ -865,12 +866,9 @@ const Home = () => {
                       playsInline
                     />
                   ) : (
-                    <img
-                      src={optimizeCloudinaryUrl(product.images[0], 600)}
+                    <ProductImageSlider
+                      images={product.images}
                       alt={product.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover group-hover:scale-[1.15] transform-gpu transition-transform duration-[800ms] ease-out origin-top"
                     />
                   )}
 
