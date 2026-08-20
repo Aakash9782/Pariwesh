@@ -104,6 +104,22 @@ const SettingsPage = () => {
     },
   ]);
 
+  const [campaignBanners, setCampaignBanners] = useState([
+    {
+      title: "Classic Cotton Zari",
+      subtitle: "HERITAGE COUTURE",
+      path: "/shop?tag=Best Seller",
+      image: "",
+    },
+    {
+      title: "Handcrafted Linens",
+      subtitle: "SUMMER ESSENTIALS",
+      path: "/shop?category=kurtis",
+      image: "",
+    },
+  ]);
+  const [campaignBannersActive, setCampaignBannersActive] = useState(true);
+
   const fetchSettings = async () => {
     try {
       setSettingsLoading(true);
@@ -171,6 +187,22 @@ const SettingsPage = () => {
             console.error(e);
           }
         }
+        if (data.homeCampaignBanners) {
+          try {
+            const parsed = JSON.parse(data.homeCampaignBanners);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setCampaignBanners(parsed);
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        setCampaignBannersActive(
+          data.homeCampaignBannersActive === undefined
+            ? true
+            : data.homeCampaignBannersActive === "true" ||
+                data.homeCampaignBannersActive === true,
+        );
       }
     } catch (err) {
       console.error(err);
@@ -292,6 +324,14 @@ const SettingsPage = () => {
       await saveSettingKey("homeStoryImage", storyImage);
       await saveSettingKey("homeCategories", JSON.stringify(categories));
       await saveSettingKey("homeVibeMoods", JSON.stringify(vibeMoods));
+      await saveSettingKey(
+        "homeCampaignBanners",
+        JSON.stringify(campaignBanners),
+      );
+      await saveSettingKey(
+        "homeCampaignBannersActive",
+        String(campaignBannersActive),
+      );
       alert("Homepage Curations saved successfully!");
       fetchSettings();
     } catch (err) {
@@ -516,6 +556,10 @@ const SettingsPage = () => {
                 setCategories={setCategories}
                 vibeMoods={vibeMoods}
                 setVibeMoods={setVibeMoods}
+                campaignBanners={campaignBanners}
+                setCampaignBanners={setCampaignBanners}
+                campaignBannersActive={campaignBannersActive}
+                setCampaignBannersActive={setCampaignBannersActive}
                 handleSaveHomepage={handleSaveHomepage}
               />
             )}

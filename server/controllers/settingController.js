@@ -255,6 +255,33 @@ export const updateSetting = async (req, res, next) => {
           e,
         );
       }
+    } else if (key === "homeCampaignBanners" && value) {
+      try {
+        const parsed = typeof value === "object" ? value : JSON.parse(value);
+        if (Array.isArray(parsed)) {
+          for (let i = 0; i < parsed.length; i++) {
+            if (parsed[i].image && parsed[i].image.startsWith("data:image")) {
+              parsed[i].image = await uploadBase64Image(
+                parsed[i].image,
+                "pariwesh/branding",
+              );
+              if (parsed[i].image.startsWith("data:image/")) {
+                return sendError(
+                  res,
+                  `Cloudinary upload failed for campaign banner ${i + 1} image.`,
+                  400,
+                );
+              }
+            }
+          }
+          finalValue = JSON.stringify(parsed);
+        }
+      } catch (e) {
+        console.error(
+          "Failed to parse homeCampaignBanners inside settingController:",
+          e,
+        );
+      }
     }
 
     let setting = await Setting.findOne({ key });

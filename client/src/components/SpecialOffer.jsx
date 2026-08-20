@@ -44,14 +44,24 @@ const SpecialOffer = ({
   // Trigger parent state update on eligibility changes
   useEffect(() => {
     if (onOfferChange) {
-      // If a manual coupon is applied, special offer becomes inactive (0% discount) to prevent stacking
       if (couponApplied) {
-        onOfferChange(null);
+        // Only PREPAID_5 auto-discount is allowed to stack with manual coupon codes
+        if (selectedOffer && selectedOffer.type === "PREPAID_5") {
+          onOfferChange(selectedOffer);
+        } else {
+          onOfferChange(null);
+        }
       } else {
         onOfferChange(selectedOffer);
       }
     }
-  }, [paymentMethod, deliveredCount, couponApplied, onOfferChange]);
+  }, [
+    paymentMethod,
+    deliveredCount,
+    couponApplied,
+    selectedOffer,
+    onOfferChange,
+  ]);
 
   const prepaidDiscountAmount = Math.round(subtotal * (PREPAID_DISCOUNT / 100));
   const fifthDiscountAmount = Math.round(
@@ -67,14 +77,14 @@ const SpecialOffer = ({
         </h4>
       </div>
 
-      {couponApplied && (
+      {couponApplied && selectedOffer?.type === "FIFTH_PURCHASE_15" && (
         <div className="flex items-start space-x-2 bg-secondary/10 border border-secondary/20 p-2.5 rounded-sm">
           <RiInformationLine
             size={14}
             className="text-accent-gold flex-shrink-0 mt-0.5"
           />
           <p className="text-[10px] text-textSecondary leading-normal">
-            A manual coupon code is applied. Special offer automatic discounts
+            A manual coupon code is applied. Royalty reward automatic discounts
             are temporarily disabled to prevent stacking.
           </p>
         </div>
@@ -84,7 +94,7 @@ const SpecialOffer = ({
         {/* PREPAID OFFER CARD */}
         <div
           className={`border p-3.5 rounded-sm transition-all duration-300 relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 ${
-            isPrepaidEligible && !couponApplied
+            isPrepaidEligible
               ? "border-accent-gold/50 bg-secondary/5 ring-1 ring-accent-gold/20"
               : "border-borderLight bg-bgLight/40 opacity-70"
           }`}
@@ -94,7 +104,7 @@ const SpecialOffer = ({
               <span className="text-xs font-bold text-textPrimary">
                 💳 Pay Online & Get {PREPAID_DISCOUNT}% OFF
               </span>
-              {isPrepaidEligible && !couponApplied && (
+              {isPrepaidEligible && (
                 <span className="text-[8px] bg-success/15 text-green-600 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
                   Active
                 </span>
@@ -103,14 +113,14 @@ const SpecialOffer = ({
             <p className="text-[10px] text-textSecondary leading-relaxed">
               Save {PREPAID_DISCOUNT}% instantly on prepaid orders.
             </p>
-            {isPrepaidEligible && !couponApplied && subtotal > 0 && (
+            {isPrepaidEligible && subtotal > 0 && (
               <p className="text-[10px] font-bold text-accent-gold">
                 Instant Discount: -₹{prepaidDiscountAmount}
               </p>
             )}
           </div>
           <div className="self-end sm:self-auto flex items-center">
-            {isPrepaidEligible && !couponApplied ? (
+            {isPrepaidEligible ? (
               <RiCheckboxCircleLine className="text-green-600" size={18} />
             ) : (
               <span className="text-[8.5px] uppercase font-bold tracking-wider text-textSecondary bg-borderLight/30 px-2 py-1 rounded-sm">

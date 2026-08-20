@@ -98,6 +98,7 @@ const Cart = () => {
   const [couponError, setCouponError] = useState("");
   const [selectedSpecialOffer, setSelectedSpecialOffer] = useState(null);
   const [deliveredCount, setDeliveredCount] = useState(0);
+  const [failedOrder, setFailedOrder] = useState(null);
 
   // Checkout flow states
   const [checkoutStep, setCheckoutStep] = useState(isDirectCheckout && !!user);
@@ -332,7 +333,6 @@ const Cart = () => {
                 verifyRes.data?.message || "Payment verification failed",
                 "Payment Failed",
               );
-              await finalizeOrderSuccess(orderId, false, purchasedItems);
               resolve(false);
             }
           } catch (err) {
@@ -353,7 +353,6 @@ const Cart = () => {
                 /* ignore */
               }
             }
-            await finalizeOrderSuccess(orderId, false, purchasedItems);
             resolve(false);
           }
         },
@@ -371,7 +370,6 @@ const Cart = () => {
             } catch (_) {
               /* ignore */
             }
-            await finalizeOrderSuccess(orderId, false, purchasedItems);
             resolve(false);
           },
         },
@@ -452,7 +450,8 @@ const Cart = () => {
           grandTotal,
           appliedCoupon: couponApplied ? coupon.trim().toUpperCase() : "",
           specialOffer:
-            !couponApplied && selectedSpecialOffer
+            (selectedSpecialOffer?.type === "PREPAID_5" || !couponApplied) &&
+            selectedSpecialOffer
               ? {
                   type: selectedSpecialOffer.type,
                   discountPercent: selectedSpecialOffer.discountPercent,
@@ -475,11 +474,19 @@ const Cart = () => {
         const orderId = orderData.orderId;
 
         if (address.paymentMethod === "ONLINE" && orderData.razorpayCheckout) {
-          await openRazorpayCheckout(
+          const success = await openRazorpayCheckout(
             orderData.razorpayCheckout,
             orderId,
             orderItemsPayload,
           );
+          if (!success) {
+            setFailedOrder({
+              orderId,
+              razorpayCheckout: orderData.razorpayCheckout,
+              orderItemsPayload,
+            });
+            return;
+          }
         } else {
           if (
             address.paymentMethod === "ONLINE" &&
@@ -515,11 +522,18 @@ const Cart = () => {
 
   const subtotal = getSubtotal();
   const delivery = subtotal >= 1500 || subtotal === 0 ? 0 : 45;
-  const finalDiscount = couponApplied
-    ? discount
-    : selectedSpecialOffer
-      ? Math.round(subtotal * (selectedSpecialOffer.discountPercent / 100))
-      : 0;
+  let tempDiscount = 0;
+  if (couponApplied) {
+    tempDiscount += discount;
+  }
+  if (selectedSpecialOffer) {
+    if (selectedSpecialOffer.type === "PREPAID_5" || !couponApplied) {
+      tempDiscount += Math.round(
+        subtotal * (selectedSpecialOffer.discountPercent / 100),
+      );
+    }
+  }
+  const finalDiscount = tempDiscount;
   const discountRatio = subtotal > 0 ? finalDiscount / subtotal : 0;
   const gst = Math.round(
     selectedItems.reduce((acc, item) => {
@@ -962,6 +976,104 @@ const Cart = () => {
               </div>
             )}
 
+            {/* Coupon Promo Code Input Block inside Checkout step */}
+            <div className="pt-4 border-t border-borderLight space-y-3">
+              <span className="block text-[10px] uppercase font-bold tracking-widest text-textSecondary">
+                Coupon Promo Code
+              </span>
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  placeholder="Enter e.g. PARIWESHGOLD"
+                  value={coupon}
+                  onChange={(e) => setCoupon(e.target.value)}
+                  disabled={couponApplied}
+                  className="bg-bgLight text-textPrimary px-3 py-2 text-xs rounded-sm border border-borderLight focus:border-accent-gold focus:outline-none w-full uppercase"
+                />
+                {couponApplied ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCouponApplied(false);
+                      setDiscount(0);
+                      setCoupon("");
+                      setCouponError("");
+                    }}
+                    className="bg-danger/25 text-danger hover:bg-danger hover:text-white px-4 py-2 text-xs font-bold uppercase rounded-xs tracking-wider transition-colors"
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={applyPromoCode}
+                    className="bg-secondary text-primary hover:bg-accent-gold hover:text-secondary px-4 py-2 text-xs font-bold uppercase rounded-xs tracking-wider transition-colors disabled:opacity-50"
+                  >
+                    Apply
+                  </button>
+                )}
+              </div>
+              {couponApplied && (
+                <p className="text-[10px] text-green-600 font-medium flex items-center space-x-1">
+                  <span>
+                    ✔ Coupon {coupon.trim().toUpperCase()} applied! ₹{discount}{" "}
+                    discount registered.
+                  </span>
+                </p>
+              )}
+              {couponError && (
+                <p className="text-[10px] text-danger font-medium">
+                  {couponError}
+                </p>
+              )}
+            </div>
+
+            {/* Retry Payment Block */}
+            {failedOrder && (
+              <div className="bg-danger/10 border border-danger/20 p-4 rounded-sm space-y-3 font-sans pt-4 border-t border-borderLight shadow-sm">
+                <h4 className="text-xs font-bold text-danger uppercase tracking-wider flex items-center space-x-2">
+                  <span>❌ Online Payment Failed</span>
+                </h4>
+                <p className="text-[11px] text-textSecondary leading-relaxed">
+                  Order <strong>{failedOrder.orderId}</strong> has been created,
+                  but payment failed or was cancelled. Please retry your online
+                  payment to confirm the order, or place order via Cash on
+                  Delivery instead.
+                </p>
+                <div className="flex flex-wrap gap-2.5">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setLoading(true);
+                      const ok = await openRazorpayCheckout(
+                        failedOrder.razorpayCheckout,
+                        failedOrder.orderId,
+                        failedOrder.orderItemsPayload,
+                      );
+                      if (ok) {
+                        setFailedOrder(null);
+                      }
+                      setLoading(false);
+                    }}
+                    disabled={loading}
+                    className="bg-accent-gold hover:bg-accent-gold/90 text-secondary px-4 py-2 text-xs font-bold uppercase rounded-xs tracking-wider transition-colors disabled:opacity-50"
+                  >
+                    {loading ? "Processing..." : "Retry Online Payment"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFailedOrder(null);
+                      setAddress((prev) => ({ ...prev, paymentMethod: "COD" }));
+                    }}
+                    className="bg-borderLight/40 hover:bg-borderLight/60 text-textPrimary px-4 py-2 text-xs font-bold uppercase rounded-xs tracking-wider transition-colors"
+                  >
+                    Pay via COD instead
+                  </button>
+                </div>
+              </div>
+            )}
+
             <Button
               type="submit"
               variant="gold"
@@ -995,13 +1107,27 @@ const Cart = () => {
                   disabled={couponApplied}
                   className="bg-bgLight text-textPrimary px-3 py-2 text-xs rounded-sm border border-borderLight focus:border-accent-gold focus:outline-none w-full uppercase"
                 />
-                <button
-                  onClick={applyPromoCode}
-                  disabled={couponApplied}
-                  className="bg-secondary text-primary hover:bg-accent-gold hover:text-secondary px-4 py-2 text-xs font-bold uppercase rounded-sm tracking-wider transition-colors disabled:opacity-50"
-                >
-                  Apply
-                </button>
+                {couponApplied ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCouponApplied(false);
+                      setDiscount(0);
+                      setCoupon("");
+                      setCouponError("");
+                    }}
+                    className="bg-danger/25 text-danger hover:bg-danger hover:text-white px-4 py-2 text-xs font-bold uppercase rounded-sm tracking-wider transition-colors"
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <button
+                    onClick={applyPromoCode}
+                    className="bg-secondary text-primary hover:bg-accent-gold hover:text-secondary px-4 py-2 text-xs font-bold uppercase rounded-sm tracking-wider transition-colors disabled:opacity-50"
+                  >
+                    Apply
+                  </button>
+                )}
               </div>
               {couponApplied && (
                 <p className="text-[10px] text-green-600 font-medium flex items-center space-x-1">

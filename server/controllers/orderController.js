@@ -241,8 +241,17 @@ export const createOrder = async (req, res, next) => {
     let appliedOffer = null;
 
     if (pricing && pricing.appliedCoupon) {
-      // Coupon takes priority and disables automatic special offers
+      // Coupon takes priority, but if the payment method is ONLINE, stack the 5% online discount
       finalDiscount = couponDiscount;
+      if (method === "ONLINE") {
+        finalDiscount += Math.round(
+          calculatedSubtotal * (PREPAID_DISCOUNT / 100),
+        );
+        appliedOffer = {
+          type: "PREPAID_5",
+          discountPercent: PREPAID_DISCOUNT,
+        };
+      }
     } else if (pricing && pricing.specialOffer && pricing.specialOffer.type) {
       const requestedOfferType = pricing.specialOffer.type;
       if (requestedOfferType !== eligibleOfferType) {

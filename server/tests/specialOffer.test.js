@@ -268,6 +268,38 @@ describe("Special Offer Backend Validation and Pricing Rules", () => {
     assert.equal(res.body.data.pricing.specialOffer, undefined);
   });
 
+  it("should stack coupon discount and prepaid 5% discount if a coupon is applied manually and payment is ONLINE", async () => {
+    mockDeliveredCount = 0;
+    mockCoupon = {
+      code: "FESTIVE10",
+      discountType: "Percentage",
+      value: 10,
+      status: "Active",
+      ordersUsed: 0,
+      save: async () => {},
+    };
+
+    const req = getBaseReq("ONLINE");
+    // Client sent 10% coupon (₹200 discount) + prepaid 5% discount (₹100) = ₹300 discount
+    req.body.pricing.appliedCoupon = "FESTIVE10";
+    req.body.pricing.discount = 300;
+    req.body.pricing.grandTotal = 1700;
+    req.body.pricing.specialOffer = {
+      type: "PREPAID_5",
+      discountPercent: 5,
+    };
+    const res = makeMockRes();
+
+    await createOrder(req, res);
+
+    assert.equal(res.statusCode, 201);
+    assert.equal(res.body.success, true);
+    assert.equal(res.body.data.pricing.discount, 300);
+    assert.equal(res.body.data.pricing.gst, 81); // 1700 * 5/105 = 80.95 (approx 81)
+    assert.equal(res.body.data.pricing.appliedCoupon, "FESTIVE10");
+    assert.equal(res.body.data.pricing.specialOffer.type, "PREPAID_5");
+  });
+
   it("should enforce minQuantity coupon validation and throw error if not met", async () => {
     mockCoupon = {
       code: "SUMMER10",

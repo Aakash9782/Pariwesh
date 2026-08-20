@@ -4,10 +4,10 @@ import { useDispatch, useSelector } from "react-redux";
 import SEO from "../components/common/SEO.jsx";
 import ProductImageSlider from "../components/common/ProductImageSlider.jsx";
 import Icon from "../theme/icons.jsx";
-import PremiumBannerSlider from "../components/home/PremiumBannerSlider.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import HeroSlider from "../components/home/HeroSlider.jsx";
 import VibeGrid from "../components/home/VibeGrid.jsx";
+import CampaignBanners from "../components/home/CampaignBanners.jsx";
 import Skeleton, { ProductSkeleton } from "../components/common/Skeleton.jsx";
 import { optimizeCloudinaryUrl } from "../utils/cloudinary.js";
 import { addToCart } from "../redux/slices/cartSlice.js";
@@ -54,6 +54,37 @@ const Home = () => {
     code: "FESTIVE50",
     link: "/shop",
     theme: "royal-gold",
+  });
+
+  const [dynCampaignBannersActive, setDynCampaignBannersActive] = useState(
+    () => {
+      const cached = localStorage.getItem("homeCampaignBannersActive");
+      return cached === null ? true : cached === "true";
+    },
+  );
+
+  const [dynCampaignBanners, setDynCampaignBanners] = useState(() => {
+    const cached = localStorage.getItem("homeCampaignBanners");
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return [
+      {
+        title: "Classic Cotton Zari",
+        subtitle: "HERITAGE COUTURE",
+        path: "/shop?tag=Best Seller",
+        image: "/hero.png",
+      },
+      {
+        title: "Handcrafted Linens",
+        subtitle: "SUMMER ESSENTIALS",
+        path: "/shop?category=kurtis",
+        image: "/hero.png",
+      },
+    ];
   });
 
   const [settingsLoading, setSettingsLoading] = useState(() => {
@@ -259,18 +290,11 @@ const Home = () => {
               (!start || now >= start) && (!end || now <= end);
 
             adState = {
+              ...adState,
+              ...parsed,
               active:
                 (parsed.enabled === true || parsed.enabled === "true") &&
                 isDateValid,
-              title: parsed.bannerTitle || adState.title,
-              subtitle: parsed.subtitle || adState.subtitle,
-              code: parsed.discountTag || adState.code,
-              link: parsed.link || "/shop",
-              theme: parsed.theme || "royal-gold",
-              primaryButtonText: parsed.primaryButtonText,
-              desktopImage: parsed.desktopImage || parsed.bannerImage || "",
-              tabletImage: parsed.tabletImage || "",
-              mobileImage: parsed.mobileImage || "",
             };
           } catch (e) {
             console.error("Failed to parse festiveBannerSettings", e);
@@ -354,6 +378,27 @@ const Home = () => {
               console.error("Failed to parse homeVibeMoods:", e);
             }
           }
+          if (settings.homeCampaignBanners) {
+            try {
+              const parsed = JSON.parse(settings.homeCampaignBanners);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setDynCampaignBanners(parsed);
+                safeSetItem(
+                  "homeCampaignBanners",
+                  settings.homeCampaignBanners,
+                );
+              }
+            } catch (e) {
+              console.error("Failed to parse homeCampaignBanners:", e);
+            }
+          }
+          const cBannersActive =
+            settings.homeCampaignBannersActive === undefined
+              ? true
+              : settings.homeCampaignBannersActive === "true" ||
+                settings.homeCampaignBannersActive === true;
+          setDynCampaignBannersActive(cBannersActive);
+          safeSetItem("homeCampaignBannersActive", String(cBannersActive));
         }
       } catch (err) {
         console.error("Error loaded settings:", err);
@@ -375,6 +420,11 @@ const Home = () => {
         link: localStorage.getItem("festiveAdLink") || "/shop",
         theme: localStorage.getItem("festiveAdTheme") || "royal-gold",
       });
+      setDynCampaignBannersActive(
+        localStorage.getItem("homeCampaignBannersActive") === null
+          ? true
+          : localStorage.getItem("homeCampaignBannersActive") === "true",
+      );
 
       const fallbackImages = [
         "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop",
@@ -545,13 +595,6 @@ const Home = () => {
         keywords="Pariwesh, Ethnic Wear, Suit Sets, Kurtis, Traditional Indian Wear, Luxury Crafts, Designer Kurtas"
         structuredData={websiteSchema}
       />
-      {/* Premium Dynamic / Static Secondary Banner Slider */}
-      <PremiumBannerSlider
-        adConfig={adConfig}
-        handleCopyCode={handleCopyCode}
-        copiedCode={copiedCode}
-      />
-
       {/* SECTION 1: HERO SPOTLIGHT SLIDER (Vibrant premium hero layout) */}
       <HeroSlider
         sliderConfig={sliderConfig}
@@ -631,6 +674,14 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* CAMPAIGN BANNER CARDS GRID (Mobile-First visual cards block) */}
+      {dynCampaignBannersActive && (
+        <CampaignBanners
+          banners={dynCampaignBanners}
+          settingsLoading={settingsLoading}
+        />
+      )}
 
       {/* SECTION 2: THE PARIWESH EDIT (Comfort meets Couture layout with countdown) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">

@@ -9,8 +9,28 @@ const HomepageTab = ({
   setCategories,
   vibeMoods,
   setVibeMoods,
+  campaignBanners,
+  setCampaignBanners,
+  campaignBannersActive,
+  setCampaignBannersActive,
   handleSaveHomepage,
 }) => {
+  const handleAddCampaignBanner = () => {
+    setCampaignBanners([
+      ...(campaignBanners || []),
+      {
+        title: "New Campaign Section",
+        subtitle: "FRESH DESIGNS",
+        path: "/shop",
+        image: "",
+      },
+    ]);
+  };
+
+  const handleDeleteCampaignBanner = (idxToDelete) => {
+    const updated = campaignBanners.filter((_, idx) => idx !== idxToDelete);
+    setCampaignBanners(updated);
+  };
   const handleStoryFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -58,6 +78,25 @@ const HomepageTab = ({
     const copy = [...vibeMoods];
     copy[index] = { ...copy[index], [field]: value };
     setVibeMoods(copy);
+  };
+
+  const handleCampaignImageChange = (e, index) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const copy = [...campaignBanners];
+        copy[index] = { ...copy[index], image: reader.result };
+        setCampaignBanners(copy);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCampaignFieldChange = (index, field, value) => {
+    const copy = [...campaignBanners];
+    copy[index] = { ...copy[index], [field]: value };
+    setCampaignBanners(copy);
   };
 
   return (
@@ -276,6 +315,125 @@ const HomepageTab = ({
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* CAMPAIGN BANNERS SECTIONS */}
+      <div className="space-y-6 pt-8 border-t border-slate-100">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold tracking-widest uppercase text-[#c5a880]">
+              Home Campaign Banners (Swipe Slider)
+            </h3>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Configure titles, subtitles, navigation paths, and preview images
+              for marketing banners.
+            </p>
+          </div>
+          <div className="flex items-center space-x-2 shrink-0">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              {campaignBannersActive ? "Active" : "Inactive"}
+            </span>
+            <button
+              type="button"
+              onClick={() => setCampaignBannersActive(!campaignBannersActive)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                campaignBannersActive ? "bg-[#c5a880]" : "bg-slate-200"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  campaignBannersActive ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {Array.isArray(campaignBanners) &&
+            campaignBanners.map((banner, idx) => (
+              <div
+                key={idx}
+                className="p-4 bg-[#FAF9F6] border border-slate-200/80 rounded-xl space-y-4 relative"
+              >
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] uppercase font-black tracking-widest text-[#c5a880]">
+                    Campaign Banner #{idx + 1}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCampaignBanner(idx)}
+                    className="text-[9px] font-bold text-rose-500 hover:text-rose-700 uppercase tracking-wider transition"
+                  >
+                    Remove
+                  </button>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  {banner.image ? (
+                    <div className="w-20 h-24 rounded border border-slate-200 shrink-0 overflow-hidden">
+                      <img
+                        src={banner.image}
+                        className="w-full h-full object-cover"
+                        alt={`Campaign preview ${idx}`}
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-20 h-24 bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center text-[8px] text-slate-400 italic">
+                      No Image
+                    </div>
+                  )}
+                  <label className="bg-white hover:bg-slate-50 border border-slate-200 text-[8px] uppercase font-black tracking-widest text-[#c5a880] py-1.5 px-3 rounded-lg cursor-pointer transition">
+                    Change Image
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleCampaignImageChange(e, idx)}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="Title"
+                    value={banner.title || ""}
+                    onChange={(e) =>
+                      handleCampaignFieldChange(idx, "title", e.target.value)
+                    }
+                  />
+                  <Input
+                    label="Subtitle (e.g. SUMMER COLLECTION)"
+                    value={banner.subtitle || ""}
+                    onChange={(e) =>
+                      handleCampaignFieldChange(idx, "subtitle", e.target.value)
+                    }
+                  />
+                </div>
+                <Input
+                  label="Navigation URL Path"
+                  value={banner.path || ""}
+                  onChange={(e) =>
+                    handleCampaignFieldChange(idx, "path", e.target.value)
+                  }
+                />
+              </div>
+            ))}
+
+          {/* Add Campaign Banner button card */}
+          <button
+            type="button"
+            onClick={handleAddCampaignBanner}
+            className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-[#c5a880]/30 hover:border-[#c5a880] rounded-xl hover:bg-[#FAF9F6]/50 transition duration-300 min-h-[220px] text-center space-y-2 group cursor-pointer"
+          >
+            <div className="w-10 h-10 rounded-full bg-[#c5a880]/10 flex items-center justify-center text-[#c5a880] group-hover:scale-110 transition-transform">
+              <span className="text-xl font-bold">+</span>
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#c5a880]">
+              Add Campaign Banner
+            </span>
+          </button>
         </div>
       </div>
 
