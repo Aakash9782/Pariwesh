@@ -1,6 +1,7 @@
 import { describe, it, before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
+import Razorpay from "razorpay";
 import Product from "../models/Product.js";
 import Order from "../models/Order.js";
 import Coupon from "../models/Coupon.js";
@@ -12,6 +13,7 @@ describe("Special Offer Backend Validation and Pricing Rules", () => {
   const originalOrderCountDocuments = Order.countDocuments;
   const originalOrderCreate = Order.create;
   const originalCouponFindOne = Coupon.findOne;
+  const originalOrderFindByIdAndDelete = Order.findByIdAndDelete;
 
   // Local state for stub configuration
   let mockDeliveredCount = 0;
@@ -21,6 +23,7 @@ describe("Special Offer Backend Validation and Pricing Rules", () => {
     sku: "KURTA-SILK-M",
     price: 2000,
     gst: 5,
+    sizes: ["M"],
     sizesStock: { M: 10 },
     get: (key) => 10,
     set: () => {},
@@ -46,7 +49,7 @@ describe("Special Offer Backend Validation and Pricing Rules", () => {
     Order.create = async (payload) => {
       return {
         ...payload,
-        _id: "mocked-order-id-999",
+        _id: new mongoose.Types.ObjectId().toString(),
         toObject: function () {
           return this;
         },
@@ -63,6 +66,32 @@ describe("Special Offer Backend Validation and Pricing Rules", () => {
       }
       return null;
     };
+
+    // Stub Order.findByIdAndDelete
+    Order.findByIdAndDelete = async (id) => {
+      return null;
+    };
+
+    // Configure mock env keys so isRazorpayConfigured returns true
+    process.env.RAZORPAY_KEY_ID = "rzp_test_mock_key";
+    process.env.RAZORPAY_KEY_SECRET = "mock_secret_key";
+
+    // Stub Razorpay orders via prototype getter/setter hack
+    Object.defineProperty(Razorpay.prototype, "orders", {
+      get() {
+        return {
+          create: async (params) => {
+            return {
+              id: "rzp_test_order_999",
+              amount: params.amount,
+              currency: params.currency,
+            };
+          },
+        };
+      },
+      set() {},
+      configurable: true,
+    });
   });
 
   after(async () => {
@@ -71,6 +100,10 @@ describe("Special Offer Backend Validation and Pricing Rules", () => {
     Order.countDocuments = originalOrderCountDocuments;
     Order.create = originalOrderCreate;
     Coupon.findOne = originalCouponFindOne;
+    Order.findByIdAndDelete = originalOrderFindByIdAndDelete;
+
+    // Restore Razorpay prototype
+    delete Razorpay.prototype.orders;
 
     // Disconnect mongoose to ensure test process exits cleanly
     await mongoose.disconnect();
@@ -161,6 +194,7 @@ describe("Special Offer Backend Validation and Pricing Rules", () => {
     const res = makeMockRes();
 
     await createOrder(req, res);
+    console.log("DEBUG: should apply 5% discount response:", res.body);
 
     assert.equal(res.statusCode, 201);
     assert.equal(res.body.success, true);

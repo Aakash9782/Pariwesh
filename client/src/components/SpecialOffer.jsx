@@ -23,45 +23,45 @@ const SpecialOffer = ({
   const isFifthPurchaseEligible = deliveredCount === FIFTH_PURCHASE_NUMBER;
 
   // Optimal offer auto-selection (15% fifth purchase has priority, prepaid is 5%)
-  let selectedOffer = null;
-  if (isFifthPurchaseEligible) {
-    selectedOffer = {
-      type: "FIFTH_PURCHASE_15",
-      discountPercent: FIFTH_PURCHASE_DISCOUNT,
-      label: "5th Purchase Reward — 15% OFF",
-      description:
-        "Thank you for being a loyal customer! Enjoy 15% OFF on your 5th purchase.",
-    };
-  } else if (isPrepaidEligible) {
-    selectedOffer = {
-      type: "PREPAID_5",
-      discountPercent: PREPAID_DISCOUNT,
-      label: "Pay Online & Get 5% OFF",
-      description: "Save 5% instantly on prepaid orders.",
-    };
-  }
+  // Memoized to prevent infinite loop of referential state changes in parent Cart.jsx component
+  const selectedOffer = React.useMemo(() => {
+    if (couponApplied) {
+      // Manual coupons can only stack with PREPAID_5 discount when paying online
+      if (isPrepaidEligible) {
+        return {
+          type: "PREPAID_5",
+          discountPercent: PREPAID_DISCOUNT,
+          label: "Pay Online & Get 5% OFF",
+          description: "Save 5% instantly on prepaid orders.",
+        };
+      }
+    } else {
+      if (isFifthPurchaseEligible) {
+        return {
+          type: "FIFTH_PURCHASE_15",
+          discountPercent: FIFTH_PURCHASE_DISCOUNT,
+          label: "5th Purchase Reward — 15% OFF",
+          description:
+            "Thank you for being a loyal customer! Enjoy 15% OFF on your 5th purchase.",
+        };
+      } else if (isPrepaidEligible) {
+        return {
+          type: "PREPAID_5",
+          discountPercent: PREPAID_DISCOUNT,
+          label: "Pay Online & Get 5% OFF",
+          description: "Save 5% instantly on prepaid orders.",
+        };
+      }
+    }
+    return null;
+  }, [couponApplied, isPrepaidEligible, isFifthPurchaseEligible]);
 
   // Trigger parent state update on eligibility changes
   useEffect(() => {
     if (onOfferChange) {
-      if (couponApplied) {
-        // Only PREPAID_5 auto-discount is allowed to stack with manual coupon codes
-        if (selectedOffer && selectedOffer.type === "PREPAID_5") {
-          onOfferChange(selectedOffer);
-        } else {
-          onOfferChange(null);
-        }
-      } else {
-        onOfferChange(selectedOffer);
-      }
+      onOfferChange(selectedOffer);
     }
-  }, [
-    paymentMethod,
-    deliveredCount,
-    couponApplied,
-    selectedOffer,
-    onOfferChange,
-  ]);
+  }, [selectedOffer, onOfferChange]);
 
   const prepaidDiscountAmount = Math.round(subtotal * (PREPAID_DISCOUNT / 100));
   const fifthDiscountAmount = Math.round(
