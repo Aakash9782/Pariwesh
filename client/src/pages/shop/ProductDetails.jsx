@@ -28,6 +28,11 @@ import {
   syncCartNow,
   syncWishlistNow,
 } from "../../services/hydrateCommerce.js";
+import {
+  trackViewContent,
+  trackAddToCart,
+  trackAddToWishlist,
+} from "../../services/metaPixel.js";
 
 const ProductDetails = () => {
   const navigate = useNavigate();
@@ -122,6 +127,7 @@ const ProductDetails = () => {
           setSelectedSize(
             data.sizes && data.sizes.length > 0 ? data.sizes[0] : "",
           );
+          trackViewContent(data);
         } else {
           setProduct(null);
         }
@@ -227,6 +233,7 @@ const ProductDetails = () => {
     }
 
     setLoading(true);
+    trackAddToCart(product, quantity, selectedSize, product.color);
     setTimeout(() => {
       dispatch(
         addToCart({
@@ -265,6 +272,7 @@ const ProductDetails = () => {
       return;
     }
 
+    trackAddToCart(product, quantity, selectedSize, product.color);
     dispatch(
       addToCart({
         product,
@@ -281,6 +289,7 @@ const ProductDetails = () => {
   };
 
   const handleWishlistToggle = () => {
+    trackAddToWishlist(product);
     dispatch(toggleWishlistProduct(product));
     syncWishlistNow();
   };

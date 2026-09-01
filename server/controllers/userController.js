@@ -11,6 +11,7 @@ import {
   signRefreshToken,
   verifyRefreshToken,
 } from "../utils/jwt.js";
+import { sendMetaCapiEvent } from "../utils/metaCapi.js";
 
 const OTP_LENGTH = 6;
 const OTP_TTL_MS = 10 * 60 * 1000; // OTP validity
@@ -396,6 +397,26 @@ export const verifyOtp = async (req, res) => {
       });
 
       await PendingSignup.deleteOne({ _id: pending._id });
+
+      // Non-blocking Meta CAPI CompleteRegistration
+      sendMetaCapiEvent({
+        eventName: "CompleteRegistration",
+        eventId: `reg_${user._id}`,
+        userData: {
+          email: user.email,
+          phone: user.phone,
+          firstName: user.name?.split(" ")[0] || "",
+          lastName: user.name?.split(" ").slice(1).join(" ") || "",
+        },
+        customData: {
+          status: true,
+        },
+        req,
+        eventSourceUrl: "https://pariwesh.in/login",
+      }).catch((err) =>
+        console.error("[Meta CAPI] Registration tracking error:", err),
+      );
+
       return sendTokenResponse(user, 200, res, "Account created successfully");
     }
 

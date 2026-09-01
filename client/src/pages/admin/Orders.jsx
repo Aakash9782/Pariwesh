@@ -401,10 +401,14 @@ const OrdersPage = () => {
 
   // Filter Queue Logic
   const filteredOrders = orders.filter((o) => {
+    const term = searchTerm.toLowerCase();
     const matchSearch =
-      o.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.customer?.phone.includes(searchTerm);
+      o.orderId.toLowerCase().includes(term) ||
+      o.customer?.name.toLowerCase().includes(term) ||
+      o.customer?.phone.includes(searchTerm) ||
+      (o.razorpayPaymentId &&
+        o.razorpayPaymentId.toLowerCase().includes(term)) ||
+      (o.razorpayOrderId && o.razorpayOrderId.toLowerCase().includes(term));
 
     const matchStatus = statusFilter ? o.orderStatus === statusFilter : true;
     const matchPay = payFilter ? o.paymentStatus === payFilter : true;
@@ -509,6 +513,7 @@ const OrdersPage = () => {
           <option value="">Payment: All</option>
           <option value="Pending">Pending</option>
           <option value="Paid">Paid</option>
+          <option value="Failed">Failed</option>
           <option value="Refunded">Refunded</option>
         </select>
 
@@ -595,6 +600,11 @@ const OrdersPage = () => {
                       </p>
                       <p className="text-[10px] text-slate-500 font-mono mt-0.5">
                         {ord.customer?.phone} | {ord.paymentMethod}
+                        {ord.razorpayPaymentId && (
+                          <span className="text-emerald-700 block font-semibold mt-0.5">
+                            Txn: {ord.razorpayPaymentId}
+                          </span>
+                        )}
                       </p>
                     </td>
                     <td className="py-4 px-5 text-slate-600 font-mono text-[10px]">
@@ -722,6 +732,40 @@ const OrdersPage = () => {
                       {selectedOrder.paymentMethod}
                     </span>
                   </p>
+                  {selectedOrder.paymentMethod === "ONLINE" && (
+                    <>
+                      <p className="text-slate-600 text-xs mt-1 flex justify-between items-center">
+                        <span>Payment Status:</span>
+                        <span
+                          className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                            selectedOrder.paymentStatus === "Paid"
+                              ? "bg-emerald-50 text-emerald-700"
+                              : selectedOrder.paymentStatus === "Failed"
+                                ? "bg-rose-50 text-rose-700"
+                                : "bg-amber-50 text-amber-700"
+                          }`}
+                        >
+                          {selectedOrder.paymentStatus}
+                        </span>
+                      </p>
+                      {selectedOrder.razorpayOrderId && (
+                        <p className="text-slate-600 text-xs mt-1 font-mono flex justify-between">
+                          <span>Razorpay Order ID:</span>
+                          <span className="text-slate-800 font-semibold">
+                            {selectedOrder.razorpayOrderId}
+                          </span>
+                        </p>
+                      )}
+                      {selectedOrder.razorpayPaymentId && (
+                        <p className="text-slate-600 text-xs mt-1 font-mono flex justify-between">
+                          <span>Transaction ID:</span>
+                          <span className="text-emerald-700 font-semibold">
+                            {selectedOrder.razorpayPaymentId}
+                          </span>
+                        </p>
+                      )}
+                    </>
+                  )}
                   <button
                     type="button"
                     onClick={() => openShipForm(selectedOrder)}
@@ -1041,6 +1085,7 @@ const OrdersPage = () => {
               >
                 <option value="Pending">Payment: Pending</option>
                 <option value="Paid">Payment: Completed</option>
+                <option value="Failed">Payment: Failed</option>
                 <option value="Refunded">Payment: Refunded</option>
               </select>
             </div>

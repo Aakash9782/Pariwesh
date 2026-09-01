@@ -20,6 +20,12 @@ import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
 import { updateProfile } from "../../redux/slices/authSlice.js";
 import { syncCartNow } from "../../services/hydrateCommerce.js";
+import {
+  trackInitiateCheckout,
+  trackAddPaymentInfo,
+  trackPurchase,
+  getMetaTrackingCookies,
+} from "../../services/metaPixel.js";
 import SEO from "../../components/common/SEO.jsx";
 import SpecialOffer from "../../components/SpecialOffer.jsx";
 
@@ -240,6 +246,14 @@ const Cart = () => {
     setPlacedOrderId(orderId);
     setPaymentConfirmed(paid);
     setOrderSuccess(true);
+
+    // Track Purchase event with built-in SessionStorage refresh guard
+    trackPurchase({
+      orderId,
+      value: grandTotal,
+      items: purchased && purchased.length > 0 ? purchased : cartItems,
+      paymentMethod: address.paymentMethod,
+    });
 
     const shouldClear = paid || address.paymentMethod === "COD";
     if (shouldClear) {
@@ -465,6 +479,7 @@ const Cart = () => {
           phone: address.phone,
           email: user.email || "",
         },
+        metaTracking: getMetaTrackingCookies(),
       };
 
       const res = await API.post("/orders", payload);
@@ -546,6 +561,13 @@ const Cart = () => {
     }, 0),
   );
   const grandTotal = subtotal + delivery - finalDiscount;
+
+  // Track InitiateCheckout when entering the address/checkout step
+  React.useEffect(() => {
+    if (checkoutStep && selectedItems.length > 0 && !orderSuccess) {
+      trackInitiateCheckout(selectedItems, grandTotal);
+    }
+  }, [checkoutStep]);
 
   if (orderSuccess) {
     return (
@@ -927,9 +949,10 @@ const Cart = () => {
                     name="paymentMethod"
                     value="COD"
                     checked={address.paymentMethod === "COD"}
-                    onChange={(e) =>
-                      setAddress({ ...address, paymentMethod: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setAddress({ ...address, paymentMethod: e.target.value });
+                      trackAddPaymentInfo(e.target.value, grandTotal);
+                    }}
                     className="accent-accent-gold"
                   />
                 </label>
@@ -954,9 +977,10 @@ const Cart = () => {
                     name="paymentMethod"
                     value="ONLINE"
                     checked={address.paymentMethod === "ONLINE"}
-                    onChange={(e) =>
-                      setAddress({ ...address, paymentMethod: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setAddress({ ...address, paymentMethod: e.target.value });
+                      trackAddPaymentInfo(e.target.value, grandTotal);
+                    }}
                     className="accent-accent-gold"
                   />
                 </label>

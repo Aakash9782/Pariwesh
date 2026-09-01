@@ -21,6 +21,7 @@ import {
   generateShiprocketManifest,
   requestShiprocketPickup,
 } from "../utils/shiprocket.js";
+import { trackCapiPurchase } from "../utils/metaCapi.js";
 
 // @desc    Get orders (Admin views all, Customer views their own)
 // @route   GET /api/v1/orders
@@ -502,6 +503,16 @@ export const createOrder = async (req, res, next) => {
     emailOrderPlaced(newOrder.toObject ? newOrder.toObject() : newOrder).catch(
       (err) => console.error("[Mail] order placed email error:", err),
     );
+
+    // Non-blocking Meta CAPI Purchase tracking for COD orders
+    if (method === "COD") {
+      trackCapiPurchase(newOrder, req, {
+        fbp: req?.headers?.["x-fbp"] || req?.body?.metaTracking?.fbp,
+        fbc: req?.headers?.["x-fbc"] || req?.body?.metaTracking?.fbc,
+      }).catch((err) =>
+        console.error("[Meta CAPI] COD Purchase tracking error:", err),
+      );
+    }
 
     return sendSuccess(
       res,

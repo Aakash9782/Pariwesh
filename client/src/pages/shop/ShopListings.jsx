@@ -16,6 +16,7 @@ import { ProductSkeleton } from "../../components/common/Skeleton.jsx";
 import { toggleWishlistProduct } from "../../redux/slices/wishlistSlice.js";
 import API from "../../services/api.js";
 import { syncWishlistNow } from "../../services/hydrateCommerce.js";
+import { trackSearch, trackAddToWishlist } from "../../services/metaPixel.js";
 import SEO from "../../components/common/SEO.jsx";
 
 const ShopListings = () => {
@@ -74,6 +75,9 @@ const ShopListings = () => {
     }
     const search = searchParams.get("search") || "";
     setSearchQuery(search);
+    if (search.trim()) {
+      trackSearch(search.trim());
+    }
   }, [searchParams]);
 
   // Simulate loading state transitions on filters
@@ -330,6 +334,7 @@ const ShopListings = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        trackAddToWishlist(product);
                         dispatch(toggleWishlistProduct(product));
                         syncWishlistNow();
                       }}

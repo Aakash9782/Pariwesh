@@ -5,6 +5,7 @@ import Product from "../models/Product.js";
 import { sendSuccess, sendError } from "../utils/responseFormatter.js";
 import { uploadBase64Image } from "../utils/cloudinaryUploader.js";
 import { logActivity } from "../utils/logger.js";
+import { sendMetaCapiEvent } from "../utils/metaCapi.js";
 
 // @desc    Get all settings
 // @route   GET /api/v1/settings
@@ -302,3 +303,62 @@ export const updateSetting = async (req, res, next) => {
     return sendError(res, error.message, 500);
   }
 };
+
+// @desc    Test Meta Conversions API (CAPI) Connection
+// @route   POST /api/v1/settings/test-meta-capi
+// @access  Private (Admin only)
+export const testMetaCapiConnection = async (req, res) => {
+  try {
+    const { metaPixelId, metaCapiToken, metaTestEventCode } = req.body || {};
+    const testResult = await sendMetaCapiEvent({
+      eventName: "TestEvent",
+      eventId: `test_${Date.now()}`,
+      userData: {
+        email: "test@pariwesh.in",
+        phone: "+919999999999",
+        firstName: "Test",
+        lastName: "Admin",
+        city: "Jaipur",
+        state: "Rajasthan",
+        pincode: "302001",
+      },
+      customData: {
+        value: 100,
+        currency: "INR",
+        test_note: "Admin connection test verification from Pariwesh control panel",
+      },
+      req,
+      eventSourceUrl: "https://pariwesh.in/admin/settings",
+      pixelId: metaPixelId || undefined,
+      capiToken: metaCapiToken || undefined,
+      testEventCode: metaTestEventCode || undefined,
+    });
+
+    if (!testResult) {
+      return sendError(
+        res,
+        "Meta tracking is either disabled or Meta Pixel ID / Access Token are missing in settings.",
+        400,
+      );
+    }
+
+    if (!testResult.success) {
+      return sendError(
+        res,
+        testResult.error?.error?.message ||
+          "Meta Conversions API returned an error. Check your Pixel ID and Access Token.",
+        400,
+        testResult.error,
+      );
+    }
+
+    return sendSuccess(
+      res,
+      "Meta Conversions API test event dispatched successfully! Check Events Manager.",
+      testResult.data,
+    );
+  } catch (err) {
+    return sendError(res, err.message, 500);
+  }
+};
+

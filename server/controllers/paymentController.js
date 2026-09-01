@@ -9,6 +9,7 @@ import {
   emailPaymentSuccess,
   emailPaymentFailed,
 } from "../utils/orderEmails.js";
+import { trackCapiPurchase } from "../utils/metaCapi.js";
 
 const assertOrderOwner = (order, user) => {
   if (user.role === "admin") return true;
@@ -141,6 +142,14 @@ export const verifyPayment = async (req, res) => {
 
     emailPaymentSuccess(order.toObject()).catch((err) =>
       console.error("[Mail] payment success email:", err),
+    );
+
+    // Non-blocking Meta CAPI Purchase tracking for Paid Online orders
+    trackCapiPurchase(order, req, {
+      fbp: req?.headers?.["x-fbp"] || req?.body?.metaTracking?.fbp,
+      fbc: req?.headers?.["x-fbc"] || req?.body?.metaTracking?.fbc,
+    }).catch((err) =>
+      console.error("[Meta CAPI] Razorpay Paid Purchase tracking error:", err),
     );
 
     return sendSuccess(res, "Payment verified successfully", {

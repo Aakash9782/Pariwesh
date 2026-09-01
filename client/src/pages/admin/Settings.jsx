@@ -11,12 +11,14 @@ import {
   RiShipLine,
   RiHistoryLine,
   RiFolderImageLine,
+  RiFacebookCircleLine,
 } from "react-icons/ri";
 import GeneralTab from "./settings/GeneralTab.jsx";
 import ShippingTab from "./settings/ShippingTab.jsx";
 import SlideshowTab from "./settings/SlideshowTab.jsx";
 import AdminManagementTab from "./settings/AdminManagementTab.jsx";
 import HomepageTab from "./settings/HomepageTab.jsx";
+import MetaPixelTab from "./settings/MetaPixelTab.jsx";
 
 const SettingsPage = () => {
   const { showAlert: alert, showConfirm } = useAlert();
@@ -120,6 +122,15 @@ const SettingsPage = () => {
   ]);
   const [campaignBannersActive, setCampaignBannersActive] = useState(true);
 
+  // Meta Pixel & CAPI configs
+  const [metaForm, setMetaForm] = useState({
+    metaPixelId: "",
+    metaCapiToken: "",
+    metaTestEventCode: "",
+    metaTrackingEnabled: "true",
+  });
+  const [metaSaving, setMetaSaving] = useState(false);
+
   const fetchSettings = async () => {
     try {
       setSettingsLoading(true);
@@ -127,6 +138,15 @@ const SettingsPage = () => {
       if (res.data?.success) {
         const data = res.data.data || {};
         setDbSettings(data);
+        setMetaForm({
+          metaPixelId: data.metaPixelId || "",
+          metaCapiToken: data.metaCapiToken || "",
+          metaTestEventCode: data.metaTestEventCode || "",
+          metaTrackingEnabled:
+            data.metaTrackingEnabled === undefined
+              ? "true"
+              : String(data.metaTrackingEnabled),
+        });
         setGeneralForm({
           brandName: data.brandName || "Pariwesh",
           brandLogoUrl: data.brandLogoUrl || "",
@@ -341,6 +361,22 @@ const SettingsPage = () => {
     }
   };
 
+  const handleSaveMeta = async (e) => {
+    e.preventDefault();
+    try {
+      setMetaSaving(true);
+      await Promise.all(
+        Object.entries(metaForm).map(([key, val]) => saveSettingKey(key, val)),
+      );
+      alert("Meta Pixel & Conversions API parameters saved successfully!");
+      fetchSettings();
+    } catch (err) {
+      alert("Failed to save Meta settings");
+    } finally {
+      setMetaSaving(false);
+    }
+  };
+
   const handleAddAdminSubmit = async (e) => {
     e.preventDefault();
     if (!newAdminPhone || !newAdminName || !newAdminEmail) {
@@ -462,6 +498,11 @@ const SettingsPage = () => {
             icon: <RiShipLine size={15} />,
           },
           {
+            id: "meta",
+            label: "Meta Pixel & CAPI",
+            icon: <RiFacebookCircleLine size={15} />,
+          },
+          {
             id: "admins",
             label: "Admins",
             icon: <RiShieldUserLine size={15} />,
@@ -561,6 +602,16 @@ const SettingsPage = () => {
                 campaignBannersActive={campaignBannersActive}
                 setCampaignBannersActive={setCampaignBannersActive}
                 handleSaveHomepage={handleSaveHomepage}
+              />
+            )}
+
+            {/* META PIXEL & CAPI SETTINGS */}
+            {activeTab === "meta" && (
+              <MetaPixelTab
+                metaForm={metaForm}
+                setMetaForm={setMetaForm}
+                handleSaveMeta={handleSaveMeta}
+                saving={metaSaving}
               />
             )}
 

@@ -12,6 +12,7 @@ import Button from "../../components/common/Button.jsx";
 import Input from "../../components/form/Input.jsx";
 import { authSuccess } from "../../redux/slices/authSlice.js";
 import API from "../../services/api.js";
+import { trackCompleteRegistration } from "../../services/metaPixel.js";
 import SEO from "../../components/common/SEO.jsx";
 
 const OTP_LENGTH = 6;
@@ -217,6 +218,9 @@ const Login = () => {
       if (res.data?.success) {
         const { token, user } = res.data.data;
         clearResendTimer();
+        if (mode === "signup") {
+          trackCompleteRegistration(user);
+        }
         dispatch(authSuccess({ user, token }));
         resolveRedirect(user);
       } else {

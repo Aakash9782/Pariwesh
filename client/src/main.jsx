@@ -28,6 +28,7 @@ import {
 } from "./pages/static/StaticPages.jsx";
 import { AlertProvider } from "./contexts/AlertContext.jsx";
 import ScrollToTop from "./components/common/ScrollToTop.jsx";
+import MetaPixelTracker from "./components/common/MetaPixelTracker.jsx";
 import Loader from "./components/common/Loader.jsx";
 import "./index.css";
 
@@ -66,6 +67,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <HelmetProvider>
             <BrowserRouter>
               <ScrollToTop />
+              <MetaPixelTracker />
               <Routes>
                 <Route path="/" element={<MainLayout />}>
                   <Route index element={<Home />} />
