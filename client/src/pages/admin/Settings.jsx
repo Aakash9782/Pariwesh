@@ -139,9 +139,9 @@ const SettingsPage = () => {
         const data = res.data.data || {};
         setDbSettings(data);
         setMetaForm({
-          metaPixelId: data.metaPixelId || "",
+          metaPixelId: data.metaPixelId || "28073830485569829",
           metaCapiToken: data.metaCapiToken || "",
-          metaTestEventCode: data.metaTestEventCode || "",
+          metaTestEventCode: data.metaTestEventCode || "TEST91325",
           metaTrackingEnabled:
             data.metaTrackingEnabled === undefined
               ? "true"

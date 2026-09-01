@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import SEO from "../../components/common/SEO.jsx";
+import { trackPixelEvent } from "../../services/metaPixel.js";
 
 // Reusable Layout wrapper for static files to ensure visual cohesion
 const PageWrapper = ({ title, children }) => (
@@ -141,7 +142,13 @@ export const Contact = () => {
                 className="w-full border border-slate-200 p-2 rounded focus:outline-none focus:border-accent-gold"
               ></textarea>
             </div>
-            <button className="bg-[#8a1c14] text-white hover:bg-neutral-900 px-4 py-2.5 rounded font-bold uppercase tracking-widest text-[9px] w-full transition">
+            <button
+              onClick={() => {
+                trackPixelEvent("Contact", { content_name: "Customer Inquiry" });
+                alert("Thank you for reaching out! Our team will contact you shortly.");
+              }}
+              className="bg-[#8a1c14] text-white hover:bg-neutral-900 px-4 py-2.5 rounded font-bold uppercase tracking-widest text-[9px] w-full transition"
+            >
               Send Message
             </button>
           </div>
