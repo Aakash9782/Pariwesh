@@ -14,7 +14,8 @@ import {
  */
 const MetaPixelTracker = () => {
   const location = useLocation();
-  const isInitializedRef = useRef(false);
+  const isFirstRender = useRef(true);
+  const isInitializedRef = useRef(typeof window !== "undefined" && Boolean(window.fbq));
 
   useEffect(() => {
     let isMounted = true;
@@ -24,7 +25,7 @@ const MetaPixelTracker = () => {
         const res = await API.get("/settings");
         if (res.data?.success && res.data?.data) {
           const settings = res.data.data;
-          const pixelId = settings.metaPixelId || "28073830485569829";
+          const pixelId = settings.metaPixelId || "992964093751142";
           const isEnabled =
             settings.metaTrackingEnabled !== undefined
               ? settings.metaTrackingEnabled === "true" ||
@@ -34,8 +35,6 @@ const MetaPixelTracker = () => {
           if (pixelId && isEnabled && isMounted) {
             initMetaPixel(pixelId);
             isInitializedRef.current = true;
-            // First page view
-            trackPageView(location.pathname);
             // Ensure cookies / fbclid are initialized
             getMetaTrackingCookies();
           }
@@ -53,9 +52,13 @@ const MetaPixelTracker = () => {
     };
   }, []);
 
-  // Track PageView on route navigation
+  // Track PageView on route navigation (skip initial render as index.html already fires PageView)
   useEffect(() => {
-    if (isInitializedRef.current) {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (isInitializedRef.current || (typeof window !== "undefined" && window.fbq)) {
       trackPageView(location.pathname);
     }
   }, [location.pathname, location.search]);
