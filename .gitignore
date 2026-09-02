@@ -48,6 +48,9 @@ server/production_audit_report.json
 server/production_reset_prep.js
 server/production_reset_live.js
 server/production_reset_final.js
+META_CONVERSIONS_API_AUDIT_REPORT.md
+*CAPI_REPORT.md
+*AUDIT_REPORT.md
 
 
 
