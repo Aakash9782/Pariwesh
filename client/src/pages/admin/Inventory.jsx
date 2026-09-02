@@ -62,7 +62,7 @@ const InventoryPage = () => {
 
   const handleEditStockInit = (prod) => {
     setEditingId(prod._id);
-    setEditStockState(prod.sizesStock || { S: 0, M: 0, L: 0, XL: 0, XXL: 0 });
+    setEditStockState(prod.sizesStock || { M: 0, L: 0, XL: 0, XXL: 0 });
   };
 
   const handleStockValueChange = (size, val) => {
@@ -288,7 +288,7 @@ const InventoryPage = () => {
                       <td className="py-4 px-5 text-center">
                         {isEditing ? (
                           <div className="flex items-center justify-center space-x-1.5 font-sans">
-                            {["S", "M", "L", "XL", "XXL"].map((sz) => (
+                            {["M", "L", "XL", "XXL"].map((sz) => (
                               <div key={sz} className="text-[10px] space-y-0.5">
                                 <span className="block text-slate-500 font-bold uppercase text-[9px]">
                                   {sz}
@@ -310,7 +310,7 @@ const InventoryPage = () => {
                           </div>
                         ) : (
                           <div className="flex items-center justify-center space-x-3.5">
-                            {["S", "M", "L", "XL", "XXL"].map((sz) => {
+                            {["M", "L", "XL", "XXL"].map((sz) => {
                               const val = p.sizesStock?.[sz] || 0;
                               return (
                                 <span

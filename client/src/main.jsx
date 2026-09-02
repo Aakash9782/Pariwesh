@@ -81,6 +81,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                   <Route path="wishlist" element={<Wishlist />} />
                   <Route path="cart" element={<Cart />} />
                   <Route path="login" element={<Login />} />
+                  <Route path="forgot-password" element={<Login initialMode="forgot" />} />
                   <Route path="profile" element={<Profile />} />
                   <Route path="about" element={<About />} />
                   <Route path="contact" element={<Contact />} />

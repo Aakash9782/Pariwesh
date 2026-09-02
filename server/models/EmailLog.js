@@ -31,6 +31,7 @@ const EmailLogSchema = new mongoose.Schema(
         "payment_success",
         "payment_failed",
         "order_shipped",
+        "password_reset",
         "other",
       ],
       default: "other",

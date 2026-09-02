@@ -337,25 +337,24 @@ const seedDatabase = async () => {
 
       // Stock configurations
       let stockLevel = 15;
-      let sStk = { S: 10, M: 10, L: 10, XL: 10, XXL: 10 };
+      let sStk = { M: 10, L: 10, XL: 10, XXL: 10 };
 
       if (i === 7 || i === 21) {
         // Out of stock
         stockLevel = 0;
-        sStk = { S: 0, M: 0, L: 0, XL: 0, XXL: 0 };
+        sStk = { M: 0, L: 0, XL: 0, XXL: 0 };
       } else if (i === 15 || i === 33) {
         // Low Stock
         stockLevel = 3;
-        sStk = { S: 1, M: 1, L: 1, XL: 0, XXL: 0 };
+        sStk = { M: 1, L: 1, XL: 1, XXL: 0 };
       } else {
-        stockLevel = 15 + (i % 25);
-        const val = Math.floor(stockLevel / 5);
+        stockLevel = 16 + (i % 24);
+        const val = Math.floor(stockLevel / 4);
         sStk = {
-          S: val,
           M: val,
           L: val,
           XL: val,
-          XXL: stockLevel - val * 4,
+          XXL: stockLevel - val * 3,
         };
       }
 
@@ -367,7 +366,7 @@ const seedDatabase = async () => {
         washCare: i % 2 === 0 ? "Dry Clean Only" : "Gentle Hand Wash",
         color: col,
         colorHex: ColorHexes[(i - 1) % ColorHexes.length],
-        sizes: ["S", "M", "L", "XL", "XXL"],
+        sizes: ["M", "L", "XL", "XXL"],
         sizesStock: sStk,
         mrp,
         discount: discountPct,

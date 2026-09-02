@@ -6,7 +6,6 @@ import ProductImageSlider from "../components/common/ProductImageSlider.jsx";
 import Icon from "../theme/icons.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import HeroSlider from "../components/home/HeroSlider.jsx";
-import VibeGrid from "../components/home/VibeGrid.jsx";
 import CampaignBanners from "../components/home/CampaignBanners.jsx";
 import Skeleton, { ProductSkeleton } from "../components/common/Skeleton.jsx";
 import { optimizeCloudinaryUrl } from "../utils/cloudinary.js";
@@ -15,6 +14,17 @@ import { toggleWishlistProduct } from "../redux/slices/wishlistSlice.js";
 import API from "../services/api.js";
 import { useAlert } from "../contexts/AlertContext.jsx";
 import { syncCartNow, syncWishlistNow } from "../services/hydrateCommerce.js";
+import {
+  RiSparklingFill,
+  RiStarFill,
+  RiTruckLine,
+  RiExchangeLine,
+  RiShieldCheckLine,
+  RiSecurePaymentLine,
+  RiDoubleQuotesL,
+  RiAwardLine,
+  RiLeafLine,
+} from "react-icons/ri";
 
 const safeSetItem = (key, value) => {
   try {
@@ -232,6 +242,11 @@ const Home = () => {
                 images,
                 video: p.video || "",
                 tag: p.tag || p.tags || "",
+                sizes:
+                  Array.isArray(p.sizes) && p.sizes.length > 0
+                    ? p.sizes.filter((s) => s !== "S")
+                    : ["M", "L", "XL", "XXL"],
+                sizesStock: p.sizesStock || { M: 10, L: 10, XL: 10, XXL: 10 },
               };
             });
           setProducts(dbProducts);
@@ -588,7 +603,7 @@ const Home = () => {
   ];
 
   return (
-    <div className="space-y-16 pb-20">
+    <div className="pb-20">
       <SEO
         title="PARIWESH | Premium Traditional Ethnic Wear & Kurtas"
         description="Discover premium traditional ethnic suit sets, handcrafted kurtis, and designer wear for women at PARIWESH. Elevated designs crafted with luxury fabrics."
@@ -614,14 +629,52 @@ const Home = () => {
         </div>
       </div>
 
-      {/* EXQUISITE CATEGORY SELECTION CIRCLES (Boutique Horizontal Navigation) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 md:pt-4">
-        <div className="flex flex-col space-y-4">
-          <div className="text-left space-y-1">
-            <span className="text-[10px] text-[#8a1c14] tracking-[0.2em] uppercase font-bold">
-              Shop by Category
+      {/* MOBILE TRUST BAR: Displayed directly below Marquee banner on Mobile (Matches Mockup Image 2) */}
+      <div className="md:hidden max-w-7xl mx-auto px-4 py-3.5 border-b border-slate-100 bg-white">
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="flex flex-col items-center space-y-1">
+            <div className="w-9 h-9 rounded-full border border-[#c5a880]/50 flex items-center justify-center text-[#8a1c14] bg-[#FDFBF7] shadow-xs">
+              <RiAwardLine size={18} />
+            </div>
+            <span className="text-[9px] font-bold text-slate-900 uppercase tracking-wider">
+              PREMIUM QUALITY
             </span>
-            <h2 className="text-2xl font-serif text-textPrimary">
+            <span className="text-[8px] text-slate-500">Finest Fabrics</span>
+          </div>
+          <div className="flex flex-col items-center space-y-1">
+            <div className="w-9 h-9 rounded-full border border-[#c5a880]/50 flex items-center justify-center text-[#8a1c14] bg-[#FDFBF7] shadow-xs">
+              <RiLeafLine size={18} />
+            </div>
+            <span className="text-[9px] font-bold text-slate-900 uppercase tracking-wider">
+              ETHICAL FASHION
+            </span>
+            <span className="text-[8px] text-slate-500">Sustainable Choices</span>
+          </div>
+          <div className="flex flex-col items-center space-y-1">
+            <div className="w-9 h-9 rounded-full border border-[#c5a880]/50 flex items-center justify-center text-[#8a1c14] bg-[#FDFBF7] shadow-xs">
+              <RiShieldCheckLine size={18} />
+            </div>
+            <span className="text-[9px] font-bold text-slate-900 uppercase tracking-wider">
+              TRUSTED BRAND
+            </span>
+            <span className="text-[8px] text-slate-500">Loved by Thousands</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-16 pt-6 md:pt-10">
+        {/* EXQUISITE CATEGORY SELECTION CIRCLES (Boutique Horizontal Navigation) */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 md:pt-4">
+        <div className="flex flex-col space-y-4">
+          <div className="text-center md:text-left space-y-1">
+            <div className="flex items-center justify-center md:justify-start space-x-2 text-[#c5a880]">
+              <span className="h-[1px] w-8 bg-[#c5a880]/50" />
+              <span className="text-[10px] text-[#8a1c14] tracking-[0.2em] uppercase font-bold">
+                Shop by Category
+              </span>
+              <span className="h-[1px] w-8 bg-[#c5a880]/50" />
+            </div>
+            <h2 className="text-2xl md:text-3xl font-serif text-textPrimary">
               Boutique Curations
             </h2>
           </div>
@@ -826,21 +879,19 @@ const Home = () => {
         </div>
       </section>
 
-      {/* SECTION 2.5: PICK YOUR VIBE (4-Column Style Mood Cards) */}
-      <VibeGrid vibeMoods={dynVibeMoods} settingsLoading={settingsLoading} />
-
       {/* SECTION 3: TRENDING COLLECTION (Interactive Cards Grid) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
-        <div className="text-center space-y-2">
-          <span className="text-xs text-[#8a1c14] tracking-widest uppercase font-bold">
-            Curated Picks
+        <div className="text-center space-y-2 mb-10 max-w-xl mx-auto">
+          <span className="text-[10px] text-[#8a1c14] tracking-[0.25em] uppercase font-bold flex items-center justify-center space-x-2">
+            <span className="h-[1px] w-6 bg-[#8a1c14]/30" />
+            <span>Curated Picks</span>
+            <span className="h-[1px] w-6 bg-[#8a1c14]/30" />
           </span>
-          <h2 className="text-3xl font-serif text-textPrimary">
+          <h2 className="text-2xl sm:text-3xl font-serif text-slate-900 tracking-wide">
             Trending Classics
           </h2>
-          <p className="text-xs text-textSecondary max-w-md mx-auto">
-            Explore styles that are currently high on demand. Exquisite finish,
-            luxury detailing.
+          <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+            Handpicked festive ensembles that define royal grace. Exquisite zari work and bespoke tailoring.
           </p>
         </div>
 
@@ -868,124 +919,215 @@ const Home = () => {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-8">
+          <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4 sm:gap-y-8">
             {products.map((product) => (
               <div
                 key={product._id}
-                className="group relative bg-transparent flex flex-col h-full transition-all duration-300"
+                className="group relative bg-white/80 hover:bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/80 hover:border-[#c5a880]/40 shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_12px_32px_rgba(197,168,128,0.18),0_4px_12px_rgba(0,0,0,0.03)] hover:-translate-y-1 flex flex-col h-full transition-all duration-400"
               >
                 {/* Product Badge */}
                 {product.tag && (
-                  <span className="absolute top-3 left-3 z-10 bg-[#8a1c14] text-white font-bold text-[9px] uppercase tracking-wider px-2.5 py-1 shadow-sm">
-                    {product.tag}
-                  </span>
+                  <div className="absolute top-3.5 left-3.5 z-20 pointer-events-none">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-xs bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.16em] shadow-md border border-amber-300/30">
+                      {product.tag}
+                    </span>
+                  </div>
                 )}
 
-                {/* Product Heart Selector */}
+                {/* Wishlist Button */}
                 <button
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     handleWishlistToggle(product);
                   }}
-                  className={`absolute top-3 right-3 z-10 p-2 rounded-full shadow-sm hover:scale-110 transition-all border border-borderLight bg-white/80 hover:bg-white ${
+                  className={`absolute top-3.5 right-3.5 z-20 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 shadow-sm border border-white/60 cursor-pointer ${
                     wishlistItems.some((p) => p._id === product._id)
-                      ? "text-[#8a1c14]"
-                      : "text-textPrimary hover:text-[#8a1c14]"
+                      ? "bg-white text-[#8a1c14] scale-105 ring-2 ring-[#8a1c14]/30"
+                      : "bg-white/85 hover:bg-white text-slate-700 hover:text-[#8a1c14] hover:scale-110 active:scale-95"
                   }`}
+                  aria-label="Wishlist"
                 >
                   {wishlistItems.some((p) => p._id === product._id) ? (
-                    <Icon name="HeartFill" size={16} />
+                    <Icon name="HeartFill" size={15} />
                   ) : (
-                    <Icon name="HeartOutline" size={16} />
+                    <Icon name="HeartOutline" size={15} />
                   )}
                 </button>
 
-                {/* Image / Video Container with Zoom */}
+                {/* Image / Video Container with Mehrab Arch */}
                 <Link
                   to={`/product/${product.slug}`}
-                  className="aspect-[4/5] overflow-hidden relative block bg-bgLight border border-borderLight"
+                  className="aspect-[3/4] sm:aspect-[4/5] overflow-hidden relative block bg-[#FBF9F5] rounded-t-lg transition-transform duration-500"
                   style={{ clipPath: "url(#mehrab-clip)" }}
                 >
                   {product.video ? (
                     <video
                       src={product.video}
-                      className="w-full h-full object-cover group-hover:scale-[1.12] transform-gpu transition-all duration-[800ms] ease-out origin-top"
+                      className="w-full h-full object-cover group-hover:scale-105 transform-gpu transition-transform duration-700 ease-out origin-top"
                       muted
                       loop
                       autoPlay
                       playsInline
                     />
                   ) : (
-                    <ProductImageSlider
-                      images={product.images}
-                      alt={product.name}
-                    />
+                    <div className="w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out">
+                      <ProductImageSlider
+                        images={product.images}
+                        alt={product.name}
+                      />
+                    </div>
                   )}
 
-                  {/* Arch outline SVG overlay */}
+                  {/* Royal Golden Mehrab Arch Filigree Stroke */}
                   <svg
                     viewBox="0 0 100 125"
-                    className="absolute inset-0 w-full h-full pointer-events-none fill-none stroke-accent-gold stroke-[1.5px] opacity-60"
+                    className="absolute inset-0 w-full h-full pointer-events-none fill-none stroke-accent-gold stroke-[1.8px] opacity-85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.15)]"
                     preserveAspectRatio="none"
                   >
                     <path d="M 0,125 L 0,43.75 C 0,35 8,32.5 12,30 C 12,22.5 22,18.75 28,15 C 28,10 38,7.5 44,3.75 C 47,1.25 49,0 50,0 C 51,0 53,1.25 56,3.75 C 62,7.5 72,10 72,15 C 78,18.75 88,22.5 88,30 C 92,32.5 100,35 100,43.75 L 100,125" />
                   </svg>
 
-                  {/* Add to cart hover overlay */}
-                  <div className="absolute inset-0 bg-secondary/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4 space-y-2 z-20">
-                    <span className="text-white text-[9px] uppercase tracking-widest font-bold text-center block">
-                      Quick Buy Size
-                    </span>
-                    <div className="flex justify-center gap-1">
-                      {["S", "M", "L", "XL"].map((size) => (
-                        <button
-                          key={size}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleQuickAddToCart(product, size);
-                          }}
-                          className="w-8 h-8 rounded-full bg-primary/95 text-textPrimary hover:bg-[#8a1c14] hover:text-white text-[10px] font-bold shadow-sm transition-all duration-200"
-                        >
-                          {size}
-                        </button>
-                      ))}
+                  {/* Floating Rating Badge (Inspired by Reference Design) */}
+                  <div className="absolute bottom-2.5 right-2.5 z-10 bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10.5px] font-bold text-slate-800 shadow-sm border border-white/90 flex items-center space-x-1 pointer-events-none transition-opacity duration-200 group-hover:opacity-0 sm:group-hover:opacity-0">
+                    <span className="text-amber-500 text-[11px]">★</span>
+                    <span>{product.rating || "4.8"}</span>
+                    <span className="text-slate-400 font-normal">({product.reviewsCount ? `${product.reviewsCount}+` : "120+"})</span>
+                  </div>
+
+                  {/* Subtle Gradient Shade at Hem */}
+                  <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 via-black/10 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                  {/* Quick Buy Slide-Up Frosted Glass Dock (DESKTOP HOVER ONLY) */}
+                  <div className="hidden md:block absolute inset-x-0 bottom-0 z-20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out pointer-events-none group-hover:pointer-events-auto">
+                    <div className="bg-white/95 backdrop-blur-md px-2 py-2.5 border-t border-accent-gold/40 shadow-[0_-4px_20px_rgba(0,0,0,0.12)] flex flex-col items-center space-y-1.5">
+                      <span className="text-[9px] uppercase tracking-[0.2em] font-extrabold text-slate-700 flex items-center space-x-1 select-none">
+                        <span className="text-accent-gold text-[8px]">✦</span>
+                        <span>Quick Buy Size</span>
+                        <span className="text-accent-gold text-[8px]">✦</span>
+                      </span>
+                      <div className="flex justify-center items-center gap-1.5 w-full px-1">
+                        {(product.sizes && product.sizes.length > 0
+                          ? product.sizes.filter((s) => s !== "S")
+                          : ["M", "L", "XL", "XXL"]
+                        ).map((size) => {
+                          const isOutOfStock =
+                            product.sizesStock &&
+                            product.sizesStock[size] !== undefined &&
+                            product.sizesStock[size] <= 0;
+                          return (
+                            <button
+                              key={size}
+                              disabled={isOutOfStock}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleQuickAddToCart(product, size);
+                              }}
+                              className={`flex-1 h-7 rounded text-[10px] font-bold tracking-wider uppercase transition-all duration-200 cursor-pointer flex items-center justify-center font-sans ${
+                                isOutOfStock
+                                  ? "bg-slate-100 text-slate-300 border border-slate-200 cursor-not-allowed line-through"
+                                  : "bg-white text-slate-800 border border-slate-200 hover:border-[#8a1c14] hover:bg-[#8a1c14] hover:text-white shadow-xs hover:shadow-sm active:scale-95"
+                              }`}
+                              title={
+                                isOutOfStock
+                                  ? `${size} (Out of Stock)`
+                                  : `Add Size ${size} to Bag`
+                              }
+                            >
+                              {size}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </Link>
 
                 {/* Info area */}
-                <div className="py-4 flex flex-col flex-grow justify-between space-y-2 text-left">
+                <div className="pt-3 pb-1 px-1 flex flex-col flex-grow justify-between space-y-2 text-left">
                   <div className="space-y-1">
-                    <span className="text-[9px] text-[#8a1c14] uppercase tracking-widest font-black block">
-                      {product.category}
-                    </span>
-                    <h3 className="text-xs font-semibold text-textPrimary leading-snug group-hover:text-[#8a1c14] transition-colors line-clamp-2">
+                    {/* Category & Fabric Tag */}
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[9.5px] text-[#c5a880] uppercase tracking-[0.18em] font-extrabold block truncate">
+                        {product.fabric ? `${product.fabric} • ` : ""}{product.category || "Ethnic Wear"}
+                      </span>
+                      {product.colorVariants && product.colorVariants.length > 1 && (
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider shrink-0">
+                          {product.colorVariants.length} Colors
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Product Title (1-Tap Navigates Instantly) */}
+                    <h3 className="text-xs sm:text-[13px] font-sans font-medium text-slate-900 leading-snug group-hover:text-[#8a1c14] transition-colors duration-200 line-clamp-2 h-9">
                       <Link to={`/product/${product.slug}`}>
                         {product.name}
                       </Link>
                     </h3>
+
+                    {/* Available Sizes Micro-Indicator */}
+                    <div className="flex items-center space-x-1.5 pt-0.5 font-sans text-[10px]">
+                      <span className="text-slate-400 font-semibold uppercase text-[9px] tracking-wider">Sizes:</span>
+                      <div className="flex items-center space-x-1">
+                        {(product.sizes && product.sizes.length > 0
+                          ? product.sizes.filter((s) => s !== "S")
+                          : ["M", "L", "XL", "XXL"]
+                        ).map((sz) => {
+                          const isOut =
+                            product.sizesStock &&
+                            product.sizesStock[sz] !== undefined &&
+                            product.sizesStock[sz] <= 0;
+                          return (
+                            <span
+                              key={sz}
+                              className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${
+                                isOut
+                                  ? "text-slate-300 border-slate-200 line-through bg-slate-50"
+                                  : "text-slate-700 border-slate-200 bg-white shadow-2xs"
+                              }`}
+                            >
+                              {sz}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex items-center space-x-2 text-xs">
-                    <span className="text-[#8a1c14] font-bold">
+                  <div className="flex items-baseline space-x-2 pt-0.5 font-sans">
+                    <span className="text-sm sm:text-base font-extrabold text-slate-900 font-sans tracking-tight">
                       ₹{product.sellingPrice}
                     </span>
-                    <span className="text-textSecondary line-through font-medium">
-                      ₹{product.mrp}
-                    </span>
+                    {product.mrp > product.sellingPrice && (
+                      <>
+                        <span className="text-[11px] text-slate-400 line-through font-normal font-sans">
+                          ₹{product.mrp}
+                        </span>
+                        <span className="text-[8.5px] font-extrabold text-[#8a1c14] bg-rose-50 border border-rose-200/70 px-1.5 py-0.2 uppercase tracking-wider font-sans rounded">
+                          {Math.round(
+                            ((product.mrp - product.sellingPrice) /
+                              product.mrp) *
+                              100,
+                          )}
+                          % OFF
+                        </span>
+                      </>
+                    )}
                   </div>
 
-                  <div className="pt-0.5">
-                    <span className="bg-[#8a1c14]/10 text-[#8a1c14] border border-[#8a1c14]/20 text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-none font-bold inline-block">
-                      {Math.round(
-                        ((product.mrp - product.sellingPrice) / product.mrp) *
-                          100,
-                      )}
-                      % OFF
-                    </span>
-                  </div>
+                  {/* Prominent Full-Width ADD TO CART Button (Subtle 3D Glassy) */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleQuickAddToCart(product, "M");
+                    }}
+                    className="w-full bg-gradient-to-b from-[#9b2017] to-[#7a1810] hover:from-[#a8251b] hover:to-[#861c13] text-white font-extrabold text-[11px] uppercase tracking-[0.15em] py-2.5 rounded-xl border border-rose-300/25 shadow-[0_4px_14px_rgba(138,28,20,0.22),inset_0_1px_0_rgba(255,255,255,0.25),inset_0_-1px_0_rgba(0,0,0,0.2)] hover:shadow-[0_6px_20px_rgba(138,28,20,0.38),inset_0_1px_0_rgba(255,255,255,0.35)] active:scale-[0.98] active:translate-y-[1px] transition-all duration-200 cursor-pointer flex items-center justify-center space-x-1.5 mt-1"
+                  >
+                    <span>ADD TO CART</span>
+                  </button>
                 </div>
               </div>
             ))}
@@ -993,53 +1135,208 @@ const Home = () => {
         )}
       </section>
 
-      {/* SECTION 4: WHY CHOOSE PARIWESH */}
-      <section className="bg-primary py-16 border-t border-borderLight grid grid-cols-1 md:grid-cols-3 gap-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center text-center space-y-3">
-          <div className="w-12 h-12 rounded-full border border-[#8a1c14]/20 bg-[#FAF7F3] flex items-center justify-center text-[#8a1c14] font-script text-xl italic font-bold">
-            1
-          </div>
-          <h3 className="text-sm font-semibold tracking-wide text-textPrimary uppercase">
-            handmade with{" "}
-            <span className="font-script text-[#8a1c14] text-lg lowercase tracking-normal">
-              love.
+      {/* SECTION 4: ROYAL BRAND PILLARS */}
+      <section className="py-16 border-t border-slate-200/50 bg-[#FBF9F5]/70">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-2 max-w-xl mx-auto">
+            <span className="text-[10px] text-[#8a1c14] tracking-[0.25em] uppercase font-bold flex items-center justify-center space-x-2">
+              <span className="h-[1px] w-6 bg-[#8a1c14]/30" />
+              <span>The Pariwesh Standard</span>
+              <span className="h-[1px] w-6 bg-[#8a1c14]/30" />
             </span>
-          </h3>
-          <p className="text-[11px] text-textSecondary leading-relaxed max-w-xs font-light">
-            Handpicked collections designed by seasoned stylists with premium
-            zari and block threadings.
-          </p>
-        </div>
-        <div className="flex flex-col items-center text-center space-y-3">
-          <div className="w-12 h-12 rounded-full border border-[#8a1c14]/20 bg-[#FAF7F3] flex items-center justify-center text-[#8a1c14] font-script text-xl italic font-bold">
-            2
+            <h2 className="text-2xl sm:text-3xl font-serif text-slate-900 tracking-wide">
+              The Essence of Royalty
+            </h2>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Every creation honors time-tested Indian handicraft traditions blended with contemporary elegance.
+            </p>
           </div>
-          <h3 className="text-sm font-semibold tracking-wide text-textPrimary uppercase">
-            your{" "}
-            <span className="font-script text-[#8a1c14] text-lg lowercase tracking-normal">
-              perfect fit.
-            </span>
-          </h3>
-          <p className="text-[11px] text-textSecondary leading-relaxed max-w-xs font-light">
-            Each suit is custom adjusted, following extreme validation checks.
-          </p>
-        </div>
-        <div className="flex flex-col items-center text-center space-y-3">
-          <div className="w-12 h-12 rounded-full border border-[#8a1c14]/20 bg-[#FAF7F3] flex items-center justify-center text-[#8a1c14] font-script text-xl italic font-bold">
-            3
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Pillar 1 */}
+            <div className="bg-white/80 hover:bg-white backdrop-blur-md border border-slate-200/80 hover:border-accent-gold/60 p-8 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl transition-all duration-500 text-center flex flex-col items-center space-y-4 group">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-accent-gold/40 flex items-center justify-center text-accent-gold group-hover:scale-110 group-hover:bg-[#8a1c14] group-hover:text-white transition-all duration-300 shadow-xs">
+                <RiSparklingFill size={26} />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-sm font-serif font-bold text-slate-900 tracking-wide uppercase">
+                  Handcrafted with Love
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed font-light">
+                  Meticulously hand-embroidered by generational artisans using authentic Zari, Resham, and Gotapatti threading.
+                </p>
+              </div>
+            </div>
+
+            {/* Pillar 2 */}
+            <div className="bg-white/80 hover:bg-white backdrop-blur-md border border-slate-200/80 hover:border-accent-gold/60 p-8 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl transition-all duration-500 text-center flex flex-col items-center space-y-4 group">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-accent-gold/40 flex items-center justify-center text-accent-gold group-hover:scale-110 group-hover:bg-[#8a1c14] group-hover:text-white transition-all duration-300 shadow-xs">
+                <RiShieldCheckLine size={26} />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-sm font-serif font-bold text-slate-900 tracking-wide uppercase">
+                  Tailored Precision Fit
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed font-light">
+                  Curated in standard luxury sizes (M to XXL) with generous inner seam margins for effortless bespoke custom fitting.
+                </p>
+              </div>
+            </div>
+
+            {/* Pillar 3 */}
+            <div className="bg-white/80 hover:bg-white backdrop-blur-md border border-slate-200/80 hover:border-accent-gold/60 p-8 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl transition-all duration-500 text-center flex flex-col items-center space-y-4 group">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-accent-gold/40 flex items-center justify-center text-accent-gold group-hover:scale-110 group-hover:bg-[#8a1c14] group-hover:text-white transition-all duration-300 shadow-xs">
+                <RiTruckLine size={26} />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-sm font-serif font-bold text-slate-900 tracking-wide uppercase">
+                  Regal Muslin Packaging
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed font-light">
+                  Every ensemble arrives wrapped in pure cotton muslin cloths nestled inside a royal rigid keepsake storage box.
+                </p>
+              </div>
+            </div>
           </div>
-          <h3 className="text-sm font-semibold tracking-wide text-textPrimary uppercase">
-            pure{" "}
-            <span className="font-script text-[#8a1c14] text-lg lowercase tracking-normal">
-              heritage.
-            </span>
-          </h3>
-          <p className="text-[11px] text-textSecondary leading-relaxed max-w-xs font-light">
-            All order sets are dispatched in premium cardboard containers
-            wrapped in cotton muslin cloths.
-          </p>
         </div>
       </section>
+
+      {/* SECTION 5: PATRON CHRONICLES (TESTIMONIALS & SOCIAL PROOF) */}
+      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="text-center space-y-2 max-w-xl mx-auto">
+          <span className="text-[10px] text-[#8a1c14] tracking-[0.25em] uppercase font-bold flex items-center justify-center space-x-2">
+            <span className="h-[1px] w-6 bg-[#8a1c14]/30" />
+            <span>Royal Patrons</span>
+            <span className="h-[1px] w-6 bg-[#8a1c14]/30" />
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-serif text-slate-900 tracking-wide">
+            Voices of Elegance
+          </h2>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Discover why connoisseurs across India celebrate their festive moments draped in PARIWESH.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+          {/* Review 1 */}
+          <div className="bg-white/60 hover:bg-white backdrop-blur-md p-7 rounded-2xl border border-slate-200/80 hover:border-accent-gold/50 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col justify-between space-y-5">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex text-amber-500 space-x-1">
+                  {[...Array(5)].map((_, i) => (
+                    <RiStarFill key={i} size={14} />
+                  ))}
+                </div>
+                <RiDoubleQuotesL size={22} className="text-accent-gold/40" />
+              </div>
+              <p className="text-xs text-slate-700 leading-relaxed font-serif italic">
+                "The embroidery on the Farshi Salwar set was beyond expectations. Wore it for my sister's Sangeet in Jaipur and received countless compliments."
+              </p>
+            </div>
+            <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 font-sans">Ananya Sharma</h4>
+                <p className="text-[10px] text-slate-400">Jaipur, Rajasthan</p>
+              </div>
+              <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                Verified Patron
+              </span>
+            </div>
+          </div>
+
+          {/* Review 2 */}
+          <div className="bg-white/60 hover:bg-white backdrop-blur-md p-7 rounded-2xl border border-slate-200/80 hover:border-accent-gold/50 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col justify-between space-y-5">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex text-amber-500 space-x-1">
+                  {[...Array(5)].map((_, i) => (
+                    <RiStarFill key={i} size={14} />
+                  ))}
+                </div>
+                <RiDoubleQuotesL size={22} className="text-accent-gold/40" />
+              </div>
+              <p className="text-xs text-slate-700 leading-relaxed font-serif italic">
+                "Extremely comfortable yet looks so regal. The fabric breathes beautifully, doesn't crease easily, and the finishing is top-notch couture quality."
+              </p>
+            </div>
+            <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 font-sans">Pooja Singhania</h4>
+                <p className="text-[10px] text-slate-400">Mumbai, Maharashtra</p>
+              </div>
+              <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                Verified Patron
+              </span>
+            </div>
+          </div>
+
+          {/* Review 3 */}
+          <div className="bg-white/60 hover:bg-white backdrop-blur-md p-7 rounded-2xl border border-slate-200/80 hover:border-accent-gold/50 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col justify-between space-y-5">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex text-amber-500 space-x-1">
+                  {[...Array(5)].map((_, i) => (
+                    <RiStarFill key={i} size={14} />
+                  ))}
+                </div>
+                <RiDoubleQuotesL size={22} className="text-accent-gold/40" />
+              </div>
+              <p className="text-xs text-slate-700 leading-relaxed font-serif italic">
+                "The Mehrab arch silhouette and bespoke fit in size XL felt made-to-measure. Pariwesh has become my undisputed go-to festive label."
+              </p>
+            </div>
+            <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 font-sans">Dr. Meera Nambiar</h4>
+                <p className="text-[10px] text-slate-400">Bengaluru, Karnataka</p>
+              </div>
+              <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                Verified Patron
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 6: ROYAL TRUST GUARANTEES BAR */}
+      <section className="border-y border-slate-200/60 bg-white/80 backdrop-blur-md py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div className="flex flex-col items-center space-y-1.5 p-2">
+              <RiTruckLine size={24} className="text-accent-gold" />
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Free Express Shipping
+              </h4>
+              <p className="text-[10px] text-slate-500">Pan-India on all orders</p>
+            </div>
+
+            <div className="flex flex-col items-center space-y-1.5 p-2">
+              <RiExchangeLine size={24} className="text-accent-gold" />
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                7-Day Easy Exchange
+              </h4>
+              <p className="text-[10px] text-slate-500">Hassle-free size & fit swaps</p>
+            </div>
+
+            <div className="flex flex-col items-center space-y-1.5 p-2">
+              <RiSparklingFill size={24} className="text-accent-gold" />
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                100% Handcrafted
+              </h4>
+              <p className="text-[10px] text-slate-500">Authentic artisan weaving</p>
+            </div>
+
+            <div className="flex flex-col items-center space-y-1.5 p-2">
+              <RiSecurePaymentLine size={24} className="text-accent-gold" />
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Secure Payments & COD
+              </h4>
+              <p className="text-[10px] text-slate-500">256-Bit SSL Encrypted</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      </div>
     </div>
   );
 };

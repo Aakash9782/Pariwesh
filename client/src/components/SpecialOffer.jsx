@@ -114,8 +114,8 @@ const SpecialOffer = ({
               Save {PREPAID_DISCOUNT}% instantly on prepaid orders.
             </p>
             {isPrepaidEligible && subtotal > 0 && (
-              <p className="text-[10px] font-bold text-accent-gold">
-                Instant Discount: -₹{prepaidDiscountAmount}
+              <p className="text-[10px] font-bold text-accent-gold font-sans tracking-tight">
+                Instant Discount: -₹{Math.round(prepaidDiscountAmount).toLocaleString("en-IN")}
               </p>
             )}
           </div>
@@ -154,8 +154,8 @@ const SpecialOffer = ({
               based on delivered orders.
             </p>
             {isFifthPurchaseEligible && !couponApplied && subtotal > 0 && (
-              <p className="text-[10px] font-bold text-accent-gold">
-                Loyalty Discount: -₹{fifthDiscountAmount}
+              <p className="text-[10px] font-bold text-accent-gold font-sans tracking-tight">
+                Loyalty Discount: -₹{Math.round(fifthDiscountAmount).toLocaleString("en-IN")}
               </p>
             )}
           </div>

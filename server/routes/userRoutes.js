@@ -11,6 +11,10 @@ import {
   deleteUser,
   refreshAccessToken,
   logoutUser,
+  forgotPassword,
+  verifyResetOtp,
+  resetPassword,
+  resendResetOtp,
 } from "../controllers/userController.js";
 import { protect, authorize } from "../middleware/auth.js";
 
@@ -20,6 +24,10 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/verify-otp", verifyOtp);
 router.post("/resend-otp", resendOtp);
+router.post("/forgot-password", forgotPassword);
+router.post("/verify-reset-otp", verifyResetOtp);
+router.post("/reset-password", resetPassword);
+router.post("/resend-reset-otp", resendResetOtp);
 router.post("/refresh", refreshAccessToken);
 router.post("/logout", logoutUser);
 router.get("/profile", protect, getUserProfile);

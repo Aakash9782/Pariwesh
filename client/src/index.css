@@ -445,3 +445,61 @@ textarea {
 .admin-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* Glassmorphism Styles & Buttons */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04);
+}
+
+.btn-glass {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(197, 168, 128, 0.5);
+  box-shadow: 0 6px 20px rgba(197, 168, 128, 0.2), inset 0 1px 0 rgba(255, 255, 255, 1);
+  transform: translateY(-1px);
+}
+
+.btn-glass-gold {
+  background: linear-gradient(135deg, rgba(197, 168, 128, 0.92), rgba(168, 143, 101, 0.95));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(197, 168, 128, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-glass-gold:hover {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.98), rgba(184, 151, 46, 0.98));
+  box-shadow: 0 6px 25px rgba(197, 168, 128, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transform: translateY(-1px);
+}
+
+.btn-glass-dark {
+  background: rgba(18, 18, 20, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-glass-dark:hover {
+  background: rgba(10, 10, 12, 0.98);
+  border-color: rgba(197, 168, 128, 0.4);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}

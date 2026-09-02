@@ -7,6 +7,10 @@ import {
   RiPercentLine,
   RiSecurePaymentLine,
   RiCheckboxCircleLine,
+  RiShieldCheckLine,
+  RiRefreshLine,
+  RiTruckLine,
+  RiShoppingBagLine,
 } from "react-icons/ri";
 import Button from "../../components/common/Button.jsx";
 import Input from "../../components/form/Input.jsx";
@@ -41,6 +45,11 @@ const loadRazorpayScript = () =>
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
   });
+
+const formatCurrency = (val) => {
+  const num = Math.round(Number(val) || 0);
+  return `₹${num.toLocaleString("en-IN")}`;
+};
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -628,19 +637,26 @@ const Cart = () => {
 
   if (cartItems.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-24 text-center space-y-6">
+      <div className="max-w-2xl mx-auto px-4 py-28 text-center space-y-7">
         <SEO title="Empty Bag" noindex={true} />
-        <h2 className="text-3xl font-display font-medium text-textPrimary uppercase tracking-wider">
-          Your bag is empty
-        </h2>
-        <p className="text-xs text-textSecondary">
-          Looks like you haven't added any luxury ensembles to your shopping bag
-          yet.
-        </p>
-        <div className="pt-4 flex justify-center">
+        <div className="w-20 h-20 mx-auto rounded-full bg-amber-50 border border-accent-gold/40 flex items-center justify-center text-accent-gold shadow-sm">
+          <RiShoppingBagLine size={36} />
+        </div>
+        <div className="space-y-2">
+          <span className="text-[10px] text-[#8a1c14] tracking-[0.25em] uppercase font-bold">
+            ✦ Your Royal Wardrobe Awaits ✦
+          </span>
+          <h2 className="text-3xl font-serif font-medium text-slate-900 tracking-wide">
+            Your Bag is Empty
+          </h2>
+          <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+            Discover our artisanal festive sets, pure cotton embroidered farshi ensembles, and signature kurtas crafted for royal grace.
+          </p>
+        </div>
+        <div className="pt-2 flex justify-center">
           <Link to="/shop">
-            <Button variant="primary" size="md">
-              Browse Catalog
+            <Button variant="gold" size="lg" className="rounded-xl px-8 shadow-md">
+              Explore Collections
             </Button>
           </Link>
         </div>
@@ -649,16 +665,64 @@ const Cart = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <SEO
         title={
           checkoutStep ? "Secure Payment Checkout" : "Shopping Bag Collection"
         }
         noindex={true}
       />
-      <h1 className="text-3xl font-display font-medium uppercase tracking-wider text-textPrimary mb-10">
-        Shopping Bag Ensembles
-      </h1>
+
+      {/* 3-STEP LUXURY CHECKOUT STEPPER */}
+      <div className="max-w-md mx-auto mb-10 px-4">
+        <div className="flex items-center justify-between relative">
+          <div className="absolute top-4 left-6 right-6 h-[2px] bg-slate-200 -translate-y-1/2 z-0" />
+          <div
+            className="absolute top-4 left-6 h-[2px] bg-accent-gold -translate-y-1/2 z-0 transition-all duration-500"
+            style={{ width: checkoutStep ? "100%" : "50%" }}
+          />
+
+          {/* Step 1: Bag */}
+          <div className="relative z-10 flex flex-col items-center space-y-1.5 cursor-pointer" onClick={() => setCheckoutStep(false)}>
+            <div className="w-8 h-8 rounded-full bg-accent-gold text-white font-bold text-xs flex items-center justify-center shadow-md ring-4 ring-amber-50">
+              1
+            </div>
+            <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-800">
+              Shopping Bag
+            </span>
+          </div>
+
+          {/* Step 2: Shipping */}
+          <div className="relative z-10 flex flex-col items-center space-y-1.5">
+            <div
+              className={`w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center transition-all shadow-sm ring-4 ring-amber-50/50 ${
+                checkoutStep
+                  ? "bg-accent-gold text-white shadow-md"
+                  : "bg-white border-2 border-slate-300 text-slate-400"
+              }`}
+            >
+              2
+            </div>
+            <span
+              className={`text-[10px] uppercase font-extrabold tracking-wider ${
+                checkoutStep ? "text-slate-800" : "text-slate-400"
+              }`}
+            >
+              Shipping & Pay
+            </span>
+          </div>
+
+          {/* Step 3: Confirmation */}
+          <div className="relative z-10 flex flex-col items-center space-y-1.5">
+            <div className="w-8 h-8 rounded-full bg-white border-2 border-slate-200 text-slate-300 font-bold text-xs flex items-center justify-center shadow-2xs">
+              3
+            </div>
+            <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-300">
+              Confirmation
+            </span>
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start animate-fade-in">
         {/* LEFT COMPONENT COLUMN (Cart Items List vs Address details checkout step) */}
@@ -738,9 +802,25 @@ const Cart = () => {
                             {item.variant.color}
                           </span>
                         </p>
-                        <p className="text-xs font-bold text-textPrimary">
-                          ₹{item.product.price}
-                        </p>
+                        <div className="flex items-baseline flex-wrap gap-x-2.5 gap-y-1 pt-1 font-sans">
+                          <span className="text-sm font-bold text-slate-900 tracking-tight font-sans">
+                            {formatCurrency(item.product.price)}
+                          </span>
+                          {item.product.mrp && item.product.mrp > item.product.price && (
+                            <span className="text-[11px] text-slate-400 line-through font-normal font-sans">
+                              {formatCurrency(item.product.mrp)}
+                            </span>
+                          )}
+                          {displayQty > 1 && (
+                            <span className="text-[11px] text-amber-800 font-medium font-sans">
+                              ({displayQty} × {formatCurrency(item.product.price)} ={" "}
+                              <strong className="text-slate-900 font-bold">
+                                {formatCurrency(item.product.price * displayQty)}
+                              </strong>
+                              )
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -1040,8 +1120,8 @@ const Cart = () => {
               {couponApplied && (
                 <p className="text-[10px] text-green-600 font-medium flex items-center space-x-1">
                   <span>
-                    ✔ Coupon {coupon.trim().toUpperCase()} applied! ₹{discount}{" "}
-                    discount registered.
+                    ✔ Coupon {coupon.trim().toUpperCase()} applied!{" "}
+                    {formatCurrency(discount)} discount registered.
                   </span>
                 </p>
               )}
@@ -1156,8 +1236,8 @@ const Cart = () => {
               {couponApplied && (
                 <p className="text-[10px] text-green-600 font-medium flex items-center space-x-1">
                   <span>
-                    ✔ Coupon {coupon.trim().toUpperCase()} applied! ₹{discount}{" "}
-                    discount registered.
+                    ✔ Coupon {coupon.trim().toUpperCase()} applied!{" "}
+                    {formatCurrency(discount)} discount registered.
                   </span>
                 </p>
               )}
@@ -1170,59 +1250,93 @@ const Cart = () => {
           )}
 
           {/* Lines detailing billing */}
-          <div className="space-y-3.5 text-xs text-textSecondary font-medium">
-            <div className="flex justify-between">
+          <div className="space-y-3.5 text-xs text-slate-600 font-sans font-medium">
+            <div className="flex justify-between items-center">
               <span>Cart Subtotal</span>
-              <span className="text-textPrimary font-bold">₹{subtotal}</span>
+              <span className="text-sm font-bold text-slate-900 font-sans tracking-tight">
+                {formatCurrency(subtotal)}
+              </span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span>Delivery Charges</span>
               <span>
                 {delivery === 0 ? (
-                  <span className="text-green-600 font-bold">FREE</span>
+                  <span className="text-[11px] text-emerald-700 font-bold uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 font-sans">
+                    Free Delivery
+                  </span>
                 ) : (
-                  `₹${delivery}`
+                  <span className="text-sm font-bold text-slate-900 font-sans tracking-tight">
+                    {formatCurrency(delivery)}
+                  </span>
                 )}
               </span>
             </div>
             {finalDiscount > 0 && (
-              <div className="flex justify-between text-green-600 bg-success/10 p-2 rounded">
-                <span>
+              <div className="flex justify-between items-center text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 px-3 py-2 rounded-lg font-sans">
+                <span className="font-medium text-[11px]">
                   {couponApplied ? "Coupon Discount" : "Special Offer Discount"}
                 </span>
-                <span className="font-bold">-₹{finalDiscount}</span>
+                <span className="text-sm font-bold tracking-tight font-sans">
+                  -{formatCurrency(finalDiscount)}
+                </span>
               </div>
             )}
 
-            <div className="border-t border-borderLight pt-4 flex justify-between text-sm font-bold text-textPrimary leading-normal">
-              <span>Total Payable</span>
-              <span className="text-accent-gold font-display font-semibold text-lg">
-                ₹{grandTotal}
+            <div className="border-t border-slate-200/80 pt-4 flex justify-between items-baseline font-sans">
+              <div className="space-y-0.5">
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-900 block font-sans">
+                  Total Payable
+                </span>
+                <span className="text-[10px] text-slate-500 font-normal font-sans">
+                  Inclusive of all taxes
+                </span>
+              </div>
+              <span className="text-2xl font-extrabold text-[#8a1c14] font-sans tracking-tight tabular-nums">
+                {formatCurrency(grandTotal)}
               </span>
             </div>
           </div>
 
           {/* Main button drawer toggling step */}
           {!checkoutStep ? (
-            <Button
-              onClick={() => {
-                if (!user) {
-                  navigate("/login?redirect=cart");
-                } else {
-                  setCheckoutStep(true);
-                }
-              }}
-              variant="primary"
-              size="lg"
-              className="w-full space-x-2"
-            >
-              <RiSecurePaymentLine size={16} />
-              <span>Checkout Address details</span>
-            </Button>
+            <div className="space-y-4">
+              <Button
+                onClick={() => {
+                  if (!user) {
+                    navigate("/login?redirect=cart");
+                  } else {
+                    setCheckoutStep(true);
+                  }
+                }}
+                variant="primary"
+                size="lg"
+                className="w-full space-x-2 rounded-xl py-4 text-xs tracking-wider shadow-lg"
+              >
+                <RiSecurePaymentLine size={16} />
+                <span>Proceed to Checkout</span>
+              </Button>
+
+              <div className="pt-2 flex items-center justify-center space-x-3 text-[10px] text-slate-500 font-sans">
+                <span className="flex items-center space-x-1">
+                  <RiShieldCheckLine className="text-accent-gold" size={14} />
+                  <span>256-Bit SSL Secure</span>
+                </span>
+                <span>•</span>
+                <span className="flex items-center space-x-1">
+                  <RiRefreshLine className="text-accent-gold" size={14} />
+                  <span>7-Day Returns</span>
+                </span>
+                <span>•</span>
+                <span className="flex items-center space-x-1">
+                  <RiTruckLine className="text-accent-gold" size={14} />
+                  <span>Express Dispatch</span>
+                </span>
+              </div>
+            </div>
           ) : (
-            <div className="text-[9px] text-center text-textSecondary leading-relaxed">
-              Protected by SSL encryption. All transactions are securely
-              verified.
+            <div className="text-[10px] text-center text-slate-500 leading-relaxed font-sans pt-2 border-t border-slate-100 flex items-center justify-center space-x-2">
+              <RiShieldCheckLine className="text-accent-gold" size={15} />
+              <span>Protected by 256-Bit SSL Encryption • Razorpay Certified</span>
             </div>
           )}
         </aside>

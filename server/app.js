@@ -129,6 +129,10 @@ app.use("/api/v1/users/login", authLimiter);
 app.use("/api/v1/users/register", authLimiter);
 app.use("/api/v1/users/verify-otp", authLimiter);
 app.use("/api/v1/users/resend-otp", authLimiter);
+app.use("/api/v1/users/forgot-password", authLimiter);
+app.use("/api/v1/users/verify-reset-otp", authLimiter);
+app.use("/api/v1/users/reset-password", authLimiter);
+app.use("/api/v1/users/resend-reset-otp", authLimiter);
 
 // 5. TEST/HEALTH ROUTE
 app.get("/api/v1/health", (req, res) => {

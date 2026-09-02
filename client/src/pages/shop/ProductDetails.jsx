@@ -16,6 +16,7 @@ import {
   RiScissorsLine,
   RiGlobeLine,
   RiScalesLine,
+  RiCheckLine,
 } from "react-icons/ri";
 import Button from "../../components/common/Button.jsx";
 import Skeleton from "../../components/common/Skeleton.jsx";
@@ -24,6 +25,7 @@ import { toggleWishlistProduct } from "../../redux/slices/wishlistSlice.js";
 import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
 import SEO from "../../components/common/SEO.jsx";
+import SizeChartModal from "../../components/common/SizeChartModal.jsx";
 import {
   syncCartNow,
   syncWishlistNow,
@@ -33,6 +35,11 @@ import {
   trackAddToCart,
   trackAddToWishlist,
 } from "../../services/metaPixel.js";
+
+const formatCurrency = (val) => {
+  const num = Math.round(Number(val) || 0);
+  return `₹${num.toLocaleString("en-IN")}`;
+};
 
 const ProductDetails = () => {
   const navigate = useNavigate();
@@ -44,6 +51,7 @@ const ProductDetails = () => {
   const wishlist = useSelector((state) => state.wishlist.products);
   const [product, setProduct] = useState(null);
   const [activeImage, setActiveImage] = useState("");
+  const [activeVideo, setActiveVideo] = useState(null);
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -51,6 +59,17 @@ const ProductDetails = () => {
   const [fetching, setFetching] = useState(true);
   const [activeOffers, setActiveOffers] = useState([]);
   const [copiedCode, setCopiedCode] = useState("");
+  const [showSizeChart, setShowSizeChart] = useState(false);
+  const [pincodeInput, setPincodeInput] = useState("");
+  const [pincodeChecked, setPincodeChecked] = useState(false);
+
+  const checkPincodeDelivery = (val) => {
+    if (val && val.length === 6) {
+      setPincodeChecked(true);
+    } else {
+      showAlert("Please enter a valid 6-digit Indian postal code.", "Pincode Required");
+    }
+  };
 
   const handleCopyCode = (code) => {
     navigator.clipboard.writeText(code);
@@ -102,13 +121,13 @@ const ProductDetails = () => {
   const [descExpanded, setDescExpanded] = useState(false);
   const [shippingOpen, setShippingOpen] = useState(false);
   const [returnsOpen, setReturnsOpen] = useState(false);
+  const [authenticityOpen, setAuthenticityOpen] = useState(false);
   const [specsOpen, setSpecsOpen] = useState({
-    fabric: false,
+    fabric: true,
     material: false,
     washCare: false,
     origin: false,
-    weight: false,
-    returnPolicy: false,
+    packageDetails: false,
   });
 
   const toggleSpec = (key) => {
@@ -124,8 +143,10 @@ const ProductDetails = () => {
           const data = res.data.data;
           setProduct(data);
           setActiveImage(data.images?.[0] || "");
+          setActiveVideo(null);
+          const validSizes = (data.sizes || []).filter((s) => s !== "S");
           setSelectedSize(
-            data.sizes && data.sizes.length > 0 ? data.sizes[0] : "",
+            validSizes.length > 0 ? validSizes[0] : data.sizes?.[0] || "",
           );
           trackViewContent(data);
         } else {
@@ -424,24 +445,61 @@ const ProductDetails = () => {
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerLeave}
           >
-            <img
-              src={getOptimizedImageUrl(activeImage, 1000)}
-              alt={product.name}
-              className="w-full h-full object-cover transition-all duration-300 select-none"
-              draggable="false"
-              fetchPriority="high"
-            />
+            {activeVideo ? (
+              <video
+                src={activeVideo}
+                controls
+                autoPlay
+                loop
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <img
+                src={getOptimizedImageUrl(activeImage, 1000)}
+                alt={product.name}
+                className="w-full h-full object-cover transition-all duration-300 select-none"
+                draggable="false"
+                fetchPriority="high"
+              />
+            )}
           </div>
 
           {/* Thumbnails grid */}
-          {product.images && product.images.length > 1 && (
-            <div className="grid grid-cols-5 gap-3">
-              {product.images.map((img, idx) => (
+          <div className="grid grid-cols-5 gap-3">
+            {/* Video Thumbnail Button if present */}
+            {(product.video || (product.videos && product.videos.length > 0)) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveVideo(product.video || product.videos[0]);
+                }}
+                className={`aspect-[3/4] border rounded-lg overflow-hidden transition-all duration-300 relative bg-slate-950 flex flex-col items-center justify-center cursor-pointer ${
+                  activeVideo
+                    ? "border-[#c5a880] ring-2 ring-[#c5a880]/40 scale-[1.02]"
+                    : "border-slate-200 hover:border-[#c5a880]/60 opacity-85 hover:opacity-100"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-full bg-white/95 flex items-center justify-center text-[#8a1c14] shadow-md mb-1">
+                  <span className="text-[11px] ml-0.5">▶</span>
+                </div>
+                <span className="text-[9px] font-bold text-white uppercase tracking-wider">
+                  Reel
+                </span>
+              </button>
+            )}
+
+            {/* Images Thumbnails */}
+            {product.images &&
+              product.images.map((img, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setActiveImage(img)}
+                  onClick={() => {
+                    setActiveVideo(null);
+                    setActiveImage(img);
+                  }}
                   className={`aspect-[3/4] border rounded-lg overflow-hidden transition-all duration-300 ${
-                    activeImage === img
+                    !activeVideo && activeImage === img
                       ? "border-accent-gold ring-2 ring-accent-gold/20 scale-[1.02]"
                       : "border-slate-200 hover:border-slate-450 hover:border-slate-400"
                   }`}
@@ -455,66 +513,67 @@ const ProductDetails = () => {
                   />
                 </button>
               ))}
-            </div>
-          )}
+          </div>
         </div>
 
         {/* RIGHT COLUMN: ATTRIBUTE CONTROLS */}
-        <div className="lg:col-span-5 space-y-7 bg-white p-6 md:p-8 border border-slate-200/60 rounded-2xl shadow-sm">
-          <div className="space-y-3">
-            {product.tag && (
-              <span className="bg-amber-50 text-accent-gold text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded border border-amber-250 border-amber-200/40 inline-block">
-                {product.tag}
+        <div className="lg:col-span-5 space-y-6 bg-white p-6 md:p-8 border border-[#c5a880]/30 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.05)]">
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2">
+              <span className="bg-amber-50 text-amber-900 text-[9.5px] font-extrabold uppercase tracking-[0.22em] px-3 py-1 rounded-full border border-[#c5a880]/35 shadow-2xs inline-flex items-center gap-1.5">
+                <span className="text-[#c5a880]">✦</span>
+                <span>{product.tag || "Pariwesh Exclusive"}</span>
               </span>
-            )}
-            <h1 className="text-xl md:text-2xl font-display font-medium text-slate-900 leading-snug">
+            </div>
+            <h1 className="text-2xl md:text-3xl font-serif text-slate-900 leading-snug tracking-tight font-normal">
               {product.name}
             </h1>
-            <div className="flex items-center space-x-2 text-[11px] text-slate-500 font-sans">
-              <span>
-                SKU:{" "}
-                <span className="font-mono font-bold text-slate-700">
-                  {product.sku}
-                </span>
-              </span>
-              <span>•</span>
+            <div className="flex items-center space-x-1.5 text-[11.5px] text-slate-600 font-sans">
               <div className="flex items-center space-x-1">
-                <RiStarFill className="text-accent-gold mb-0.5" size={13} />
+                <RiStarFill className="text-amber-500 mb-0.5" size={13} />
                 <span className="text-slate-800 font-bold">
                   {product.rating || "4.8"}
                 </span>
-                <span className="text-slate-450 text-slate-400">
-                  ({product.reviewsCount || 12} reviews)
+                <span className="text-slate-400">
+                  ({product.reviewsCount || 12} customer reviews)
                 </span>
               </div>
             </div>
           </div>
 
           {/* PRICING GRID */}
-          <div className="flex items-baseline space-x-3.5 border-y border-slate-100/80 py-4 my-5">
-            <span className="text-2xl font-bold text-slate-900">
-              ₹{product.price}
-            </span>
-            {product.mrp > product.price && (
-              <>
-                <span className="text-sm text-slate-400 line-through">
-                  MRP ₹{product.mrp}
-                </span>
-                <span className="bg-rose-50 border border-rose-100 text-rose-700 text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded font-bold">
-                  {Math.round(
-                    ((product.mrp - product.price) / product.mrp) * 100,
-                  )}
-                  % OFF
-                </span>
-              </>
-            )}
+          <div className="border-y border-slate-200/70 py-4 my-2 bg-[#FBF9F5]/70 px-4 rounded-2xl font-sans">
+            <div className="flex items-baseline gap-3 font-sans">
+              <span className="text-3xl font-sans font-bold text-slate-900 tracking-tight">
+                {formatCurrency(product.price)}
+              </span>
+              {product.mrp > product.price && (
+                <>
+                  <span className="text-sm font-sans text-slate-400 line-through font-normal">
+                    MRP {formatCurrency(product.mrp)}
+                  </span>
+                  <span className="bg-[#8a1c14]/10 text-[#8a1c14] border border-[#8a1c14]/25 text-[10.5px] font-sans uppercase tracking-widest px-2.5 py-0.5 rounded-full font-bold shadow-2xs">
+                    {Math.round(
+                      ((product.mrp - product.price) / product.mrp) * 100,
+                    )}
+                    % OFF
+                  </span>
+                </>
+              )}
+            </div>
+            <p className="text-[11px] text-emerald-700 font-semibold mt-1.5 flex items-center space-x-2 font-sans">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              <span>In Stock • Ready to dispatch</span>
+              <span className="text-slate-300">•</span>
+              <span className="text-slate-500 font-normal">Inclusive of all taxes</span>
+            </p>
           </div>
 
           {/* FORM: SIZES & ACTION CONTROLLERS */}
           <div className="space-y-6">
             {/* Color variants selector */}
             {product.colorVariants && product.colorVariants.length > 0 && (
-              <div className="space-y-3 pb-2 border-b border-slate-100/50">
+              <div className="space-y-3 pb-2 border-b border-slate-100/70">
                 <div className="text-[10px] uppercase font-extrabold tracking-widest text-slate-500">
                   Choose your color:{" "}
                   <span className="text-slate-800 font-bold normal-case ml-1">
@@ -559,43 +618,59 @@ const ProductDetails = () => {
               </div>
             )}
 
-            {/* Size pick */}
+            {/* Size pick (Strictly M, L, XL, XXL) */}
             {product.sizes && product.sizes.length > 0 && (
               <div className="space-y-2.5">
                 <div className="flex justify-between items-center text-[10px] uppercase font-extrabold tracking-widest text-slate-500">
-                  <span>Select Size</span>
-                  <span className="text-accent-gold flex items-center space-x-1.5 cursor-pointer hover:underline">
-                    <RiRulerLine size={13} />
-                    <span>Size Chart</span>
-                  </span>
+                  <div className="flex items-center space-x-1.5">
+                    <span>Select Size</span>
+                    {selectedSize && (
+                      <span className="text-[#8a1c14] font-bold tracking-normal font-sans text-[11px]">
+                        : {selectedSize}
+                      </span>
+                    )}
+                  </div>
+                  {product.sizeChart?.type !== "none" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSizeChart(true)}
+                      className="text-[#8a1c14] hover:text-red-900 bg-amber-50 hover:bg-amber-100 px-3 py-1 rounded-full border border-[#c5a880]/40 shadow-xs flex items-center space-x-1.5 cursor-pointer transition-all duration-200 focus:outline-none"
+                    >
+                      <RiRulerLine size={13} />
+                      <span className="font-bold tracking-wider">Size Chart</span>
+                    </button>
+                  )}
                 </div>
                 <div className="flex flex-col space-y-2">
-                  <div className="flex flex-wrap gap-2.5">
-                    {product.sizes.map((sz) => {
-                      const isOutOfStock = product.sizesStock
-                        ? Number(product.sizesStock[sz]) <= 0
-                        : false;
-                      return (
-                        <button
-                          key={sz}
-                          type="button"
-                          onClick={() => setSelectedSize(sz)}
-                          className={`w-11 h-11 border text-xs font-semibold tracking-wider transition-all relative ${
-                            selectedSize === sz
-                              ? "border-accent-gold bg-accent-gold text-white shadow-md shadow-accent-gold/15"
-                              : isOutOfStock
-                                ? "border-slate-200 text-slate-300 bg-slate-50/50 cursor-not-allowed relative overflow-hidden after:content-[''] after:absolute after:inset-y-0 after:left-1/2 after:w-[1px] after:bg-slate-200 after:-rotate-45 after:scale-y-[1.4]"
-                                : "border-slate-200 text-slate-700 hover:border-accent-gold hover:bg-slate-50"
-                          }`}
-                        >
-                          {sz}
-                        </button>
-                      );
-                    })}
+                  <div className="flex flex-wrap gap-2.5 sm:gap-3">
+                    {product.sizes
+                      .filter((sz) => sz !== "S")
+                      .map((sz) => {
+                        const isOutOfStock = product.sizesStock
+                          ? Number(product.sizesStock[sz]) <= 0
+                          : false;
+                        const isSelected = selectedSize === sz;
+                        return (
+                          <button
+                            key={sz}
+                            type="button"
+                            onClick={() => setSelectedSize(sz)}
+                            className={`min-w-[52px] h-11 px-3.5 rounded-xl text-xs font-bold font-sans tracking-wider transition-all duration-200 relative flex items-center justify-center cursor-pointer ${
+                              isSelected
+                                ? "bg-gradient-to-b from-[#d2b68e] to-[#a8865a] text-white border-2 border-[#a8865a] shadow-[0_4px_14px_rgba(197,168,128,0.45),inset_0_1px_0_rgba(255,255,255,0.4)] scale-[1.03] font-extrabold ring-2 ring-[#c5a880]/30"
+                                : isOutOfStock
+                                ? "bg-slate-100/70 text-slate-300 border border-slate-200 cursor-not-allowed relative overflow-hidden after:content-[''] after:absolute after:inset-y-0 after:left-1/2 after:w-[1px] after:bg-slate-300 after:-rotate-45 after:scale-y-[1.4]"
+                                : "bg-white hover:bg-amber-50/40 text-slate-800 border border-slate-200/90 shadow-2xs hover:border-[#c5a880] hover:text-[#8a1c14] active:scale-95"
+                            }`}
+                          >
+                            {sz}
+                          </button>
+                        );
+                      })}
                   </div>
                   {product.sizesStock &&
                     Number(product.sizesStock[selectedSize]) <= 0 && (
-                      <p className="text-[11px] text-red-656 text-red-600 font-bold mt-1 text-left animate-pulse">
+                      <p className="text-[11px] text-red-600 font-bold mt-1 text-left animate-pulse">
                         ⚠️ Size {selectedSize} is currently out of stock.
                         Ordering it will alert the admin to check inventory.
                       </p>
@@ -609,69 +684,118 @@ const ProductDetails = () => {
               <span className="block text-[10px] uppercase font-extrabold tracking-widest text-slate-500">
                 Quantity
               </span>
-              <div className="inline-flex border border-slate-200 rounded-lg bg-slate-50 overflow-hidden shadow-sm">
+              <div className="inline-flex border border-slate-200 rounded-xl bg-white overflow-hidden shadow-xs">
                 <button
                   type="button"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-4 py-2 hover:bg-slate-100 text-sm font-bold transition"
+                  className="px-4 py-2 hover:bg-slate-50 text-slate-800 text-sm font-bold transition cursor-pointer"
                 >
                   -
                 </button>
-                <span className="px-5 py-2 text-xs font-bold leading-normal flex items-center">
+                <span className="px-5 py-2 text-xs font-bold leading-normal flex items-center text-slate-900 font-mono">
                   {quantity}
                 </span>
                 <button
                   type="button"
                   onClick={() => setQuantity(quantity + 1)}
-                  className="px-4 py-2 hover:bg-slate-100 text-sm font-bold transition"
+                  className="px-4 py-2 hover:bg-slate-50 text-slate-800 text-sm font-bold transition cursor-pointer"
                 >
                   +
                 </button>
               </div>
             </div>
 
-            {/* Submissions */}
-            <div className="flex flex-col gap-3.5 pt-4">
-              <Button
+            {/* Action Buttons: Add to Bag & Buy Now */}
+            <div className="flex flex-col gap-3 pt-3">
+              {/* ADD TO BAG */}
+              <button
+                type="button"
                 onClick={handleAddToCart}
-                loading={loading}
-                variant="outline"
-                size="lg"
-                className="w-full rounded-sm py-3.5 text-[11px] uppercase tracking-wider font-extrabold flex items-center justify-center space-x-2 transition-all"
+                disabled={loading}
+                className="w-full bg-gradient-to-b from-slate-800 to-slate-950 hover:from-slate-750 hover:to-slate-900 text-white font-extrabold text-xs uppercase tracking-[0.18em] py-4 px-6 rounded-xl border border-white/20 shadow-[0_4px_14px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.3)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.26)] transition-all duration-300 flex items-center justify-center space-x-2.5 active:scale-[0.98] active:translate-y-[1px] cursor-pointer disabled:opacity-50"
               >
-                <RiShoppingBagLine size={16} />
-                <span>Add to Bag</span>
-              </Button>
+                <RiShoppingBagLine size={18} />
+                <span>{loading ? "Adding to Bag..." : "Add to Bag"}</span>
+              </button>
 
+              {/* BUY IT NOW & WISHLIST ROW */}
               <div className="flex items-center gap-3 w-full">
-                <Button
+                <button
+                  type="button"
                   onClick={handleBuyNow}
-                  variant="gold"
-                  size="lg"
-                  className="flex-grow font-extrabold rounded-sm py-3.5 text-[11px] uppercase tracking-wider transition-all"
+                  className="flex-grow bg-gradient-to-b from-[#d2b68e] to-[#a8865a] hover:from-[#dbbf97] hover:to-[#b39062] text-white font-extrabold text-xs uppercase tracking-[0.18em] py-4 px-6 rounded-xl shadow-[0_4px_18px_rgba(197,168,128,0.38),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-1px_0_rgba(0,0,0,0.15)] hover:shadow-[0_8px_28px_rgba(197,168,128,0.55)] transition-all duration-300 flex items-center justify-center space-x-2 active:scale-[0.98] active:translate-y-[1px] cursor-pointer border border-amber-200/40"
                 >
                   <span>Buy It Now</span>
-                </Button>
+                  <RiArrowRightSLine size={18} />
+                </button>
 
                 <button
                   type="button"
                   onClick={handleWishlistToggle}
-                  className={`w-12 h-12 shrink-0 rounded-sm border flex items-center justify-center transition active:scale-95 shadow-sm ${
+                  className={`w-13 h-13 shrink-0 rounded-xl border flex items-center justify-center transition-all duration-300 active:scale-95 shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] cursor-pointer ${
                     isWishlisted
-                      ? "border-red-200 bg-red-50 text-red-500"
-                      : "border-slate-200 hover:border-slate-400 hover:bg-slate-50 text-slate-700 bg-white"
+                      ? "border-red-200 bg-red-50 text-red-500 shadow-md ring-2 ring-red-200/50"
+                      : "border-slate-200 bg-white hover:bg-amber-50/40 text-slate-700 hover:text-[#8a1c14] hover:border-[#c5a880]/50"
                   }`}
                   title={
                     isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"
                   }
                 >
                   {isWishlisted ? (
-                    <RiHeartFill size={18} />
+                    <RiHeartFill size={22} />
                   ) : (
-                    <RiHeartLine size={18} />
+                    <RiHeartLine size={22} />
                   )}
                 </button>
               </div>
+            </div>
+
+            {/* Pincode Delivery Estimator Widget */}
+            <div className="border-t border-slate-100/80 pt-5 space-y-2.5">
+              <div className="flex items-center justify-between text-[10px] uppercase font-extrabold tracking-widest text-slate-500">
+                <span className="flex items-center space-x-1.5">
+                  <RiTruckLine size={15} className="text-accent-gold" />
+                  <span>Delivery & Pincode Check</span>
+                </span>
+                <span className="text-emerald-700 font-bold lowercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 font-sans">
+                  Free Express Shipping
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    placeholder="Enter 6-digit Pincode (e.g. 302001)"
+                    value={pincodeInput}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      setPincodeInput(val);
+                      if (val.length === 6) {
+                        checkPincodeDelivery(val);
+                      } else {
+                        setPincodeChecked(false);
+                      }
+                    }}
+                    className="w-full bg-white/70 backdrop-blur-sm border border-slate-200/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 font-sans focus:outline-none focus:border-accent-gold shadow-2xs"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => checkPincodeDelivery(pincodeInput)}
+                  className="px-4 py-2.5 bg-slate-900 hover:bg-slate-950 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-sm cursor-pointer active:scale-95 font-sans"
+                >
+                  Check
+                </button>
+              </div>
+              {pincodeChecked && (
+                <div className="text-[11px] text-emerald-700 font-medium flex items-center space-x-1.5 pt-0.5 animate-fade-in font-sans">
+                  <RiCheckLine size={15} className="text-emerald-600 shrink-0" />
+                  <span>
+                    Express delivery available to <strong>{pincodeInput}</strong> (Estimated in 3–5 business days).
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -751,24 +875,27 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* BOTTOM SECTION: SPECS & ACCORDIONS */}
-      <div className="mt-16 border-t border-slate-200 pt-12 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-        {/* Left Column: Collapsible Description & Details */}
+      {/* BOTTOM SECTION: SPECS & ACCORDIONS (PREMIUM LUXURY DROPDOWNS) */}
+      <div className="mt-16 border-t border-slate-200/80 pt-12 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        {/* Left Column: Product Story & Policies Dropdowns */}
         <div className="lg:col-span-6 space-y-6">
-          <div className="space-y-3.5">
-            <h3 className="text-xs font-bold uppercase text-slate-900 tracking-widest">
-              Product Story & Details
-            </h3>
-            <div className="text-xs text-slate-600 leading-relaxed font-sans relative">
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <span className="text-[#c5a880] text-xs">✦</span>
+              <h3 className="text-xs font-bold uppercase text-slate-900 tracking-[0.2em]">
+                Product Story & Details
+              </h3>
+            </div>
+            <div className="text-xs sm:text-[13px] text-slate-600 leading-relaxed font-sans relative">
               <p className={descExpanded ? "" : "line-clamp-3"}>
                 {product.description ||
-                  "Premium ethnic ensemble custom tailored to perfection from Pariwesh signature apparel catalog."}
+                  "A stylish ready-to-wear premium ethnic ensemble featuring a timeless silhouette, crafted to perfection from Pariwesh signature apparel catalog. Tailored with breathable ease and artistic flair for elevated daily and festive wear."}
               </p>
               {product.description && product.description.length > 150 && (
                 <button
                   type="button"
                   onClick={() => setDescExpanded(!descExpanded)}
-                  className="text-[10px] font-extrabold text-accent-gold uppercase tracking-wider mt-2.5 hover:text-yellow-600 transition block underline"
+                  className="text-[10px] font-extrabold text-[#8a1c14] uppercase tracking-wider mt-2 hover:text-red-900 transition block underline cursor-pointer"
                 >
                   {descExpanded ? "Read Less" : "Read More"}
                 </button>
@@ -776,227 +903,376 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          {/* Collapsible shipping & returns policies */}
-          <div className="border-t border-slate-100 pt-6 space-y-2.5">
-            <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
+          {/* Left Column Accordions */}
+          <div className="border-t border-slate-100 pt-5 space-y-3">
+            {/* Accordion 1: Shipping & Delivery */}
+            <div
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
+                shippingOpen
+                  ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
+              }`}
+            >
               <button
                 type="button"
                 onClick={() => setShippingOpen(!shippingOpen)}
-                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 transition duration-150"
+                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
               >
-                <span className="flex items-center space-x-2.5">
-                  <RiTruckLine className="text-accent-gold" size={17} />
-                  <span>Shipping & Delivery Timelines</span>
+                <span className="flex items-center space-x-3">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                    <RiTruckLine size={15} />
+                  </div>
+                  <span className="tracking-wide">Shipping & Delivery Timelines</span>
                 </span>
-                <RiArrowRightSLine
-                  className={`text-slate-400 transition duration-200 transform ${
-                    shippingOpen ? "rotate-90" : ""
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
+                    shippingOpen
+                      ? "rotate-90 bg-amber-100/70 text-[#8a1c14]"
+                      : "text-slate-400"
                   }`}
-                  size={18}
-                />
+                >
+                  <RiArrowRightSLine size={17} />
+                </div>
               </button>
               {shippingOpen && (
-                <div className="px-4 pb-4 pt-1.5 text-[11px] text-slate-500 leading-relaxed font-sans border-t border-slate-100/50 animate-fade-in">
-                  Every order is carefully dispatched from our flagship boutique
-                  within 24-48 business hours. We offer complimentary express
-                  delivery across India. Delivery takes roughly 3 to 7 business
-                  days under standard circumstances. COD is available.
+                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in space-y-2">
+                  <p>
+                    Every order is carefully inspected and dispatched from our boutique atelier within <strong>24–48 business hours</strong>.
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1 text-slate-500">
+                    <li>Complimentary Express Delivery across India (3–5 business days).</li>
+                    <li>Cash on Delivery (COD) and all major prepaid payment options available.</li>
+                    <li>Live doorstep tracking link shared via SMS and WhatsApp.</li>
+                  </ul>
                 </div>
               )}
             </div>
 
-            <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
+            {/* Accordion 2: Easy Returns & Refunds */}
+            <div
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
+                returnsOpen
+                  ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
+              }`}
+            >
               <button
                 type="button"
                 onClick={() => setReturnsOpen(!returnsOpen)}
-                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 transition duration-150"
+                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
               >
-                <span className="flex items-center space-x-2.5">
-                  <RiExchangeLine className="text-accent-gold" size={17} />
-                  <span>Easy Returns & Stellar Refund Guarantee</span>
+                <span className="flex items-center space-x-3">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                    <RiExchangeLine size={15} />
+                  </div>
+                  <span className="tracking-wide">Easy Returns & Stellar Refund Guarantee</span>
                 </span>
-                <RiArrowRightSLine
-                  className={`text-slate-400 transition duration-200 transform ${
-                    returnsOpen ? "rotate-90" : ""
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
+                    returnsOpen
+                      ? "rotate-90 bg-amber-100/70 text-[#8a1c14]"
+                      : "text-slate-400"
                   }`}
-                  size={18}
-                />
+                >
+                  <RiArrowRightSLine size={17} />
+                </div>
               </button>
               {returnsOpen && (
-                <div className="px-4 pb-4 pt-1.5 text-[11px] text-slate-500 leading-relaxed font-sans border-t border-slate-100/50 animate-fade-in">
-                  We maintain a 7-day hassle-free window for returns, sizing
-                  replacements, and exchanges. Items must be returned in their
-                  original packaging with tags attached. Once Quality Checks are
-                  passed, refunds are credited back to your bank account or
-                  payment wallet in 3-5 days.
+                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in space-y-2">
+                  <p>
+                    We maintain a hassle-free <strong>7-Day Return and Exchange window</strong> from the date of delivery.
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1 text-slate-500">
+                    <li>Free doorstep pickup for size exchange or returns.</li>
+                    <li>Items must retain original tags and unused packaging.</li>
+                    <li>Instant refund credited to your bank account or payment method within 3–5 business days after quality verification.</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Accordion 3: Authenticity & Artisanal Guarantee */}
+            <div
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
+                authenticityOpen
+                  ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setAuthenticityOpen(!authenticityOpen)}
+                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
+              >
+                <span className="flex items-center space-x-3">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                    <RiShieldCheckLine size={15} />
+                  </div>
+                  <span className="tracking-wide">Artisanal Craftsmanship & Authenticity</span>
+                </span>
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
+                    authenticityOpen
+                      ? "rotate-90 bg-amber-100/70 text-[#8a1c14]"
+                      : "text-slate-400"
+                  }`}
+                >
+                  <RiArrowRightSLine size={17} />
+                </div>
+              </button>
+              {authenticityOpen && (
+                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in space-y-2">
+                  <p>
+                    Every Pariwesh creation is crafted with high-density premium yarns, precise finishing, and colorfast traditional printing techniques tested for durability and luxurious drape.
+                  </p>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Right Column: Collapsible technical specifications folders */}
+        {/* Right Column: Technical Specifications Dropdowns */}
         <div className="lg:col-span-6 space-y-4">
-          <h3 className="text-xs font-bold uppercase text-slate-900 tracking-widest mb-4">
-            Technical Specifications
-          </h3>
-          <div className="space-y-2.5">
-            {product.fabric && (
-              <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => toggleSpec("fabric")}
-                  className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 transition duration-150"
-                >
-                  <span className="flex items-center space-x-2.5">
-                    <RiShirtLine className="text-accent-gold" size={17} />
-                    <span>Fabric Type</span>
-                  </span>
-                  <RiArrowRightSLine
-                    className={`text-slate-400 transition duration-200 transform ${
-                      specsOpen.fabric ? "rotate-90" : ""
-                    }`}
-                    size={18}
-                  />
-                </button>
-                {specsOpen.fabric && (
-                  <div className="px-4 pb-4 pt-1.5 text-[11px] text-slate-500 leading-relaxed font-sans border-t border-slate-100/50 animate-fade-in text-left">
-                    {product.fabric}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {product.material && (
-              <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => toggleSpec("material")}
-                  className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 transition duration-150"
-                >
-                  <span className="flex items-center space-x-2.5">
-                    <RiScissorsLine className="text-accent-gold" size={17} />
-                    <span>Material Composition</span>
-                  </span>
-                  <RiArrowRightSLine
-                    className={`text-slate-400 transition duration-200 transform ${
-                      specsOpen.material ? "rotate-90" : ""
-                    }`}
-                    size={18}
-                  />
-                </button>
-                {specsOpen.material && (
-                  <div className="px-4 pb-4 pt-1.5 text-[11px] text-slate-500 leading-relaxed font-sans border-t border-slate-100/50 animate-fade-in text-left">
-                    {product.material}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {product.washCare && (
-              <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => toggleSpec("washCare")}
-                  className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 transition duration-150"
-                >
-                  <span className="flex items-center space-x-2.5">
-                    <RiRefreshLine className="text-accent-gold" size={17} />
-                    <span>Wash & Garment Care</span>
-                  </span>
-                  <RiArrowRightSLine
-                    className={`text-slate-400 transition duration-200 transform ${
-                      specsOpen.washCare ? "rotate-90" : ""
-                    }`}
-                    size={18}
-                  />
-                </button>
-                {specsOpen.washCare && (
-                  <div className="px-4 pb-4 pt-1.5 text-[11px] text-slate-500 leading-relaxed font-sans border-t border-slate-100/50 animate-fade-in text-left">
-                    {product.washCare}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {product.countryOfOrigin && (
-              <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => toggleSpec("origin")}
-                  className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 transition duration-150"
-                >
-                  <span className="flex items-center space-x-2.5">
-                    <RiGlobeLine className="text-accent-gold" size={17} />
-                    <span>Country of Origin</span>
-                  </span>
-                  <RiArrowRightSLine
-                    className={`text-slate-400 transition duration-200 transform ${
-                      specsOpen.origin ? "rotate-90" : ""
-                    }`}
-                    size={18}
-                  />
-                </button>
-                {specsOpen.origin && (
-                  <div className="px-4 pb-4 pt-1.5 text-[11px] text-slate-500 leading-relaxed font-sans border-t border-slate-100/50 animate-fade-in text-left">
-                    {product.countryOfOrigin}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {product.shippingWeight && (
-              <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => toggleSpec("weight")}
-                  className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 transition duration-150"
-                >
-                  <span className="flex items-center space-x-2.5">
-                    <RiScalesLine className="text-accent-gold" size={17} />
-                    <span>Package Weight</span>
-                  </span>
-                  <RiArrowRightSLine
-                    className={`text-slate-400 transition duration-200 transform ${
-                      specsOpen.weight ? "rotate-90" : ""
-                    }`}
-                    size={18}
-                  />
-                </button>
-                {specsOpen.weight && (
-                  <div className="px-4 pb-4 pt-1.5 text-[11px] text-slate-500 leading-relaxed font-sans border-t border-slate-100/50 animate-fade-in text-left">
-                    {product.shippingWeight}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {product.returnDays && (
-              <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => toggleSpec("returnPolicy")}
-                  className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 transition duration-150"
-                >
-                  <span className="flex items-center space-x-2.5">
-                    <RiExchangeLine className="text-accent-gold" size={17} />
-                    <span>Return Policy Window</span>
-                  </span>
-                  <RiArrowRightSLine
-                    className={`text-slate-400 transition duration-200 transform ${
-                      specsOpen.returnPolicy ? "rotate-90" : ""
-                    }`}
-                    size={18}
-                  />
-                </button>
-                {specsOpen.returnPolicy && (
-                  <div className="px-4 pb-4 pt-1.5 text-[11px] text-slate-500 leading-relaxed font-sans border-t border-slate-100/50 animate-fade-in text-left">
-                    {product.returnDays} Days Returns
-                  </div>
-                )}
-              </div>
-            )}
+          <div className="flex items-center space-x-2">
+            <span className="text-[#c5a880] text-xs">✦</span>
+            <h3 className="text-xs font-bold uppercase text-slate-900 tracking-[0.2em]">
+              Technical Specifications
+            </h3>
           </div>
+
+          <div className="space-y-3">
+            {/* Accordion: Fabric Type */}
+            <div
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
+                specsOpen.fabric
+                  ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => toggleSpec("fabric")}
+                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
+              >
+                <span className="flex items-center space-x-3">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                    <RiShirtLine size={15} />
+                  </div>
+                  <span className="tracking-wide">Fabric Type</span>
+                </span>
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
+                    specsOpen.fabric
+                      ? "rotate-90 bg-amber-100/70 text-[#8a1c14]"
+                      : "text-slate-400"
+                  }`}
+                >
+                  <RiArrowRightSLine size={17} />
+                </div>
+              </button>
+              {specsOpen.fabric && (
+                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in text-left">
+                  <strong className="text-slate-800 font-bold block mb-1">
+                    {product.fabric || "Premium Rayon"}
+                  </strong>
+                  Breathable, lightweight, and ultra-soft fabric offering a natural fluid drape and cool comfort throughout the day.
+                </div>
+              )}
+            </div>
+
+            {/* Accordion: Material Composition */}
+            <div
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
+                specsOpen.material
+                  ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => toggleSpec("material")}
+                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
+              >
+                <span className="flex items-center space-x-3">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                    <RiScissorsLine size={15} />
+                  </div>
+                  <span className="tracking-wide">Material Composition</span>
+                </span>
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
+                    specsOpen.material
+                      ? "rotate-90 bg-amber-100/70 text-[#8a1c14]"
+                      : "text-slate-400"
+                  }`}
+                >
+                  <RiArrowRightSLine size={17} />
+                </div>
+              </button>
+              {specsOpen.material && (
+                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in text-left">
+                  <strong className="text-slate-800 font-bold block mb-1">
+                    100% {product.fabric || "Rayon"} with Artisanal Prints
+                  </strong>
+                  Features traditional contrast floral / geometric prints with durable border embellishments and neat lock-stitch hemming.
+                </div>
+              )}
+            </div>
+
+            {/* Accordion: Wash & Garment Care */}
+            <div
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
+                specsOpen.washCare
+                  ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => toggleSpec("washCare")}
+                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
+              >
+                <span className="flex items-center space-x-3">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                    <RiRefreshLine size={15} />
+                  </div>
+                  <span className="tracking-wide">Wash & Garment Care</span>
+                </span>
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
+                    specsOpen.washCare
+                      ? "rotate-90 bg-amber-100/70 text-[#8a1c14]"
+                      : "text-slate-400"
+                  }`}
+                >
+                  <RiArrowRightSLine size={17} />
+                </div>
+              </button>
+              {specsOpen.washCare && (
+                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in text-left">
+                  <strong className="text-slate-800 font-bold block mb-1">
+                    {product.washCare || "Gentle Hand Wash / Mild Detergent"}
+                  </strong>
+                  Do not bleach. Dry in shade inside-out to retain vibrant color richness. Low to medium temperature iron on reverse side.
+                </div>
+              )}
+            </div>
+
+            {/* Accordion: Country of Origin */}
+            <div
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
+                specsOpen.origin
+                  ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => toggleSpec("origin")}
+                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
+              >
+                <span className="flex items-center space-x-3">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                    <RiGlobeLine size={15} />
+                  </div>
+                  <span className="tracking-wide">Country of Origin</span>
+                </span>
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
+                    specsOpen.origin
+                      ? "rotate-90 bg-amber-100/70 text-[#8a1c14]"
+                      : "text-slate-400"
+                  }`}
+                >
+                  <RiArrowRightSLine size={17} />
+                </div>
+              </button>
+              {specsOpen.origin && (
+                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in text-left">
+                  <strong className="text-slate-800 font-bold block mb-1">
+                    {product.countryOfOrigin || "India"}
+                  </strong>
+                  Ethically sourced, precision tailored, and handcrafted by experienced textile artisans in India.
+                </div>
+              )}
+            </div>
+
+            {/* Accordion: Package Details & SKU */}
+            <div
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
+                specsOpen.packageDetails
+                  ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => toggleSpec("packageDetails")}
+                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
+              >
+                <span className="flex items-center space-x-3">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                    <RiScalesLine size={15} />
+                  </div>
+                  <span className="tracking-wide">Package Contents & Ensemble</span>
+                </span>
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
+                    specsOpen.packageDetails
+                      ? "rotate-90 bg-amber-100/70 text-[#8a1c14]"
+                      : "text-slate-400"
+                  }`}
+                >
+                  <RiArrowRightSLine size={17} />
+                </div>
+              </button>
+              {specsOpen.packageDetails && (
+                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in text-left">
+                  <span className="text-slate-400 font-semibold text-[10.5px] uppercase block mb-1">Net Ensemble Contents:</span>
+                  <span className="text-slate-800 font-bold">
+                    1 Complete Ensemble ({product.category === "suits" ? "Kurti, Bottom & Dupatta Set" : "Kurti & Bottom Co-ord Set"})
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <SizeChartModal
+        isOpen={showSizeChart}
+        onClose={() => setShowSizeChart(false)}
+        sizeChart={product?.sizeChart}
+        selectedSize={selectedSize}
+        onSelectSize={(sz) => setSelectedSize(sz)}
+      />
+
+      {/* MOBILE STICKY PURCHASE BAR */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 px-4 py-3 flex items-center justify-between shadow-[0_-4px_25px_rgba(0,0,0,0.1)]">
+        <div className="space-y-0.5 text-left">
+          <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold block">
+            {selectedSize ? `Size: ${selectedSize}` : "Choose Size"}
+          </span>
+          <span className="text-base font-extrabold text-[#8a1c14] font-sans tracking-tight">
+            {formatCurrency(product.price * quantity)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={loading}
+            className="rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider border border-slate-300/80 text-slate-800 bg-white/90 backdrop-blur-sm hover:bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] active:scale-95 active:translate-y-[1px] cursor-pointer disabled:opacity-50"
+          >
+            {loading ? "Adding..." : "Add to Bag"}
+          </button>
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            className="rounded-xl px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wider bg-gradient-to-b from-[#d2b68e] to-[#a8865a] hover:from-[#dbbf97] hover:to-[#b39062] text-white shadow-[0_4px_14px_rgba(197,168,128,0.35),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-1px_0_rgba(0,0,0,0.15)] border border-amber-200/40 active:scale-95 active:translate-y-[1px] cursor-pointer"
+          >
+            Buy Now
+          </button>
         </div>
       </div>
     </div>

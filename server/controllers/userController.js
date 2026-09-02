@@ -4,7 +4,11 @@ import User from "../models/User.js";
 import PendingSignup from "../models/PendingSignup.js";
 import { sendSuccess, sendError } from "../utils/responseFormatter.js";
 import { sendMail } from "../utils/mailer.js";
-import { buildOtpEmail } from "../utils/emailTemplates.js";
+import {
+  buildOtpEmail,
+  buildPasswordResetOtpEmail,
+  buildPasswordChangedSuccessEmail,
+} from "../utils/emailTemplates.js";
 import { normalizePhone, isValidEmail, isAdminEmail } from "../utils/phone.js";
 import {
   signAccessToken,
@@ -117,6 +121,53 @@ const deliverOtpEmail = async ({ name, email, otp }) => {
     channel: "email",
     otp: process.env.NODE_ENV !== "production" ? otp : null,
     warning: mailResult.error || "Failed to send OTP email",
+    resendAfterSeconds: RESEND_COOLDOWN_SEC,
+  };
+};
+
+const deliverPasswordResetOtpEmail = async ({ name, email, otp }) => {
+  if (!email) {
+    return {
+      delivered: false,
+      channel: "email",
+      otp: process.env.NODE_ENV !== "production" ? otp : null,
+      warning: "No email on account to send OTP",
+      resendAfterSeconds: RESEND_COOLDOWN_SEC,
+    };
+  }
+
+  const { subject, html } = buildPasswordResetOtpEmail({
+    name,
+    otp,
+    expiresMinutes: 10,
+  });
+
+  const mailResult = await sendMail({
+    to: email,
+    subject,
+    html,
+    text: `PARIWESH password reset code: ${otp}. Valid for 10 minutes. Do not share this code.`,
+    type: "otp",
+    meta: { name, purpose: "forgot_password" },
+  });
+
+  if (mailResult.ok) {
+    return {
+      delivered: true,
+      channel: "email",
+      otp: null,
+      resendAfterSeconds: RESEND_COOLDOWN_SEC,
+    };
+  }
+
+  console.warn(
+    `[PASSWORD RESET OTP EMAIL FAIL] email=${email} reason=${mailResult.error}`,
+  );
+  return {
+    delivered: false,
+    channel: "email",
+    otp: process.env.NODE_ENV !== "production" ? otp : null,
+    warning: mailResult.error || "Failed to send reset OTP email",
     resendAfterSeconds: RESEND_COOLDOWN_SEC,
   };
 };
@@ -722,6 +773,353 @@ export const logoutUser = async (req, res) => {
       sameSite: "none",
     });
     return sendSuccess(res, "Logged out successfully", {});
+  } catch (error) {
+    return sendError(res, error.message, 500);
+  }
+};
+
+// @desc    Request password reset OTP to registered email
+// @route   POST /api/v1/users/forgot-password
+// @access  Public
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email || !isValidEmail(email)) {
+      return sendError(res, "Please provide a valid email address", 400);
+    }
+
+    const emailNorm = email.trim().toLowerCase();
+    const user = await User.findOne({ email: emailNorm });
+
+    if (!user) {
+      return sendError(
+        res,
+        "No account found with this email. Please check your spelling or sign up.",
+        404,
+      );
+    }
+
+    if (user.status === "suspended") {
+      return sendError(
+        res,
+        "Your account has been suspended. Please contact support.",
+        403,
+      );
+    }
+
+    const wait = resendWaitSeconds(user.resetPasswordOtp?.lastSentAt);
+    if (wait > 0) {
+      return sendError(
+        res,
+        `Please wait ${wait}s before requesting another reset code.`,
+        429,
+        { resendAfterSeconds: wait },
+      );
+    }
+
+    const otp = generateOtpCode();
+    user.resetPasswordOtp = {
+      hash: hashOtp(otp),
+      expiresAt: new Date(Date.now() + OTP_TTL_MS),
+      lastSentAt: new Date(),
+      attempts: 0,
+      resetTokenHash: null,
+      resetTokenExpiresAt: null,
+    };
+    await user.save();
+
+    const otpResult = await deliverPasswordResetOtpEmail({
+      name: user.name,
+      email: user.email,
+      otp,
+    });
+
+    return sendSuccess(
+      res,
+      otpResult.delivered
+        ? "Password reset code sent to your email."
+        : "Reset code generated. Email delivery failed — check Dev OTP in development.",
+      {
+        email: user.email,
+        resendAfterSeconds: otpResult.resendAfterSeconds ?? RESEND_COOLDOWN_SEC,
+        ...(otpResult.otp ? { devOtp: otpResult.otp } : {}),
+        ...(otpResult.warning ? { warning: otpResult.warning } : {}),
+      },
+    );
+  } catch (error) {
+    return sendError(res, error.message, 500);
+  }
+};
+
+// @desc    Verify password reset OTP -> issue short-lived reset token
+// @route   POST /api/v1/users/verify-reset-otp
+// @access  Public
+export const verifyResetOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !isValidEmail(email)) {
+      return sendError(res, "Please provide a valid email address", 400);
+    }
+
+    if (!otp || String(otp).length !== OTP_LENGTH) {
+      return sendError(res, `OTP must be ${OTP_LENGTH} digits`, 400);
+    }
+
+    const emailNorm = email.trim().toLowerCase();
+    const user = await User.findOne({ email: emailNorm });
+
+    if (!user) {
+      return sendError(res, "User not found", 404);
+    }
+
+    if (user.status === "suspended") {
+      return sendError(res, "Account is suspended", 403);
+    }
+
+    const resetOtp = user.resetPasswordOtp;
+    if (!resetOtp?.hash || !resetOtp?.expiresAt) {
+      return sendError(
+        res,
+        "No password reset request active. Please request a new code.",
+        400,
+      );
+    }
+
+    // Max 5 attempts
+    if (resetOtp.attempts >= 5) {
+      user.resetPasswordOtp = {
+        hash: null,
+        expiresAt: null,
+        lastSentAt: resetOtp.lastSentAt,
+        attempts: 0,
+        resetTokenHash: null,
+        resetTokenExpiresAt: null,
+      };
+      await user.save();
+      return sendError(
+        res,
+        "Too many invalid attempts. Please request a new reset code.",
+        400,
+      );
+    }
+
+    if (new Date(resetOtp.expiresAt).getTime() < Date.now()) {
+      user.resetPasswordOtp = {
+        hash: null,
+        expiresAt: null,
+        lastSentAt: resetOtp.lastSentAt,
+        attempts: 0,
+        resetTokenHash: null,
+        resetTokenExpiresAt: null,
+      };
+      await user.save();
+      return sendError(
+        res,
+        "Reset code has expired. Please request a new one.",
+        400,
+      );
+    }
+
+    if (hashOtp(otp) !== resetOtp.hash) {
+      user.resetPasswordOtp.attempts = (resetOtp.attempts || 0) + 1;
+      await user.save();
+      const remaining = 5 - user.resetPasswordOtp.attempts;
+      return sendError(
+        res,
+        `Invalid reset code.${remaining > 0 ? ` ${remaining} attempts remaining.` : ""}`,
+        400,
+      );
+    }
+
+    // OTP is valid! Invalidate OTP hash & generate 32-byte hex reset token
+    const rawResetToken = crypto.randomBytes(32).toString("hex");
+    const RESET_TOKEN_TTL_MS = 15 * 60 * 1000; // 15 mins
+
+    user.resetPasswordOtp = {
+      hash: null,
+      expiresAt: null,
+      lastSentAt: resetOtp.lastSentAt,
+      attempts: 0,
+      resetTokenHash: crypto
+        .createHash("sha256")
+        .update(rawResetToken)
+        .digest("hex"),
+      resetTokenExpiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS),
+    };
+    await user.save();
+
+    return sendSuccess(res, "Code verified successfully", {
+      email: user.email,
+      resetToken: rawResetToken,
+    });
+  } catch (error) {
+    return sendError(res, error.message, 500);
+  }
+};
+
+// @desc    Reset password using reset token -> log in automatically
+// @route   POST /api/v1/users/reset-password
+// @access  Public
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, resetToken, newPassword } = req.body;
+
+    if (!email || !isValidEmail(email)) {
+      return sendError(res, "Please provide a valid email address", 400);
+    }
+
+    if (!resetToken) {
+      return sendError(res, "Reset token is required", 400);
+    }
+
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      return sendError(res, passwordError, 400);
+    }
+
+    const emailNorm = email.trim().toLowerCase();
+    const user = await User.findOne({ email: emailNorm }).select("+password");
+
+    if (!user) {
+      return sendError(res, "User not found", 404);
+    }
+
+    if (user.status === "suspended") {
+      return sendError(res, "Account is suspended", 403);
+    }
+
+    const resetOtp = user.resetPasswordOtp;
+    if (!resetOtp?.resetTokenHash || !resetOtp?.resetTokenExpiresAt) {
+      return sendError(
+        res,
+        "No active password reset session. Please request a new code.",
+        400,
+      );
+    }
+
+    if (new Date(resetOtp.resetTokenExpiresAt).getTime() < Date.now()) {
+      user.resetPasswordOtp = {
+        hash: null,
+        expiresAt: null,
+        lastSentAt: null,
+        attempts: 0,
+        resetTokenHash: null,
+        resetTokenExpiresAt: null,
+      };
+      await user.save();
+      return sendError(
+        res,
+        "Reset session has expired. Please restart the forgot password process.",
+        400,
+      );
+    }
+
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(String(resetToken))
+      .digest("hex");
+    if (tokenHash !== resetOtp.resetTokenHash) {
+      return sendError(res, "Invalid or expired reset token", 400);
+    }
+
+    // Set new hashed password
+    user.password = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    // Invalidate reset session
+    user.resetPasswordOtp = {
+      hash: null,
+      expiresAt: null,
+      lastSentAt: null,
+      attempts: 0,
+      resetTokenHash: null,
+      resetTokenExpiresAt: null,
+    };
+    user.isVerified = true;
+    await user.save();
+
+    // Send confirmation email asynchronously (failure-isolated)
+    const confirmationEmail = buildPasswordChangedSuccessEmail({
+      name: user.name,
+    });
+    sendMail({
+      to: user.email,
+      subject: confirmationEmail.subject,
+      html: confirmationEmail.html,
+      text: `Hi ${user.name}, your PARIWESH account password was changed successfully.`,
+      type: "password_reset",
+      meta: { name: user.name, action: "password_reset" },
+    }).catch((err) =>
+      console.warn("[PASSWORD CHANGED CONFIRMATION EMAIL ERROR]", err),
+    );
+
+    return sendTokenResponse(user, 200, res, "Password updated successfully");
+  } catch (error) {
+    return sendError(res, error.message, 500);
+  }
+};
+
+// @desc    Resend password reset OTP — 60s cooldown
+// @route   POST /api/v1/users/resend-reset-otp
+// @access  Public
+export const resendResetOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email || !isValidEmail(email)) {
+      return sendError(res, "Please provide a valid email address", 400);
+    }
+
+    const emailNorm = email.trim().toLowerCase();
+    const user = await User.findOne({ email: emailNorm });
+
+    if (!user) {
+      return sendError(res, "No account found with this email", 404);
+    }
+
+    if (user.status === "suspended") {
+      return sendError(res, "Account suspended", 403);
+    }
+
+    const wait = resendWaitSeconds(user.resetPasswordOtp?.lastSentAt);
+    if (wait > 0) {
+      return sendError(
+        res,
+        `Please wait ${wait}s before requesting another reset code.`,
+        429,
+        { resendAfterSeconds: wait },
+      );
+    }
+
+    const otp = generateOtpCode();
+    user.resetPasswordOtp = {
+      hash: hashOtp(otp),
+      expiresAt: new Date(Date.now() + OTP_TTL_MS),
+      lastSentAt: new Date(),
+      attempts: 0,
+      resetTokenHash: null,
+      resetTokenExpiresAt: null,
+    };
+    await user.save();
+
+    const otpResult = await deliverPasswordResetOtpEmail({
+      name: user.name,
+      email: user.email,
+      otp,
+    });
+
+    return sendSuccess(
+      res,
+      otpResult.delivered
+        ? "Reset OTP resent to your email."
+        : "Reset OTP generated but email delivery failed.",
+      {
+        email: user.email,
+        resendAfterSeconds: otpResult.resendAfterSeconds ?? RESEND_COOLDOWN_SEC,
+        ...(otpResult.otp ? { devOtp: otpResult.otp } : {}),
+        ...(otpResult.warning ? { warning: otpResult.warning } : {}),
+      },
+    );
   } catch (error) {
     return sendError(res, error.message, 500);
   }

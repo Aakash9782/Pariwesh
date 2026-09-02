@@ -481,6 +481,53 @@ export const buildOtpEmail = ({ name, otp, expiresMinutes = 10 }) => ({
   }),
 });
 
+export const buildPasswordResetOtpEmail = ({
+  name,
+  otp,
+  expiresMinutes = 10,
+}) => ({
+  subject: `${brand.name} · Password Reset Verification Code`,
+  html: wrapLayout({
+    title: "Reset Your Password",
+    eyebrow: "Account Security",
+    bodyHtml: `
+      <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:${brand.muted};font-family:Arial,Helvetica,sans-serif;">
+        Hi ${escapeHtml(name || "there")}, we received a request to reset the password for your PARIWESH account.
+        Use the verification code below to proceed with resetting your password.
+        It expires in ${escapeHtml(expiresMinutes)} minutes.
+      </p>
+      <div style="margin:22px 0;padding:18px;text-align:center;background:${brand.bg};border:1px solid ${brand.border};">
+        <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:${brand.muted};">Reset OTP Code</div>
+        <div style="margin-top:10px;font-family:Consolas,Monaco,monospace;font-size:32px;letter-spacing:0.35em;font-weight:700;color:${brand.dark};">${escapeHtml(otp)}</div>
+      </div>
+      <p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:${brand.muted};font-family:Arial,Helvetica,sans-serif;">
+        Do not share this code with anyone. If you did not request a password reset, please ignore this email or reach out to support to secure your account.
+      </p>
+    `,
+    footerNote: "PARIWESH never asks for your OTP or password by phone or chat.",
+  }),
+});
+
+export const buildPasswordChangedSuccessEmail = ({ name }) => ({
+  subject: `${brand.name} · Security Alert: Password Changed`,
+  html: wrapLayout({
+    title: "Password Changed Successfully",
+    eyebrow: "Security Alert",
+    bodyHtml: `
+      <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:${brand.muted};font-family:Arial,Helvetica,sans-serif;">
+        Hi ${escapeHtml(name || "there")}, your PARIWESH account password was changed successfully.
+      </p>
+      <div style="margin:16px 0;padding:14px;background:#E8F5E9;border:1px solid #C8E6C9;color:${brand.success};font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;">
+        ✓ Your password has been updated. You can now use your new password to sign in.
+      </div>
+      <p style="margin:12px 0 0;font-size:12px;line-height:1.6;color:${brand.muted};font-family:Arial,Helvetica,sans-serif;">
+        If you did not perform this change, please contact our support team immediately at contact@pariwesh.co to protect your account.
+      </p>
+    `,
+    footerNote: "PARIWESH account security notification.",
+  }),
+});
+
 export const buildAdminOrderNotificationEmail = (order) => {
   const bodyHtml = `
     <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:${brand.muted};font-family:Arial,Helvetica,sans-serif;">

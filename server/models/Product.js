@@ -52,15 +52,37 @@ const ProductSchema = new mongoose.Schema(
     },
     sizes: {
       type: [String],
-      enum: ["S", "M", "L", "XL", "XXL"],
-      default: ["S", "M", "L", "XL"],
+      enum: ["M", "L", "XL", "XXL"],
+      default: ["M", "L", "XL", "XXL"],
     },
     sizesStock: {
-      S: { type: Number, default: 10 },
       M: { type: Number, default: 10 },
       L: { type: Number, default: 10 },
       XL: { type: Number, default: 10 },
       XXL: { type: Number, default: 10 },
+    },
+    sizeChart: {
+      type: {
+        type: String,
+        enum: ["table", "image", "none"],
+        default: "table",
+      },
+      imageUrl: {
+        type: String,
+        default: "",
+      },
+      measurements: [
+        {
+          size: { type: String, enum: ["M", "L", "XL", "XXL"] },
+          bust: { type: String, default: "" },
+          waist: { type: String, default: "" },
+          hip: { type: String, default: "" },
+          shoulder: { type: String, default: "" },
+          length: { type: String, default: "" },
+          bottomWaist: { type: String, default: "" },
+          bottomLength: { type: String, default: "" },
+        },
+      ],
     },
     mrp: {
       type: Number,
@@ -190,6 +212,10 @@ const ProductSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    videos: {
+      type: [String],
+      default: [],
+    },
     tag: {
       type: String,
       default: "",
@@ -228,7 +254,7 @@ ProductSchema.pre("validate", function (next) {
   try {
     if (this.sizesStock) {
       let totalStock = 0;
-      const sizes = ["S", "M", "L", "XL", "XXL"];
+      const sizes = ["M", "L", "XL", "XXL"];
       sizes.forEach((sz) => {
         const val = this.get(`sizesStock.${sz}`);
         if (val !== undefined) {

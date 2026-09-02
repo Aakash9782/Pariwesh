@@ -74,8 +74,13 @@ const ProductsPage = () => {
     colorGroup: "",
     color: "Ivory",
     colorHex: "#F5F5F0",
-    sizes: ["S", "M", "L", "XL"],
-    sizesStock: { S: 10, M: 10, L: 10, XL: 10, XXL: 10 },
+    sizes: ["M", "L", "XL", "XXL"],
+    sizesStock: { M: 10, L: 10, XL: 10, XXL: 10 },
+    sizeChart: {
+      type: "table",
+      imageUrl: "",
+      measurements: [],
+    },
     mrp: "",
     price: "",
     discount: 0,
@@ -98,6 +103,7 @@ const ProductsPage = () => {
     ogImage: "",
     images: [],
     video: "",
+    videos: [],
     tag: "Regular",
     description: "",
     status: "active",
@@ -405,25 +411,74 @@ const ProductsPage = () => {
     });
   };
 
-  // Base64 video selector helper
-  const handleVideoFileChange = (e) => {
+  // Base64 video selector helper with optional index replacement
+  const handleVideoFileChange = (e, replaceIndex = -1) => {
     const file = e.target.files[0];
     if (file) {
-      // Basic vertical reel verification tip
-      const maxSizeBytes = 10 * 1024 * 1024; // 10MB vertical video recommendation
+      const maxSizeBytes = 25 * 1024 * 1024; // 25MB max
       if (file.size > maxSizeBytes) {
-        alert("Video exceeds recommended 10MB limit.");
+        alert("Video exceeds recommended 25MB limit.");
         return;
       }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setForm((prev) => ({
-          ...prev,
-          video: reader.result,
-        }));
+        setForm((prev) => {
+          let currentVideos = Array.isArray(prev.videos)
+            ? [...prev.videos]
+            : prev.video
+            ? [prev.video]
+            : [];
+          if (replaceIndex >= 0 && replaceIndex < currentVideos.length) {
+            currentVideos[replaceIndex] = reader.result;
+          } else {
+            currentVideos.push(reader.result);
+          }
+          return {
+            ...prev,
+            video: currentVideos[0] || "",
+            videos: currentVideos,
+          };
+        });
       };
       reader.readAsDataURL(file);
+      e.target.value = "";
     }
+  };
+
+  // Direct video URL add
+  const handleUrlVideoAdd = (url) => {
+    if (!url || !url.trim()) return;
+    const trimmed = url.trim();
+    setForm((prev) => {
+      const currentVideos = Array.isArray(prev.videos)
+        ? [...prev.videos]
+        : prev.video
+        ? [prev.video]
+        : [];
+      currentVideos.push(trimmed);
+      return {
+        ...prev,
+        video: currentVideos[0] || "",
+        videos: currentVideos,
+      };
+    });
+  };
+
+  // Remove video by index
+  const handleVideoRemove = (index) => {
+    setForm((prev) => {
+      const currentVideos = Array.isArray(prev.videos)
+        ? [...prev.videos]
+        : prev.video
+        ? [prev.video]
+        : [];
+      const updated = currentVideos.filter((_, i) => i !== index);
+      return {
+        ...prev,
+        video: updated[0] || "",
+        videos: updated,
+      };
+    });
   };
 
   // MRP and discount pricing synchronization (bi-directional check)
@@ -565,8 +620,18 @@ const ProductsPage = () => {
       colorGroup: prod.colorGroup || "",
       color: prod.color || "Ivory",
       colorHex: prod.colorHex || "#F5F5F0",
-      sizes: prod.sizes || ["S", "M", "L", "XL"],
-      sizesStock: prod.sizesStock || { S: 10, M: 10, L: 10, XL: 10, XXL: 10 },
+      sizes: prod.sizes?.filter((s) => s !== "S") || ["M", "L", "XL", "XXL"],
+      sizesStock: {
+        M: prod.sizesStock?.M ?? 10,
+        L: prod.sizesStock?.L ?? 10,
+        XL: prod.sizesStock?.XL ?? 10,
+        XXL: prod.sizesStock?.XXL ?? 10,
+      },
+      sizeChart: prod.sizeChart || {
+        type: "table",
+        imageUrl: "",
+        measurements: [],
+      },
       mrp: prod.mrp || "",
       price: prod.price || "",
       discount: prod.discount || 0,
@@ -588,7 +653,13 @@ const ProductsPage = () => {
       canonicalUrl: prod.canonicalUrl || "",
       ogImage: prod.ogImage || "",
       images: prod.images || [],
-      video: prod.video || "",
+      video: prod.video || (prod.videos && prod.videos[0]) || "",
+      videos:
+        prod.videos && prod.videos.length > 0
+          ? prod.videos
+          : prod.video
+          ? [prod.video]
+          : [],
       tag: prod.tag || "Regular",
       description: prod.description || "",
       status: prod.status || "active",
@@ -838,6 +909,8 @@ const ProductsPage = () => {
         validateImageFile={validateImageFile}
         handleImageFileChange={handleImageFileChange}
         handleVideoFileChange={handleVideoFileChange}
+        handleUrlVideoAdd={handleUrlVideoAdd}
+        handleVideoRemove={handleVideoRemove}
         handleUrlImageAdd={handleUrlImageAdd}
         dragOver={dragOver}
         setDragOver={setDragOver}

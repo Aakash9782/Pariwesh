@@ -17,7 +17,7 @@ const SEED_PRODUCTS = [
     washCare: "Dry Clean Only",
     color: "Gold",
     colorHex: "#D4AF37",
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["M", "L", "XL", "XXL"],
     mrp: 3499,
     price: 2499,
     images: ["/hero.png", "/hero.png"],
@@ -35,7 +35,7 @@ const SEED_PRODUCTS = [
     washCare: "Gentle Machine Wash",
     color: "Red",
     colorHex: "#C62828",
-    sizes: ["M", "L", "XL"],
+    sizes: ["M", "L", "XL", "XXL"],
     mrp: 1799,
     price: 1199,
     images: ["/hero.png", "/hero.png"],
@@ -53,7 +53,7 @@ const SEED_PRODUCTS = [
     washCare: "Dry Clean Only",
     color: "Ivory",
     colorHex: "#F5F5F0",
-    sizes: ["S", "M", "L"],
+    sizes: ["M", "L", "XL", "XXL"],
     mrp: 5999,
     price: 3999,
     images: ["/hero.png", "/hero.png"],
@@ -71,7 +71,7 @@ const SEED_PRODUCTS = [
     washCare: "Dry Clean Only",
     color: "Brown",
     colorHex: "#78350F",
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["M", "L", "XL", "XXL"],
     mrp: 3999,
     price: 1799,
     images: ["/hero.png"],
@@ -89,7 +89,7 @@ const SEED_PRODUCTS = [
     washCare: "Gentle Machine Wash",
     color: "Blue",
     colorHex: "#1E3A8A",
-    sizes: ["M", "L", "XL"],
+    sizes: ["M", "L", "XL", "XXL"],
     mrp: 2999,
     price: 1399,
     images: ["/hero.png"],
@@ -183,6 +183,7 @@ export const createProduct = async (req, res, next) => {
       image, // Accept single base64 image or string url
       images,
       video,
+      videos,
       tag,
       description,
       discount,
@@ -251,14 +252,22 @@ export const createProduct = async (req, res, next) => {
     }
 
     // Prepare video upload
-    let productVideo = "";
-    if (video) {
-      if (video.startsWith("data:video")) {
-        productVideo = await uploadBase64Video(video, "pariwesh/videos");
-      } else {
-        productVideo = video;
+    let productVideos = [];
+    const rawVideos =
+      videos && Array.isArray(videos)
+        ? videos
+        : video
+        ? [video]
+        : [];
+    for (const v of rawVideos) {
+      if (typeof v === "string" && v.startsWith("data:video")) {
+        const uploadedUrl = await uploadBase64Video(v, "pariwesh/videos");
+        productVideos.push(uploadedUrl);
+      } else if (typeof v === "string" && v.trim()) {
+        productVideos.push(v.trim());
       }
     }
+    const productVideo = productVideos[0] || "";
 
     const newProduct = await Product.create({
       name,
@@ -269,13 +278,14 @@ export const createProduct = async (req, res, next) => {
       colorGroup: stableColorGroup,
       color: color || "Multicolor",
       colorHex: colorHex || "#D4AF37",
-      sizes: sizes || ["S", "M", "L", "XL"],
-      sizesStock: sizesStock || { S: 10, M: 10, L: 10, XL: 10, XXL: 10 },
+      sizes: sizes || ["M", "L", "XL", "XXL"],
+      sizesStock: sizesStock || { M: 10, L: 10, XL: 10, XXL: 10 },
       mrp,
       price,
       discount: discount || 0,
       images: productImages,
       video: productVideo,
+      videos: productVideos,
       tag: tag || "Regular",
       description:
         description || "Premium selection fashion apparel custom crafted.",
@@ -322,6 +332,7 @@ export const createProduct = async (req, res, next) => {
       201,
     );
   } catch (error) {
+    console.error("createProduct error:", error);
     if (error.code === 11000) {
       return sendError(
         res,
@@ -379,6 +390,7 @@ export const updateProduct = async (req, res, next) => {
       image,
       images,
       video,
+      videos,
       tag,
       description,
       discount,
@@ -440,14 +452,27 @@ export const updateProduct = async (req, res, next) => {
       }
     }
 
-    // Process video if present and base64
-    let productVideo = product.video;
-    if (video !== undefined) {
-      if (video && video.startsWith("data:video")) {
-        productVideo = await uploadBase64Video(video, "pariwesh/videos");
-      } else {
-        productVideo = video;
+    // Process video / videos if present
+    if (videos !== undefined || video !== undefined) {
+      const rawVideos = Array.isArray(videos)
+        ? videos
+        : video !== undefined
+        ? video
+          ? [video]
+          : []
+        : product.videos || (product.video ? [product.video] : []);
+
+      let processedVideos = [];
+      for (const v of rawVideos) {
+        if (typeof v === "string" && v.startsWith("data:video")) {
+          const uploadedUrl = await uploadBase64Video(v, "pariwesh/videos");
+          processedVideos.push(uploadedUrl);
+        } else if (typeof v === "string" && v.trim()) {
+          processedVideos.push(v.trim());
+        }
       }
+      product.videos = processedVideos;
+      product.video = processedVideos[0] || "";
     }
 
     product.name = name !== undefined ? name : product.name;
@@ -473,7 +498,6 @@ export const updateProduct = async (req, res, next) => {
       discount !== undefined ? Number(discount) : product.discount;
     product.stock = stock !== undefined ? Number(stock) : product.stock;
     product.images = productImages;
-    product.video = productVideo;
     product.tag = tag !== undefined ? tag : product.tag;
     product.description =
       description !== undefined ? description : product.description;
@@ -535,6 +559,7 @@ export const updateProduct = async (req, res, next) => {
       updatedProduct,
     );
   } catch (error) {
+    console.error("updateProduct error:", error);
     if (error.code === 11000) {
       return sendError(
         res,

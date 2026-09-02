@@ -207,13 +207,13 @@ const MainLayout = () => {
     setSubscriberEmail("");
   };
 
-  const navLinks = [
+    const navLinks = [
     { title: "HOME", path: "/" },
-    { title: "BEST SELLING", path: "/shop?tag=Best Seller" },
-    { title: "NEW ARRIVAL", path: "/shop?tag=New Arrival" },
+    { title: "BEST SELLING", path: "/shop?tag=Best Seller", badge: "Hot" },
+    { title: "NEW ARRIVAL", path: "/shop?tag=New Arrival", badge: "New" },
     { title: "READYMADE DRESSES", path: "/shop?category=ethnic" },
     { title: "CORD SETS", path: "/shop?category=kurtis" },
-    { title: "SUMMER SALE IS LIVE", path: "/shop" },
+    { title: "SUMMER SALE IS LIVE", path: "/shop", badge: "Sale" },
     { title: "PREMIUM DRESSES", path: "/shop?category=suits" },
     { title: "ALL COLLECTION", path: "/collections" },
     { title: "TRACK YOUR ORDER", path: "/profile" },
@@ -237,151 +237,208 @@ const MainLayout = () => {
 
       {/* 1. STICKY ANNOUNCEMENT BAR */}
       {announcementActive && (
-        <div className="w-full bg-secondary text-primary py-2 text-[10px] sm:text-xs font-display tracking-widest uppercase transition-all duration-300 overflow-hidden relative whitespace-nowrap select-none">
+        <div className="w-full bg-secondary text-primary py-2 text-[10px] sm:text-xs font-display tracking-widest uppercase transition-all duration-300 overflow-hidden relative whitespace-nowrap select-none border-b border-[#c5a880]/30 shadow-xs">
           <div className="animate-marquee flex items-center justify-around min-w-full">
             {/* Repeated text blocks for infinite seamless flow */}
             {[...Array(12)].map((_, index) => (
               <span key={index} className="mx-6 flex items-center shrink-0">
-                <span>{announcementText}</span>
-                <span className="mx-6 text-accent-gold select-none">•</span>
+                <span className="font-semibold tracking-[0.2em]">{announcementText}</span>
+                <span className="mx-6 text-accent-gold select-none text-xs">✦</span>
               </span>
             ))}
           </div>
         </div>
       )}
 
-      <header className="sticky top-0 z-50 bg-primary border-b border-borderLight shadow-sm transition-all duration-300">
+      <header className="sticky top-0 z-50 bg-white/85 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/80 border-b border-[#c5a880]/25 shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300">
         {/* Tier 1: Search, Logo, Actions */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between relative">
-          {/* Mobile Menu Toggle */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden text-textPrimary hover:text-accent-gold transition-colors focus:outline-none"
-          >
-            {mobileMenuOpen ? (
-              <RiCloseLine size={24} />
-            ) : (
-              <RiMenuLine size={24} />
-            )}
-          </button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 lg:h-22 flex items-center justify-between relative">
+          {/* Mobile Menu Toggle & Search trigger */}
+          <div className="flex items-center space-x-1.5 md:hidden">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-xl bg-white/80 hover:bg-white border border-[#c5a880]/30 shadow-xs text-slate-800 hover:text-[#8a1c14] transition-all duration-200 focus:outline-none cursor-pointer active:scale-95"
+              aria-label="Toggle Menu"
+            >
+              {mobileMenuOpen ? (
+                <RiCloseLine size={22} />
+              ) : (
+                <RiMenuLine size={22} />
+              )}
+            </button>
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 rounded-xl bg-white/80 hover:bg-white border border-[#c5a880]/30 shadow-xs text-slate-800 hover:text-[#8a1c14] transition-all duration-200 cursor-pointer active:scale-95"
+              aria-label="Search"
+            >
+              <RiSearchLine size={20} />
+            </button>
+          </div>
 
-          {/* Desktop Search Input Field (Left) */}
-          <div className="hidden md:flex items-center bg-bgLight border border-borderLight px-4 py-2 rounded-full w-72 focus-within:border-accent-gold transition-colors">
-            <RiSearchLine className="text-textSecondary mr-2" size={16} />
+          {/* Desktop Search Input Field (Left) - Glassy Pill with Gold Accent */}
+          <div className="hidden md:flex items-center bg-white/80 hover:bg-white focus-within:bg-white backdrop-blur-md border border-[#c5a880]/35 hover:border-[#c5a880]/70 focus-within:border-[#c5a880] shadow-[0_2px_10px_rgba(0,0,0,0.03),inset_0_1px_2px_rgba(0,0,0,0.02)] focus-within:shadow-[0_4px_20px_rgba(197,168,128,0.22)] px-3.5 py-2 rounded-full w-72 lg:w-80 transition-all duration-300 group">
+            <RiSearchLine className="text-[#8a1c14] group-focus-within:text-[#c5a880] mr-2 shrink-0 transition-colors" size={16} />
             <input
               type="text"
-              placeholder="Search"
+              placeholder="Search silk suits, kurtas, sets..."
               value={searchVal}
               onChange={(e) => setSearchVal(e.target.value)}
               onKeyDown={handleSearchSubmit}
-              className="bg-transparent text-xs text-textPrimary focus:outline-none w-full font-sans"
+              className="bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none w-full font-sans tracking-normal"
             />
+            {searchVal && (
+              <button
+                onClick={() => setSearchVal("")}
+                className="text-slate-400 hover:text-slate-600 p-0.5 mr-1 cursor-pointer"
+                title="Clear"
+              >
+                <RiCloseLine size={14} />
+              </button>
+            )}
+            <kbd className="text-[9px] text-slate-400 font-mono bg-slate-100/90 px-1.5 py-0.5 rounded border border-slate-200/80 shadow-2xs hidden lg:inline-block pointer-events-none">
+              ↵
+            </kbd>
           </div>
 
-          {/* Elegant Center Logo */}
-          <div className="absolute left-1/2 transform -translate-x-1/2 md:static md:transform-none flex justify-center">
-            <Link to="/" className="flex items-center">
+          {/* Regal Centered Logo - Larger, Crisp & Well-proportioned */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 md:static md:transform-none flex justify-center py-1">
+            <Link to="/" className="flex items-center group py-1">
               <img
                 src={logoUrl || "/logo.png"}
                 alt="PARIWESH Logo"
-                className="h-10 md:h-12 w-auto object-contain max-w-[110px] xs:max-w-[130px] md:max-w-[200px]"
+                className="h-12 sm:h-13 md:h-14 lg:h-15 w-auto object-contain max-w-[130px] xs:max-w-[150px] md:max-w-[220px] transition-transform duration-300 group-hover:scale-[1.04] drop-shadow-xs"
               />
             </Link>
           </div>
 
-          {/* Navigation Action Buttons (Right) */}
-          <div className="flex items-center space-x-4 md:space-x-6 text-textPrimary">
-            {/* Wishlist Link (Hidden on Mobile, now in Drawer) */}
+          {/* Navigation Action Buttons (Right) - Elevated Glassy Buttons */}
+          <div className="flex items-center space-x-2 md:space-x-3 text-slate-800">
+            {/* Wishlist Link (Desktop & Mobile) */}
             <Link
               to="/wishlist"
-              className="hidden md:block hover:text-accent-gold transition-colors relative"
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-white/80 hover:bg-white backdrop-blur-md border border-[#c5a880]/35 hover:border-[#c5a880] shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_4px_14px_rgba(197,168,128,0.25)] text-slate-700 hover:text-[#8a1c14] transition-all duration-300 relative group cursor-pointer"
+              title="Wishlist"
             >
-              <RiHeartLine size={22} />
+              <RiHeartLine size={19} className="group-hover:scale-110 transition-transform" />
               {wishlistProducts.length > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-accent-gold text-secondary font-bold text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white">
+                <span className="absolute -top-1 -right-1 bg-[#8a1c14] text-white font-bold text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
                   {wishlistProducts.length}
                 </span>
               )}
             </Link>
 
-            {/* Cart Link (Always Visible) */}
+            {/* Cart Link */}
             <Link
               to="/cart"
               onClick={(e) => {
                 e.preventDefault();
                 navigate("/cart");
               }}
-              className="hover:text-accent-gold transition-colors relative"
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-white/80 hover:bg-white backdrop-blur-md border border-[#c5a880]/35 hover:border-[#c5a880] shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_4px_14px_rgba(197,168,128,0.25)] text-slate-700 hover:text-[#8a1c14] transition-all duration-300 relative group cursor-pointer"
+              title="Shopping Bag"
             >
-              <RiShoppingBagLine size={22} />
+              <RiShoppingBagLine size={19} className="group-hover:scale-110 transition-transform" />
               {totalCartQuantity > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-accent-gold text-secondary font-bold text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white">
+                <span className="absolute -top-1 -right-1 bg-[#8a1c14] text-white font-bold text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
                   {totalCartQuantity}
                 </span>
               )}
             </Link>
 
-            {/* Auth Menu (Visible on Desktop & Mobile) */}
+            {/* Auth Menu */}
             {isAuthenticated ? (
               <div className="relative group">
                 <Link
                   to="/profile"
-                  className="hover:text-accent-gold transition-colors flex items-center space-x-1"
+                  className="h-10 px-3 rounded-full flex items-center space-x-2 bg-white/80 hover:bg-white backdrop-blur-md border border-[#c5a880]/35 hover:border-[#c5a880] shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_4px_14px_rgba(197,168,128,0.25)] text-slate-800 hover:text-[#8a1c14] transition-all duration-300"
                 >
-                  <RiUserLine size={22} />
-                  <span className="text-xs max-w-[80px] truncate hidden lg:inline-block">
-                    Hi, {user?.name?.split(" ")[0]}
+                  <div className="w-5 h-5 rounded-full bg-[#8a1c14] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                    {user?.name?.[0]?.toUpperCase() || <RiUserLine size={12} />}
+                  </div>
+                  <span className="text-xs font-semibold max-w-[85px] truncate hidden lg:inline-block">
+                    {user?.name?.split(" ")[0]}
                   </span>
                 </Link>
-                {/* Dropdown Menu (Desktop Hover only) */}
-                <div className="absolute right-0 mt-2 w-48 bg-primary border border-borderLight rounded-md shadow-lg opacity-0 invisible md:group-hover:opacity-100 md:group-hover:visible transition-all duration-300 text-textPrimary hidden md:block z-50">
-                  <Link
-                    to="/profile"
-                    className="block px-4 py-2 text-sm text-textPrimary hover:bg-bgLight hover:text-accent-gold"
-                  >
-                    My Profile
-                  </Link>
-                  <Link
-                    to="/profile"
-                    className="block px-4 py-2 text-sm text-textPrimary hover:bg-bgLight hover:text-accent-gold"
-                  >
-                    My Orders
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-danger hover:bg-bgLight"
-                  >
-                    Logout
-                  </button>
+                {/* Luxury Dropdown Menu */}
+                <div className="absolute right-0 mt-2 w-52 bg-white/95 backdrop-blur-2xl border border-[#c5a880]/35 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.12)] opacity-0 invisible md:group-hover:opacity-100 md:group-hover:visible transition-all duration-300 hidden md:block z-50 overflow-hidden p-1.5 divide-y divide-slate-100">
+                  <div className="px-3 py-2 text-left">
+                    <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Signed in as</p>
+                    <p className="text-xs font-bold text-slate-900 truncate">{user?.name}</p>
+                  </div>
+                  <div className="py-1">
+                    <Link
+                      to="/profile"
+                      className="flex items-center px-3 py-2 text-xs font-medium rounded-xl text-slate-700 hover:bg-amber-50/60 hover:text-[#8a1c14] transition"
+                    >
+                      My Profile
+                    </Link>
+                    <Link
+                      to="/profile"
+                      className="flex items-center px-3 py-2 text-xs font-medium rounded-xl text-slate-700 hover:bg-amber-50/60 hover:text-[#8a1c14] transition"
+                    >
+                      My Orders
+                    </Link>
+                    <Link
+                      to="/wishlist"
+                      className="flex items-center px-3 py-2 text-xs font-medium rounded-xl text-slate-700 hover:bg-amber-50/60 hover:text-[#8a1c14] transition"
+                    >
+                      My Wishlist
+                    </Link>
+                  </div>
+                  <div className="pt-1">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-xs font-semibold rounded-xl text-red-600 hover:bg-red-50 transition cursor-pointer"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
               <Link
                 to="/login"
-                className="hover:text-accent-gold transition-colors"
+                className="h-10 px-3.5 rounded-full flex items-center space-x-1.5 bg-white/80 hover:bg-white backdrop-blur-md border border-[#c5a880]/35 hover:border-[#c5a880] shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_4px_14px_rgba(197,168,128,0.25)] text-slate-700 hover:text-[#8a1c14] transition-all duration-300"
+                title="Sign In"
               >
-                <RiUserLine size={22} />
+                <RiUserLine size={18} />
+                <span className="text-xs font-bold uppercase tracking-wider hidden lg:inline-block">
+                  Login
+                </span>
               </Link>
             )}
           </div>
         </div>
 
-        {/* Tier 2: Horizontal Navigation bar (Desktop only) */}
-        <div className="hidden md:block border-t border-borderLight py-3.5 bg-primary/95 backdrop-blur-md overflow-x-auto scrollbar-none">
-          <nav className="max-w-7xl mx-auto px-4 flex items-center justify-start lg:justify-center gap-x-3 lg:gap-x-6 xl:gap-x-8 gap-y-2 whitespace-nowrap">
+        {/* Tier 2: Horizontal Navigation Bar (Desktop - Royal Editorial Strip) */}
+        <div className="hidden md:block border-t border-[#c5a880]/20 py-2.5 bg-[#FBF9F5]/90 backdrop-blur-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] overflow-x-auto scrollbar-none">
+          <nav className="max-w-7xl mx-auto px-4 flex items-center justify-start lg:justify-center gap-x-2.5 lg:gap-x-5 xl:gap-x-7 gap-y-1.5 whitespace-nowrap">
             {navLinks.map((link, idx) => {
               const active = isLinkActive(link.path);
               return (
                 <Link
                   key={idx}
                   to={link.path}
-                  className={`whitespace-nowrap text-[9px] lg:text-[10px] xl:text-[11px] font-semibold tracking-[0.1em] xl:tracking-[0.18em] uppercase transition-colors duration-300 relative after:content-[''] after:absolute after:-bottom-1.5 after:left-0 after:h-[1.5px] after:bg-accent-gold after:transition-all after:duration-300 ${
+                  className={`inline-flex items-center whitespace-nowrap text-[9.5px] lg:text-[10.5px] xl:text-[11px] font-bold tracking-[0.14em] xl:tracking-[0.18em] uppercase px-2 py-1 rounded-md transition-all duration-300 relative after:content-[''] after:absolute after:-bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-[2px] after:bg-[#c5a880] after:transition-all after:duration-300 ${
                     active
-                      ? "text-accent-gold after:w-full"
-                      : "text-textPrimary hover:text-accent-gold after:w-0 hover:after:w-full"
+                      ? "text-[#8a1c14] after:w-4/5"
+                      : "text-slate-700 hover:text-[#8a1c14] after:w-0 hover:after:w-4/5"
                   }`}
                 >
-                  {link.title}
+                  <span>{link.title}</span>
+                  {link.badge && (
+                    <span
+                      className={`ml-1.5 px-1.5 py-0.2 text-[7.5px] font-extrabold uppercase tracking-wider rounded-full shadow-2xs ${
+                        link.badge === "Sale"
+                          ? "bg-[#8a1c14] text-white animate-pulse"
+                          : link.badge === "New"
+                          ? "bg-[#c5a880] text-white"
+                          : "bg-amber-100 text-amber-900 border border-amber-300/60"
+                      }`}
+                    >
+                      {link.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -675,10 +732,31 @@ const MainLayout = () => {
           </div>
         </div>
 
-        {/* Border line */}
-        <div className="border-t border-gray-900 py-6 text-center text-[10px] text-textSecondary font-sans tracking-wide">
-          © {new Date().getFullYear()} PARIWESH Premium E-Commerce. All Rights
-          Reserved. Designed with Love.
+        {/* Footer Bottom Bar with Payment Partner Badges */}
+        <div className="border-t border-white/10 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-slate-400 font-sans tracking-wide">
+          <div>
+            © {new Date().getFullYear()} PARIWESH Luxury Ethnic Apparel. All Rights Reserved. Crafted with Pride in India.
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-1.5 select-none">
+            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[9px] font-extrabold tracking-wider text-slate-300">
+              UPI
+            </span>
+            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[9px] font-extrabold tracking-wider text-slate-300">
+              VISA
+            </span>
+            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[9px] font-extrabold tracking-wider text-slate-300">
+              MASTERCARD
+            </span>
+            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[9px] font-extrabold tracking-wider text-slate-300">
+              RUPAY
+            </span>
+            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[9px] font-extrabold tracking-wider text-slate-300">
+              NET BANKING
+            </span>
+            <span className="px-2 py-0.5 rounded bg-accent-gold/20 border border-accent-gold/40 text-[9px] font-extrabold tracking-wider text-accent-gold">
+              RAZORPAY 256-BIT SSL
+            </span>
+          </div>
         </div>
       </footer>
 

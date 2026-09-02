@@ -1,6 +1,13 @@
 import React from "react";
 import { useProductWizard } from "./ProductWizardContext.jsx";
-import { RiFolderImageLine, RiCloseLine, RiAddLine } from "react-icons/ri";
+import {
+  RiFolderImageLine,
+  RiCloseLine,
+  RiAddLine,
+  RiVideoLine,
+  RiDeleteBinLine,
+  RiFilmLine,
+} from "react-icons/ri";
 import API from "../../../services/api.js";
 
 // TAB 1: BASIC INFO
@@ -385,13 +392,17 @@ export const ProductDetailsTab = () => {
       colorGroup: sibling.colorGroup || "",
       color: sibling.color || "Ivory",
       colorHex: sibling.colorHex || "#F5F5F0",
-      sizes: sibling.sizes || ["S", "M", "L", "XL"],
-      sizesStock: sibling.sizesStock || {
-        S: 10,
-        M: 10,
-        L: 10,
-        XL: 10,
-        XXL: 10,
+      sizes: sibling.sizes?.filter((s) => s !== "S") || [
+        "M",
+        "L",
+        "XL",
+        "XXL",
+      ],
+      sizesStock: {
+        M: sibling.sizesStock?.M ?? 10,
+        L: sibling.sizesStock?.L ?? 10,
+        XL: sibling.sizesStock?.XL ?? 10,
+        XXL: sibling.sizesStock?.XXL ?? 10,
       },
       mrp: sibling.mrp || "",
       price: sibling.price || "",
@@ -444,7 +455,7 @@ export const ProductDetailsTab = () => {
       colorHex: "#FFFFFF",
       images: [],
       video: "",
-      sizesStock: { S: 0, M: 0, L: 0, XL: 0, XXL: 0 },
+      sizesStock: { M: 0, L: 0, XL: 0, XXL: 0 },
       status: "draft",
     });
     setActiveTab("basic");
@@ -924,15 +935,15 @@ export const ProductVisibilityTab = () => {
         <h5 className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">
           Available size stocks
         </h5>
-        <div className="grid grid-cols-5 gap-3.5">
-          {["S", "M", "L", "XL", "XXL"].map((sz, idx) => (
+        <div className="grid grid-cols-4 gap-3.5">
+          {["M", "L", "XL", "XXL"].map((sz, idx) => (
             <div key={idx} className="flex flex-col text-center">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
                 Size {sz}
               </label>
               <input
                 type="number"
-                value={form.sizesStock[sz] || 0}
+                value={form.sizesStock?.[sz] || 0}
                 onChange={(e) =>
                   setForm({
                     ...form,
@@ -947,6 +958,291 @@ export const ProductVisibilityTab = () => {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Size Chart & Fit Guide Configuration */}
+      <div className="space-y-4 pt-6 border-t border-slate-100">
+        <div>
+          <h5 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+            Size Chart & Fit Guide Configuration
+          </h5>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            Choose how customers view the size guide for this product.
+          </p>
+        </div>
+
+        {/* Mode options */}
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 text-xs font-medium">
+          {[
+            {
+              id: "table",
+              label: "Standard Brand Table",
+              desc: "Default M-XXL measurements with In/Cm switcher",
+            },
+            {
+              id: "custom_table",
+              label: "Custom Measurements",
+              desc: "Manually override bust, waist, length per size",
+            },
+            {
+              id: "image",
+              label: "Size Chart Image",
+              desc: "Upload or link a custom size chart image",
+            },
+            {
+              id: "none",
+              label: "No Size Chart",
+              desc: "Hide size chart button for this product",
+            },
+          ].map((opt) => {
+            const currentType =
+              form.sizeChart?.type === "table" &&
+              form.sizeChart?.measurements?.length > 0
+                ? "custom_table"
+                : form.sizeChart?.type || "table";
+            const isChecked = currentType === opt.id;
+            return (
+              <label
+                key={opt.id}
+                className={`border p-3 rounded-lg cursor-pointer transition flex flex-col justify-between ${
+                  isChecked
+                    ? "border-accent-gold bg-amber-50/40 text-slate-900"
+                    : "border-slate-200 hover:border-slate-300 bg-slate-50/50 text-slate-600"
+                }`}
+              >
+                <div className="flex items-start space-x-2">
+                  <input
+                    type="radio"
+                    name="sizeChartType"
+                    checked={isChecked}
+                    onChange={() => {
+                      if (opt.id === "image") {
+                        setForm({
+                          ...form,
+                          sizeChart: {
+                            ...(form.sizeChart || {}),
+                            type: "image",
+                          },
+                        });
+                      } else if (opt.id === "none") {
+                        setForm({
+                          ...form,
+                          sizeChart: {
+                            ...(form.sizeChart || {}),
+                            type: "none",
+                          },
+                        });
+                      } else if (opt.id === "custom_table") {
+                        const existingMeas = form.sizeChart?.measurements
+                          ?.length
+                          ? form.sizeChart.measurements
+                          : [
+                              {
+                                size: "M",
+                                bust: "38",
+                                waist: "34",
+                                hip: "42",
+                                shoulder: "14.5",
+                                length: "45",
+                                bottomWaist: "28-32",
+                                bottomLength: "37",
+                              },
+                              {
+                                size: "L",
+                                bust: "40",
+                                waist: "36",
+                                hip: "44",
+                                shoulder: "15",
+                                length: "45",
+                                bottomWaist: "32-36",
+                                bottomLength: "37.5",
+                              },
+                              {
+                                size: "XL",
+                                bust: "42",
+                                waist: "38",
+                                hip: "46",
+                                shoulder: "15.5",
+                                length: "46",
+                                bottomWaist: "36-40",
+                                bottomLength: "38",
+                              },
+                              {
+                                size: "XXL",
+                                bust: "44",
+                                waist: "40",
+                                hip: "48",
+                                shoulder: "16",
+                                length: "46",
+                                bottomWaist: "40-44",
+                                bottomLength: "38.5",
+                              },
+                            ];
+                        setForm({
+                          ...form,
+                          sizeChart: {
+                            ...(form.sizeChart || {}),
+                            type: "table",
+                            measurements: existingMeas,
+                          },
+                        });
+                      } else {
+                        // Standard table (clears custom overrides)
+                        setForm({
+                          ...form,
+                          sizeChart: {
+                            ...(form.sizeChart || {}),
+                            type: "table",
+                            measurements: [],
+                          },
+                        });
+                      }
+                    }}
+                    className="mt-0.5 text-accent-gold focus:ring-accent-gold"
+                  />
+                  <div>
+                    <p className="font-bold text-xs text-slate-800">
+                      {opt.label}
+                    </p>
+                    <p className="text-[10px] text-slate-500 mt-1 leading-snug">
+                      {opt.desc}
+                    </p>
+                  </div>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+
+        {/* IMAGE UPLOAD / URL INPUT */}
+        {form.sizeChart?.type === "image" && (
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 animate-fade-in">
+            <label className="text-xs font-semibold text-slate-700 block">
+              Size Chart Image URL or File
+            </label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                placeholder="Paste size chart image URL (e.g. https://... or /images/...)"
+                value={form.sizeChart?.imageUrl || ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    sizeChart: {
+                      ...(form.sizeChart || {}),
+                      type: "image",
+                      imageUrl: e.target.value,
+                    },
+                  })
+                }
+                className="flex-1 bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-accent-gold font-mono"
+              />
+              <label className="bg-accent-gold hover:bg-yellow-600 text-white text-[10px] uppercase font-bold tracking-wider px-3.5 py-2 rounded-lg cursor-pointer transition flex items-center justify-center shrink-0 shadow-sm">
+                Upload File
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setForm({
+                          ...form,
+                          sizeChart: {
+                            ...(form.sizeChart || {}),
+                            type: "image",
+                            imageUrl: reader.result,
+                          },
+                        });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+            {form.sizeChart?.imageUrl && (
+              <div className="mt-2 text-center p-2 border border-slate-200 rounded-lg bg-white max-w-xs">
+                <img
+                  src={form.sizeChart.imageUrl}
+                  alt="Size Chart Preview"
+                  className="max-h-40 mx-auto rounded object-contain"
+                />
+                <p className="text-[10px] text-slate-400 mt-1 font-semibold">
+                  Image Preview
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* CUSTOM MEASUREMENTS TABLE INPUT */}
+        {form.sizeChart?.type === "table" &&
+          form.sizeChart?.measurements?.length > 0 && (
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 animate-fade-in overflow-x-auto">
+              <label className="text-xs font-semibold text-slate-700 block">
+                Custom Garment Measurements (Inches)
+              </label>
+              <table className="w-full text-xs text-center border-collapse">
+                <thead>
+                  <tr className="bg-white text-slate-600 font-bold uppercase tracking-wider text-[9px] border-b border-slate-200">
+                    <th className="py-2 px-2 text-left">Size</th>
+                    <th className="py-2 px-2">Bust</th>
+                    <th className="py-2 px-2">Waist</th>
+                    <th className="py-2 px-2">Hip</th>
+                    <th className="py-2 px-2">Shoulder</th>
+                    <th className="py-2 px-2">Kurta Length</th>
+                    <th className="py-2 px-2">Pant Waist</th>
+                    <th className="py-2 px-2">Pant Length</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {form.sizeChart.measurements.map((m, idx) => (
+                    <tr key={m.size} className="bg-white">
+                      <td className="py-2 px-2 text-left font-bold text-slate-800">
+                        {m.size}
+                      </td>
+                      {[
+                        "bust",
+                        "waist",
+                        "hip",
+                        "shoulder",
+                        "length",
+                        "bottomWaist",
+                        "bottomLength",
+                      ].map((field) => (
+                        <td key={field} className="py-1 px-1">
+                          <input
+                            type="text"
+                            value={m[field] || ""}
+                            onChange={(e) => {
+                              const newMeas = [
+                                ...form.sizeChart.measurements,
+                              ];
+                              newMeas[idx] = {
+                                ...newMeas[idx],
+                                [field]: e.target.value,
+                              };
+                              setForm({
+                                ...form,
+                                sizeChart: {
+                                  ...(form.sizeChart || {}),
+                                  measurements: newMeas,
+                                },
+                              });
+                            }}
+                            className="w-14 bg-slate-50 border border-slate-200 rounded p-1 text-center font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-accent-gold"
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
       </div>
     </div>
   );
@@ -1106,61 +1402,188 @@ export const ProductMediaTab = () => {
           </label>
         </div>
 
-        {/* Media Video upload */}
+        {/* Media Video upload dropzone */}
         <div className="border border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100/50 p-6.5 rounded-xl text-center flex flex-col justify-center items-center space-y-3.5 transition">
-          <RiFolderImageLine className="text-slate-400" size={36} />
+          <RiVideoLine className="text-slate-400" size={36} />
           <div>
-            <p className="text-xs font-semibold text-slate-805 text-slate-800">
+            <p className="text-xs font-semibold text-slate-800">
               Upload Promo Reel Video
             </p>
-            <p className="text-[10px] text-slate-550 mt-1 font-semibold">
-              Max 15 seconds short vertical video (&lt; 10MB)
+            <p className="text-[10px] text-slate-500 mt-1 font-semibold">
+              Supports vertical reels (MP4, WebM &lt; 25MB)
             </p>
           </div>
-          <label className="bg-white hover:bg-slate-50 text-[10px] uppercase tracking-wider font-extrabold text-accent-gold py-2.5 px-4.5 rounded-lg border border-slate-200 cursor-pointer shadow-sm">
-            Upload Video
+          <label className="bg-white hover:bg-slate-50 text-[10px] uppercase tracking-wider font-extrabold text-accent-gold py-2.5 px-4.5 rounded-lg border border-slate-200 cursor-pointer shadow-sm transition">
+            Select Video File
             <input
               type="file"
               accept="video/*"
-              onChange={handleVideoFileChange}
+              onChange={(e) => handleVideoFileChange(e)}
               className="hidden"
             />
           </label>
-          {form.video && (
-            <p className="text-[9px] text-emerald-600 font-mono font-bold">
-              Video Attached (Ready to save)
-            </p>
-          )}
         </div>
       </div>
 
-      {/* Add URL field fallback */}
-      <div className="space-y-2 pt-2">
-        <label className="text-xs font-semibold text-slate-700 text-slate-700 block">
-          Or add Image URL directly
-        </label>
-        <div className="flex space-x-2">
-          <input
-            type="text"
-            placeholder="https://images.unsplash.com/your-image-address"
-            id="direct-image-url"
-            className="w-full bg-slate-50 border border-slate-202 border-slate-200 rounded-lg p-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-accent-gold/50"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              const el = document.getElementById("direct-image-url");
-              if (el) {
-                handleUrlImageAdd(el.value);
-                el.value = "";
-              }
-            }}
-            className="bg-accent-gold text-slate-950 text-xs font-bold px-5 rounded-lg hover:bg-yellow-500 transition shadow-sm font-sans"
-          >
-            Add
-          </button>
+      {/* Add Direct URL Fields (Images & Videos) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+        {/* Direct Image URL */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-slate-700 block">
+            Add Image URL directly
+          </label>
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              placeholder="https://images.unsplash.com/photo-..."
+              id="direct-image-url"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-accent-gold/50"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById("direct-image-url");
+                if (el && el.value.trim()) {
+                  handleUrlImageAdd(el.value.trim());
+                  el.value = "";
+                }
+              }}
+              className="bg-accent-gold text-slate-950 text-xs font-bold px-4 rounded-lg hover:bg-yellow-500 transition shadow-sm shrink-0 cursor-pointer"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+
+        {/* Direct Video URL */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-slate-700 block">
+            Add Video URL directly (MP4/CDN link)
+          </label>
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              placeholder="https://res.cloudinary.com/.../video.mp4"
+              id="direct-video-url"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-accent-gold/50"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById("direct-video-url");
+                if (el && el.value.trim()) {
+                  const url = el.value.trim();
+                  setForm((prev) => {
+                    const cur = Array.isArray(prev.videos)
+                      ? [...prev.videos]
+                      : prev.video
+                      ? [prev.video]
+                      : [];
+                    cur.push(url);
+                    return { ...prev, video: cur[0] || "", videos: cur };
+                  });
+                  el.value = "";
+                }
+              }}
+              className="bg-slate-800 text-white text-xs font-bold px-4 rounded-lg hover:bg-slate-900 transition shadow-sm shrink-0 cursor-pointer"
+            >
+              Add Video
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Uploaded Videos list preview & management */}
+      {(() => {
+        const videoList =
+          Array.isArray(form.videos) && form.videos.length > 0
+            ? form.videos
+            : form.video
+            ? [form.video]
+            : [];
+        if (videoList.length === 0) return null;
+
+        return (
+          <div className="space-y-3.5 pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-slate-800 uppercase tracking-widest text-[10px] flex items-center space-x-2">
+                <RiFilmLine className="text-[#c5a880]" size={14} />
+                <span>Enrolled Product Videos ({videoList.length})</span>
+              </p>
+              <label className="text-[10px] font-bold text-[#8a1c14] bg-amber-50 hover:bg-amber-100 border border-[#c5a880]/40 px-3 py-1 rounded-full cursor-pointer transition shadow-2xs">
+                + Add Another Video
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => handleVideoFileChange(e)}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {videoList.map((vidUrl, idx) => (
+                <div
+                  key={idx}
+                  className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 shadow-sm flex flex-col group"
+                >
+                  {/* Embedded Video Player */}
+                  <div className="relative aspect-[9/16] max-h-56 w-full bg-black flex items-center justify-center overflow-hidden">
+                    <video
+                      src={vidUrl}
+                      controls
+                      playsInline
+                      preload="metadata"
+                      className="w-full h-full object-contain"
+                    />
+                    <span className="absolute top-2 left-2 bg-black/75 text-white text-[9px] font-bold px-2 py-0.5 rounded-md backdrop-blur-md border border-white/10">
+                      {idx === 0 ? "★ Primary Reel" : `Video #${idx + 1}`}
+                    </span>
+                  </div>
+
+                  {/* Action bar below video */}
+                  <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between gap-2">
+                    {/* Replace / Change Video button */}
+                    <label className="flex-1 text-center bg-slate-50 hover:bg-slate-100 text-slate-700 text-[10.5px] font-bold py-1.5 px-2 rounded-lg border border-slate-200 cursor-pointer transition">
+                      Replace Video
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => handleVideoFileChange(e, idx)}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {/* Delete / Remove Video button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm((prev) => {
+                          const cur = Array.isArray(prev.videos)
+                            ? [...prev.videos]
+                            : prev.video
+                            ? [prev.video]
+                            : [];
+                          const updated = cur.filter((_, i) => i !== idx);
+                          return {
+                            ...prev,
+                            video: updated[0] || "",
+                            videos: updated,
+                          };
+                        });
+                      }}
+                      className="p-2 text-rose-600 hover:text-white hover:bg-rose-600 rounded-lg border border-rose-200 hover:border-rose-600 transition cursor-pointer"
+                      title="Delete / Remove Video"
+                    >
+                      <RiDeleteBinLine size={15} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Uploaded Images slots list preview */}
       {form.images.length > 0 && (
