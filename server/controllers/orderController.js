@@ -353,6 +353,10 @@ export const createOrder = async (req, res, next) => {
       paymentMethod: method,
       paymentStatus: safePaymentStatus,
       orderStatus: "Placed",
+      metaTracking: {
+        fbp: req.body?.metaTracking?.fbp || req.headers?.["x-fbp"] || "",
+        fbc: req.body?.metaTracking?.fbc || req.headers?.["x-fbc"] || "",
+      },
     });
 
     // 4. Decrement sizesStock for each item (Non-blocking: don't fail order if stock save errors out)

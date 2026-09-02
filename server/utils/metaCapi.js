@@ -1,6 +1,23 @@
 import crypto from "crypto";
 import Setting from "../models/Setting.js";
 
+const KNOWN_PLACEHOLDER_TOKENS = new Set([
+  "",
+  "123456",
+  "YOUR_TOKEN",
+  "YOUR_ACCESS_TOKEN",
+  "CHANGE_ME",
+  "EAAG_PLACEHOLDER",
+]);
+
+export const isPlaceholderToken = (token) => {
+  if (!token) return true;
+  const clean = String(token).trim().toUpperCase();
+  if (KNOWN_PLACEHOLDER_TOKENS.has(clean)) return true;
+  if (clean === "123456" || clean.startsWith("YOUR_")) return true;
+  return false;
+};
+
 /**
  * Normalizes and hashes customer data with SHA-256 according to Meta Conversions API specifications.
  * @param {string|number} value - The raw parameter value
@@ -64,21 +81,24 @@ export const getMetaCapiConfig = async () => {
         ? configMap.metaTrackingEnabled === "true" || configMap.metaTrackingEnabled === true
         : process.env.META_TRACKING_ENABLED !== "false";
 
+    const hasValidToken = Boolean(capiToken && !isPlaceholderToken(capiToken));
+
     return {
       pixelId: pixelId.trim(),
       capiToken: capiToken.trim(),
       testEventCode: testEventCode.trim(),
-      isEnabled: Boolean(isEnabled && pixelId && capiToken),
+      isEnabled: Boolean(isEnabled && pixelId && hasValidToken),
     };
   } catch (err) {
     console.error("[Meta CAPI] Error loading settings:", err.message);
     const fallbackPixelId = process.env.META_PIXEL_ID || "";
     const fallbackToken = process.env.META_CAPI_ACCESS_TOKEN || "";
+    const hasValidToken = Boolean(fallbackToken && !isPlaceholderToken(fallbackToken));
     return {
       pixelId: fallbackPixelId.trim(),
       capiToken: fallbackToken.trim(),
       testEventCode: (process.env.META_TEST_EVENT_CODE || "").trim(),
-      isEnabled: Boolean(fallbackPixelId && fallbackToken),
+      isEnabled: Boolean(fallbackPixelId && hasValidToken),
     };
   }
 };
@@ -114,8 +134,10 @@ export const sendMetaCapiEvent = async ({
     const effectiveTestCode =
       testEventCode !== null ? String(testEventCode).trim() : config.testEventCode;
 
-    if (!effectivePixelId || !effectiveToken) {
-      // Gracefully skip if credentials are missing
+    if (!effectivePixelId || !effectiveToken || isPlaceholderToken(effectiveToken)) {
+      if (effectiveToken && isPlaceholderToken(effectiveToken)) {
+        console.warn(`[Meta CAPI] Skipping dispatch: detected placeholder access token ("${effectiveToken}"). Configure a real Meta Access Token in Admin Settings.`);
+      }
       return null;
     }
 

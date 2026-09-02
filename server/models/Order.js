@@ -219,6 +219,10 @@ const OrderSchema = new mongoose.Schema(
         timestamp: Date,
       },
     ],
+    metaTracking: {
+      fbp: { type: String, default: "" },
+      fbc: { type: String, default: "" },
+    },
   },
   { timestamps: true },
 );

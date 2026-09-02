@@ -323,11 +323,15 @@ const Cart = () => {
     const ok = await loadRazorpayScript();
     if (!ok || !window.Razorpay) {
       showAlert(
-        `Order ${orderId} placed but Razorpay SDK failed to load. Payment is Pending.`,
+        `Order ${orderId} placed but Razorpay SDK failed to load. Please retry payment.`,
         "Payment SDK Error",
       );
-      await finalizeOrderSuccess(orderId, false, purchasedItems);
-      return;
+      setFailedOrder({
+        orderId,
+        razorpayCheckout: checkout,
+        orderItemsPayload: purchasedItems,
+      });
+      return false;
     }
 
     return new Promise((resolve) => {
@@ -347,6 +351,7 @@ const Cart = () => {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
+              metaTracking: getMetaTrackingCookies(),
             });
             if (verifyRes.data?.success) {
               await finalizeOrderSuccess(orderId, true, purchasedItems);
@@ -511,17 +516,22 @@ const Cart = () => {
             });
             return;
           }
+        } else if (
+          address.paymentMethod === "ONLINE" &&
+          !orderData.razorpayCheckout
+        ) {
+          showAlert(
+            res.data.message ||
+              "Order placed but online payment gateway is currently unavailable. Please contact support or pay via COD.",
+            "Payment Gateway Unavailable",
+          );
+          setFailedOrder({
+            orderId,
+            razorpayCheckout: null,
+            orderItemsPayload,
+          });
         } else {
-          if (
-            address.paymentMethod === "ONLINE" &&
-            !orderData.razorpayCheckout
-          ) {
-            showAlert(
-              res.data.message ||
-                "Order placed. Add real Razorpay keys in server/.env to enable online pay.",
-              "Payment Pending",
-            );
-          }
+          // Cash On Delivery (COD) Order
           await finalizeOrderSuccess(orderId, false, orderItemsPayload);
         }
       } else {

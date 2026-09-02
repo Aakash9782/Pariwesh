@@ -134,10 +134,33 @@ export const verifyPayment = async (req, res) => {
       return sendError(res, "Invalid payment signature", 400);
     }
 
+    // Secure Idempotency Guard: Placed strictly AFTER cryptographic signature verification
+    if (order.paymentStatus === "Paid") {
+      return sendSuccess(res, "Payment already verified successfully", {
+        orderId: order.orderId,
+        paymentStatus: order.paymentStatus,
+        razorpayPaymentId: order.razorpayPaymentId || razorpay_payment_id,
+      });
+    }
+
     order.paymentStatus = "Paid";
     order.razorpayOrderId = razorpay_order_id;
     order.razorpayPaymentId = razorpay_payment_id;
     order.razorpaySignature = razorpay_signature;
+
+    // Preserve latest tracking cookies if previously missing without overwriting valid ones
+    const incomingFbp = req?.body?.metaTracking?.fbp || req?.headers?.["x-fbp"];
+    const incomingFbc = req?.body?.metaTracking?.fbc || req?.headers?.["x-fbc"];
+    if (!order.metaTracking) {
+      order.metaTracking = {};
+    }
+    if (incomingFbp && !order.metaTracking.fbp) {
+      order.metaTracking.fbp = incomingFbp;
+    }
+    if (incomingFbc && !order.metaTracking.fbc) {
+      order.metaTracking.fbc = incomingFbc;
+    }
+
     await order.save();
 
     emailPaymentSuccess(order.toObject()).catch((err) =>
@@ -145,9 +168,12 @@ export const verifyPayment = async (req, res) => {
     );
 
     // Non-blocking Meta CAPI Purchase tracking for Paid Online orders
+    const effectiveFbp = incomingFbp || order.metaTracking?.fbp || undefined;
+    const effectiveFbc = incomingFbc || order.metaTracking?.fbc || undefined;
+
     trackCapiPurchase(order, req, {
-      fbp: req?.headers?.["x-fbp"] || req?.body?.metaTracking?.fbp,
-      fbc: req?.headers?.["x-fbc"] || req?.body?.metaTracking?.fbc,
+      fbp: effectiveFbp,
+      fbc: effectiveFbc,
     }).catch((err) =>
       console.error("[Meta CAPI] Razorpay Paid Purchase tracking error:", err),
     );
