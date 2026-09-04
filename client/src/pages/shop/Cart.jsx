@@ -109,6 +109,7 @@ const Cart = () => {
   // States code
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [appliedCouponDetails, setAppliedCouponDetails] = useState(null);
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponError, setCouponError] = useState("");
   const [selectedSpecialOffer, setSelectedSpecialOffer] = useState(null);
@@ -182,6 +183,26 @@ const Cart = () => {
     }, 0);
   };
 
+  const getTotalQuantity = () => {
+    return selectedItems.reduce((acc, item) => {
+      const qty =
+        isBuyNow && getItemKey(item) === buyNowKey ? buyNowQty : item.quantity;
+      return acc + (Number(qty) || 1);
+    }, 0);
+  };
+
+  const getItemsPayload = () => {
+    return selectedItems.map((item) => {
+      const qty =
+        isBuyNow && getItemKey(item) === buyNowKey ? buyNowQty : item.quantity;
+      return {
+        productId: item.product?._id || item.product,
+        quantity: Number(qty) || 1,
+        price: item.product?.price,
+      };
+    });
+  };
+
   const handleQtyChange = (productId, variant, newQty) => {
     if (newQty < 1) return;
     dispatch(updateQuantityInCart({ productId, variant, quantity: newQty }));
@@ -194,32 +215,72 @@ const Cart = () => {
   };
 
   const applyPromoCode = async () => {
+    const cleanCode = coupon ? coupon.trim().toUpperCase() : "";
+    if (!cleanCode) {
+      setCouponError("Please enter a coupon code");
+      return;
+    }
+
     try {
       setCouponError("");
       const sub = getSubtotal();
+      const totalQty = getTotalQuantity();
+      const itemsPayload = getItemsPayload();
+
       const res = await API.post("/coupons/validate", {
-        code: coupon,
+        code: cleanCode,
         subtotal: sub,
-        phone: address.phone || undefined,
+        quantity: totalQty,
+        items: itemsPayload,
+        phone: address.phone || user?.phone || undefined,
+        paymentMethod: address.paymentMethod,
       });
 
       if (res.data && res.data.success) {
-        const { discountAmount } = res.data.data;
-        setDiscount(discountAmount);
+        const couponData = res.data.data;
+        const discAmount = couponData.discountAmount || 0;
+        setDiscount(discAmount);
+        setAppliedCouponDetails(couponData);
         setCouponApplied(true);
         setCouponError("");
       } else {
         setCouponError("Invalid coupon code!");
         setDiscount(0);
+        setAppliedCouponDetails(null);
         setCouponApplied(false);
       }
     } catch (err) {
-      console.error("Coupon validation error:", err);
+      console.warn("Coupon validation feedback:", err.response?.data?.message || err.message);
       setCouponError(err.response?.data?.message || "Invalid coupon code!");
       setDiscount(0);
+      setAppliedCouponDetails(null);
       setCouponApplied(false);
     }
   };
+
+  // Auto-validate active coupon requirements if items change in cart
+  React.useEffect(() => {
+    if (couponApplied && appliedCouponDetails) {
+      const currentQty = getTotalQuantity();
+      const currentSub = getSubtotal();
+
+      if (appliedCouponDetails.minQuantity && currentQty < appliedCouponDetails.minQuantity) {
+        setCouponApplied(false);
+        setDiscount(0);
+        setAppliedCouponDetails(null);
+        setCouponError(
+          `Coupon ${appliedCouponDetails.code} removed: requires minimum of ${appliedCouponDetails.minQuantity} items.`
+        );
+      } else if (appliedCouponDetails.minAmount && currentSub < appliedCouponDetails.minAmount) {
+        setCouponApplied(false);
+        setDiscount(0);
+        setAppliedCouponDetails(null);
+        setCouponError(
+          `Coupon ${appliedCouponDetails.code} removed: requires minimum order amount of ₹${appliedCouponDetails.minAmount}.`
+        );
+      }
+    }
+  }, [selectedItems, couponApplied, appliedCouponDetails, isBuyNow, buyNowKey, buyNowQty]);
 
   const handleAddressInput = (e) => {
     const { name, value } = e.target;
@@ -436,7 +497,10 @@ const Cart = () => {
           await API.post("/coupons/validate", {
             code: coupon.trim().toUpperCase(),
             subtotal: getSubtotal(),
-            phone: address.phone,
+            quantity: getTotalQuantity(),
+            items: getItemsPayload(),
+            phone: address.phone || user?.phone || undefined,
+            paymentMethod: address.paymentMethod,
           });
         } catch (couponErr) {
           showAlert(
@@ -444,6 +508,7 @@ const Cart = () => {
             "Invalid Coupon",
           );
           setCouponApplied(false);
+          setAppliedCouponDetails(null);
           setDiscount(0);
           setLoading(false);
           return;
@@ -558,7 +623,15 @@ const Cart = () => {
   const delivery = subtotal >= 1500 || subtotal === 0 ? 0 : 45;
   let tempDiscount = 0;
   if (couponApplied) {
-    tempDiscount += discount;
+    if (appliedCouponDetails && appliedCouponDetails.discountType === "Percentage") {
+      let calc = Math.round(subtotal * (appliedCouponDetails.value / 100));
+      if (appliedCouponDetails.maxDiscount && appliedCouponDetails.maxDiscount > 0) {
+        calc = Math.min(calc, appliedCouponDetails.maxDiscount);
+      }
+      tempDiscount += calc;
+    } else {
+      tempDiscount += discount;
+    }
   }
   if (selectedSpecialOffer) {
     if (selectedSpecialOffer.type === "PREPAID_5" || !couponApplied) {
@@ -1110,6 +1183,7 @@ const Cart = () => {
                     onClick={() => {
                       setCouponApplied(false);
                       setDiscount(0);
+                      setAppliedCouponDetails(null);
                       setCoupon("");
                       setCouponError("");
                     }}
@@ -1227,6 +1301,7 @@ const Cart = () => {
                     onClick={() => {
                       setCouponApplied(false);
                       setDiscount(0);
+                      setAppliedCouponDetails(null);
                       setCoupon("");
                       setCouponError("");
                     }}
