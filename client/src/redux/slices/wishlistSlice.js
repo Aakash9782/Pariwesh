@@ -21,9 +21,14 @@ const wishlistSlice = createSlice({
     },
     toggleWishlistProduct: (state, action) => {
       const product = action.payload;
-      const exists = state.products.find((p) => p._id === product._id);
+      const targetId = String(product?._id || product || "");
+      const exists = state.products.find(
+        (p) => String(p?._id || p || "") === targetId,
+      );
       if (exists) {
-        state.products = state.products.filter((p) => p._id !== product._id);
+        state.products = state.products.filter(
+          (p) => String(p?._id || p || "") !== targetId,
+        );
       } else {
         state.products.push(product);
       }

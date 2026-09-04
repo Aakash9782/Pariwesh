@@ -2,27 +2,27 @@ import API from "./api.js";
 
 export const persistCart = async (items) => {
   try {
-    await API.put("/cart", {
-      items: (items || []).map((item) => ({
-        productId: item.product?._id || item.product,
-        quantity: item.quantity,
-        size: item.variant?.size,
-        color: item.variant?.color,
-      })),
-    });
+    const payload = (items || []).map((item) => ({
+      productId: String(item.product?._id || item.product || ""),
+      quantity: Math.max(1, Number(item.quantity) || 1),
+      size: item.variant?.size || item.size || "M",
+      color: item.variant?.color || item.color || "Default",
+    }));
+    await API.put("/cart", { items: payload });
   } catch (err) {
-    console.error("Cart sync failed:", err?.response?.data?.message || err.message);
+    console.warn("Cart sync notice:", err?.response?.data?.message || err.message);
   }
 };
 
 export const persistWishlist = async (products) => {
   try {
-    await API.put("/wishlist", {
-      productIds: (products || []).map((p) => p._id || p).filter(Boolean),
-    });
+    const payload = (products || [])
+      .map((p) => String(p?._id || p || ""))
+      .filter(Boolean);
+    await API.put("/wishlist", { productIds: payload });
   } catch (err) {
-    console.error(
-      "Wishlist sync failed:",
+    console.warn(
+      "Wishlist sync notice:",
       err?.response?.data?.message || err.message,
     );
   }
@@ -40,9 +40,20 @@ export const fetchRemoteWishlist = async () => {
 
 /** Merge guest cart into server cart (by product+size+color), then return merged. */
 export const mergeCartItems = (localItems = [], remoteItems = []) => {
+  if (!localItems || localItems.length === 0) {
+    return remoteItems || [];
+  }
+  if (!remoteItems || remoteItems.length === 0) {
+    return localItems || [];
+  }
+
   const map = new Map();
-  const keyOf = (item) =>
-    `${item.product?._id || item.product}|${item.variant?.size}|${item.variant?.color}`;
+  const keyOf = (item) => {
+    const pId = String(item.product?._id || item.product || "");
+    const size = item.variant?.size || item.size || "M";
+    const color = item.variant?.color || item.color || "Default";
+    return `${pId}|${size}|${color}`;
+  };
 
   for (const item of remoteItems) {
     if (!item.product) continue;
@@ -61,12 +72,23 @@ export const mergeCartItems = (localItems = [], remoteItems = []) => {
 };
 
 export const mergeWishlistProducts = (local = [], remote = []) => {
+  if (!local || local.length === 0) {
+    return remote || [];
+  }
+  if (!remote || remote.length === 0) {
+    return local || [];
+  }
+
   const map = new Map();
   for (const p of remote) {
-    if (p?._id) map.set(String(p._id), p);
+    const id = String(p?._id || p || "");
+    if (id) map.set(id, p);
   }
   for (const p of local) {
-    if (p?._id) map.set(String(p._id), p);
+    const id = String(p?._id || p || "");
+    if (id && !map.has(id)) {
+      map.set(id, p);
+    }
   }
   return Array.from(map.values());
 };

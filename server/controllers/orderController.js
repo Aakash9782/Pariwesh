@@ -1,6 +1,8 @@
+import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Coupon from "../models/Coupon.js";
 import Product from "../models/Product.js";
+import Cart from "../models/Cart.js";
 import { sendSuccess, sendError } from "../utils/responseFormatter.js";
 import { logActivity } from "../utils/logger.js";
 import {
@@ -515,6 +517,50 @@ export const createOrder = async (req, res, next) => {
         fbc: req?.headers?.["x-fbc"] || req?.body?.metaTracking?.fbc,
       }).catch((err) =>
         console.error("[Meta CAPI] COD Purchase tracking error:", err),
+      );
+    }
+
+    // Non-blocking selective removal of purchased items from user's MongoDB cart
+    try {
+      if (req.user?._id && mongoose.isValidObjectId(req.user._id)) {
+        const currentCart = await Cart.findOne({ user: req.user._id });
+        if (currentCart && currentCart.items && currentCart.items.length > 0) {
+          const remainingItems = [];
+          for (const cartItem of currentCart.items) {
+            const cartProdId = String(cartItem.product);
+            const purchasedMatch = items.find(
+              (p) =>
+                String(p.productId || p.product?._id || p.product || "") ===
+                  cartProdId &&
+                (p.size || "M") === (cartItem.size || "M") &&
+                (p.color || "Default") === (cartItem.color || "Default"),
+            );
+            if (purchasedMatch) {
+              const remainingQty =
+                Number(cartItem.quantity || 1) -
+                Number(purchasedMatch.quantity || 1);
+              if (remainingQty > 0) {
+                const itemObj = cartItem.toObject
+                  ? cartItem.toObject()
+                  : cartItem;
+                remainingItems.push({
+                  ...itemObj,
+                  quantity: remainingQty,
+                });
+              }
+            } else {
+              // Not purchased in this order! Keep safely in cart!
+              remainingItems.push(cartItem);
+            }
+          }
+          currentCart.items = remainingItems;
+          await currentCart.save();
+        }
+      }
+    } catch (cartCleanupErr) {
+      console.error(
+        "Non-blocking error during server-side cart cleanup:",
+        cartCleanupErr?.message || cartCleanupErr,
       );
     }
 
