@@ -250,6 +250,28 @@ const Home = () => {
               };
             });
           setProducts(dbProducts);
+
+          // If no admin custom slides are set, dynamically feature top store products on the slider
+          const hasCustomSlides = [
+            localStorage.getItem("slideImg1"),
+            localStorage.getItem("slideImg2"),
+            localStorage.getItem("slideImg3"),
+            localStorage.getItem("slideImg4"),
+            localStorage.getItem("slideImg5"),
+          ].some(Boolean);
+
+          if (!hasCustomSlides && dbProducts.length > 0) {
+            const dynamicSlides = dbProducts
+              .map((p) => p.images?.[0])
+              .filter(Boolean)
+              .slice(0, 5);
+            if (dynamicSlides.length > 0) {
+              setSliderConfig((prev) => ({
+                ...prev,
+                images: dynamicSlides,
+              }));
+            }
+          }
         } else {
           setProducts([]);
         }
@@ -441,13 +463,7 @@ const Home = () => {
           : localStorage.getItem("homeCampaignBannersActive") === "true",
       );
 
-      const fallbackImages = [
-        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?q=80&w=1200&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=1200&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=1200&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1612459284970-e8f027596582?q=80&w=1200&auto=format&fit=crop",
-      ];
+      const fallbackImages = ["/hero.png"];
       const loadedImages = [
         localStorage.getItem("slideImg1"),
         localStorage.getItem("slideImg2"),

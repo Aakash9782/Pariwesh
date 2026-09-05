@@ -1435,7 +1435,7 @@ export const ProductMediaTab = () => {
           <div className="flex space-x-2">
             <input
               type="text"
-              placeholder="https://images.unsplash.com/photo-..."
+              placeholder="https://res.cloudinary.com/... or https://..."
               id="direct-image-url"
               className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-accent-gold/50"
             />

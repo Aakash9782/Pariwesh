@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import API from "../../services/api.js";
 import { ProductSkeleton } from "../../components/common/Skeleton.jsx";
 import SEO from "../../components/common/SEO.jsx";
+import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 
 const Collections = () => {
   const [collections, setCollections] = useState([]);
@@ -28,6 +29,11 @@ const Collections = () => {
     load();
   }, []);
 
+  const heroImage =
+    collections.find((c) => c.bannerUrl || c.products?.[0]?.images?.[0])?.bannerUrl ||
+    collections[0]?.products?.[0]?.images?.[0] ||
+    "/hero.png";
+
   return (
     <div className="pb-20">
       <SEO
@@ -39,8 +45,7 @@ const Collections = () => {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage:
-              "url(https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1600&auto=format&fit=crop)",
+            backgroundImage: `url(${optimizeCloudinaryUrl(heroImage, 1600)})`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/20" />
@@ -88,7 +93,10 @@ const Collections = () => {
                 <div
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
                   style={{
-                    backgroundImage: `url(${col.bannerUrl || col.products?.[0]?.images?.[0] || "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=900&auto=format&fit=crop"})`,
+                    backgroundImage: `url(${optimizeCloudinaryUrl(
+                      col.bannerUrl || col.products?.[0]?.images?.[0] || "/hero.png",
+                      900,
+                    )})`,
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />

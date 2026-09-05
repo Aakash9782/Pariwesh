@@ -16,6 +16,7 @@ import Input from "../../components/form/Input.jsx";
 import { logoutSuccess, updateProfile } from "../../redux/slices/authSlice.js";
 import API from "../../services/api.js";
 import SEO from "../../components/common/SEO.jsx";
+import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -586,10 +587,10 @@ const Profile = () => {
                             >
                               <div className="flex space-x-3 items-center">
                                 <img
-                                  src={
-                                    it.image ||
-                                    "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=200&auto=format&fit=crop"
-                                  }
+                                  src={optimizeCloudinaryUrl(
+                                    it.image || "/hero.png",
+                                    200,
+                                  )}
                                   alt={it.name}
                                   className="w-12 h-14 object-cover bg-bgLight border border-borderLight rounded"
                                 />
@@ -893,10 +894,10 @@ const Profile = () => {
             {/* Product details */}
             <div className="flex space-x-3 items-center bg-bgLight p-3 rounded border border-borderLight">
               <img
-                src={
-                  returnForm.item.image ||
-                  "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=200&auto=format&fit=crop"
-                }
+                src={optimizeCloudinaryUrl(
+                  returnForm.item.image || "/hero.png",
+                  200,
+                )}
                 alt={returnForm.item.name}
                 className="w-12 h-14 object-cover rounded bg-primary border border-borderLight"
               />

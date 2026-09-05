@@ -7,6 +7,7 @@ import { ProductSkeleton } from "../../components/common/Skeleton.jsx";
 import { toggleWishlistProduct } from "../../redux/slices/wishlistSlice.js";
 import { syncWishlistNow } from "../../services/hydrateCommerce.js";
 import SEO from "../../components/common/SEO.jsx";
+import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 
 const CollectionDetail = () => {
   const { slug } = useParams();
@@ -111,7 +112,10 @@ const CollectionDetail = () => {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url(${collection.bannerUrl || products[0]?.images?.[0] || "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1600&auto=format&fit=crop"})`,
+            backgroundImage: `url(${optimizeCloudinaryUrl(
+              collection.bannerUrl || products[0]?.images?.[0] || "/hero.png",
+              1600,
+            )})`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/15" />
@@ -147,7 +151,10 @@ const CollectionDetail = () => {
                     className="block relative aspect-[3/4] overflow-hidden bg-bgLight border border-borderLight"
                   >
                     <img
-                      src={product.images?.[0]}
+                      src={optimizeCloudinaryUrl(
+                        product.images?.[0] || "/hero.png",
+                        600,
+                      )}
                       alt={product.name}
                       loading="lazy"
                       decoding="async"

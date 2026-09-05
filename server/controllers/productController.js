@@ -246,9 +246,7 @@ export const createProduct = async (req, res, next) => {
         productImages.push(image);
       }
     } else {
-      productImages.push(
-        "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop",
-      );
+      productImages.push("/hero.png");
     }
 
     // Prepare video upload
