@@ -92,4 +92,7 @@ const CouponSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Background query indexes for fast promotion & special offer lookups
+CouponSchema.index({ status: 1, isSpecialOffer: 1 }, { background: true });
+
 export default mongoose.model("Coupon", CouponSchema);

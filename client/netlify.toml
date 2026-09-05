@@ -7,7 +7,7 @@
 
 [[redirects]]
   from = "/sitemap.xml"
-  to = "https://pariwesh.onrender.com/api/v1/seo/sitemap"
+  to = "https://api.pariwesh.in/api/v1/seo/sitemap"
   status = 200
   force = true
 

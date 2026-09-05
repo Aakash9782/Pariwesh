@@ -25,6 +25,7 @@ import categoryRouter from "./routes/categoryRoutes.js";
 import brandRouter from "./routes/brandRoutes.js";
 import emailRouter from "./routes/emailRoutes.js";
 import seoRouter from "./routes/seoRoutes.js";
+import { getSitemap } from "./controllers/seoController.js";
 import shippingRouter from "./routes/shippingRoutes.js";
 
 const app = express();
@@ -159,6 +160,8 @@ app.get("/", (req, res) => {
     message: "Pariwesh API is Running 🚀",
   });
 });
+
+app.get("/sitemap.xml", getSitemap);
 
 // 6. ROUTE REGISTRATIONS
 app.use("/api/v1/settings", settingRouter);

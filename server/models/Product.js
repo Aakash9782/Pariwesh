@@ -269,4 +269,11 @@ ProductSchema.pre("validate", function (next) {
   next();
 });
 
+// Background query indexes for fast catalog browsing, category filtering, and color variants
+ProductSchema.index({ status: 1, createdAt: -1 }, { background: true });
+ProductSchema.index({ category: 1, status: 1 }, { background: true });
+ProductSchema.index({ colorGroup: 1, status: 1 }, { background: true });
+ProductSchema.index({ featured: 1, status: 1 }, { background: true });
+ProductSchema.index({ bestSeller: 1, status: 1 }, { background: true });
+
 export default mongoose.model("Product", ProductSchema);

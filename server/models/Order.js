@@ -227,4 +227,10 @@ const OrderSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Background query indexes for fast customer order history, admin dashboards, and webhook Lookups
+OrderSchema.index({ "customer.userId": 1, createdAt: -1 }, { background: true });
+OrderSchema.index({ orderStatus: 1, createdAt: -1 }, { background: true });
+OrderSchema.index({ shiprocketOrderId: 1 }, { background: true, sparse: true });
+OrderSchema.index({ awbCode: 1 }, { background: true, sparse: true });
+
 export default mongoose.model("Order", OrderSchema);
