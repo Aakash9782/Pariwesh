@@ -50,27 +50,49 @@ const DEFAULTS = [
 
 export const ensureDefaultCollections = async () => {
   const count = await Collection.countDocuments();
-  if (count > 0) return;
+  const products = await Product.find({
+    status: { $in: ["active", "Active"] },
+  }).select("_id category tag bestSeller newArrival featured trending images");
 
-  const products = await Product.find({}).select(
-    "_id category tag bestSeller newArrival featured trending images",
-  );
+  if (count === 0) {
+    for (const def of DEFAULTS) {
+      const matched = products.filter(def.match).map((p) => p._id);
+      const banner =
+        products.find(def.match)?.images?.[0] ||
+        products[0]?.images?.[0] ||
+        "/hero.png";
+      await Collection.create({
+        name: def.name,
+        slug: def.slug,
+        description: def.description,
+        bannerUrl: banner,
+        products: matched,
+        isActive: true,
+        sortOrder: def.sortOrder,
+      });
+    }
+    return;
+  }
 
-  for (const def of DEFAULTS) {
-    const matched = products.filter(def.match).map((p) => p._id);
-    const banner =
-      products.find(def.match)?.images?.[0] ||
-      products[0]?.images?.[0] ||
-      "";
-    await Collection.create({
-      name: def.name,
-      slug: def.slug,
-      description: def.description,
-      bannerUrl: banner,
-      products: matched,
-      isActive: true,
-      sortOrder: def.sortOrder,
-    });
+  // Auto-heal: Ensure no Unsplash URLs persist in MongoDB collections
+  const existingCols = await Collection.find({});
+  for (const col of existingCols) {
+    const hasUnsplash = col.bannerUrl && col.bannerUrl.includes("unsplash.com");
+    const hasNoProducts = !col.products || col.products.length === 0;
+    if (hasUnsplash || hasNoProducts) {
+      const def = DEFAULTS.find((d) => d.slug === col.slug);
+      const matched = def
+        ? products.filter(def.match)
+        : products.filter((p) => p.category === col.slug);
+      const effectiveProds = matched.length > 0 ? matched : products;
+      if (hasUnsplash || !col.bannerUrl) {
+        col.bannerUrl = effectiveProds[0]?.images?.[0] || "/hero.png";
+      }
+      if (hasNoProducts && matched.length > 0) {
+        col.products = matched.map((p) => p._id);
+      }
+      await col.save();
+    }
   }
 };
 
@@ -83,17 +105,23 @@ export const getCollections = async (req, res) => {
       .sort({ sortOrder: 1, name: 1 })
       .populate({
         path: "products",
-        select: "name slug price mrp images category tag",
+        select: "name slug price mrp images category tag createdAt",
+        options: { sort: { createdAt: -1 } },
       });
 
     const data = collections.map((c) => {
       const all = c.products || [];
+      const cleanBanner =
+        c.bannerUrl && !c.bannerUrl.includes("unsplash.com")
+          ? c.bannerUrl
+          : all[0]?.images?.[0] || "/hero.png";
+
       return {
         _id: c._id,
         name: c.name,
         slug: c.slug,
         description: c.description,
-        bannerUrl: c.bannerUrl || all[0]?.images?.[0] || "",
+        bannerUrl: cleanBanner,
         productCount: all.length,
         products: all.slice(0, 4),
       };
@@ -149,14 +177,20 @@ export const getCollectionBySlug = async (req, res) => {
     }).populate({
       path: "products",
       select:
-        "name slug price mrp images category tag color sizes sizesStock sku fabric",
+        "name slug price mrp images category tag color sizes sizesStock sku fabric createdAt",
+      options: { sort: { createdAt: -1 } },
     });
 
     if (!collection) {
       return sendError(res, "Collection not found", 404);
     }
 
-    return sendSuccess(res, "Collection retrieved", collection);
+    const colObj = collection.toObject();
+    if (!colObj.bannerUrl || colObj.bannerUrl.includes("unsplash.com")) {
+      colObj.bannerUrl = colObj.products?.[0]?.images?.[0] || "/hero.png";
+    }
+
+    return sendSuccess(res, "Collection retrieved", colObj);
   } catch (error) {
     return sendError(res, error.message, 500);
   }

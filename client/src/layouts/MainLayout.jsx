@@ -23,12 +23,12 @@ import API from "../services/api.js";
 import { useAlert } from "../contexts/AlertContext.jsx";
 import { hydrateCommerce } from "../services/hydrateCommerce.js";
 import Loader from "../components/common/Loader.jsx";
+import Footer from "../components/common/Footer.jsx";
 
 const MainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { showAlert } = useAlert();
-  const [subscriberEmail, setSubscriberEmail] = useState("");
   const [searchVal, setSearchVal] = useState("");
 
   const handleSearchSubmit = (e) => {
@@ -189,24 +189,6 @@ const MainLayout = () => {
     dispatch(clearWishlist());
   };
 
-  const handleJoinClub = (e) => {
-    e.preventDefault();
-    if (!subscriberEmail || !subscriberEmail.trim()) {
-      showAlert("Please enter a valid email address.", "Invalid Email");
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(subscriberEmail.trim())) {
-      showAlert("Please enter a valid email address.", "Invalid Email");
-      return;
-    }
-    showAlert(
-      "Thank you for joining the PARIWESH Club! We have sent a welcome offer to your email.",
-      "Success",
-    );
-    setSubscriberEmail("");
-  };
-
     const navLinks = [
     { title: "HOME", path: "/" },
     { title: "BEST SELLING", path: "/shop?tag=Best Seller", badge: "Hot" },
@@ -226,11 +208,11 @@ const MainLayout = () => {
         className="fixed top-0 left-0 right-0 h-[3px] bg-accent-gold z-[99999] origin-[0%]"
         style={{ scaleX }}
       />
-      {/* GLOBAL ARCH CLIP PATH */}
+      {/* GLOBAL REFINED ROYAL ARCH CLIP PATH (Delicate Crown Arch - Zero Head Cutout) */}
       <svg width="0" height="0" className="absolute pointer-events-none">
         <defs>
           <clipPath id="mehrab-clip" clipPathUnits="objectBoundingBox">
-            <path d="M 0,1 L 0,0.35 C 0,0.28 0.08,0.26 0.12,0.24 C 0.12,0.18 0.22,0.15 0.28,0.12 C 0.28,0.08 0.38,0.06 0.44,0.03 C 0.47,0.01 0.49,0 0.5,0 C 0.51,0 0.53,0.01 0.56,0.03 C 0.62,0.06 0.72,0.08 0.72,0.12 C 0.78,0.15 0.88,0.18 0.88,0.24 C 0.92,0.26 1,0.28 1,0.35 L 1,1 Z" />
+            <path d="M 0,1 L 0,0.06 C 0,0.048 0.08,0.044 0.12,0.041 C 0.12,0.031 0.22,0.026 0.28,0.02 C 0.28,0.014 0.38,0.01 0.44,0.005 C 0.47,0.002 0.49,0 0.5,0 C 0.51,0 0.53,0.002 0.56,0.005 C 0.62,0.01 0.72,0.014 0.72,0.02 C 0.78,0.026 0.88,0.031 0.88,0.041 C 0.92,0.044 1,0.048 1,0.06 L 1,1 Z" />
           </clipPath>
         </defs>
       </svg>
@@ -586,179 +568,7 @@ const MainLayout = () => {
       </main>
 
       {/* 5. PREMIUM LUXURY FOOTER */}
-      <footer className="bg-secondary text-primary mt-auto">
-        <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand Column */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-display font-medium tracking-[0.2em] text-primary uppercase">
-              PARIWESH<span className="text-accent-gold">.</span>
-            </h3>
-            <p className="text-xs text-textSecondary leading-relaxed">
-              Experience the pinnacle of luxurious women fashion. Elegant Ethnic
-              Suits, Girls Kurtas, and Bespoke Collections crafted with fine
-              fabrics.
-            </p>
-            <div className="flex items-center gap-4 pt-1">
-              <a
-                href="https://www.instagram.com/pariweshofficial/?hl=en"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-textSecondary hover:text-accent-gold transition-colors"
-                aria-label="Instagram"
-              >
-                <RiInstagramLine size={18} />
-              </a>
-              <a
-                href="https://www.facebook.com/pariweshofficial"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-textSecondary hover:text-accent-gold transition-colors"
-                aria-label="Facebook"
-              >
-                <RiFacebookCircleLine size={18} />
-              </a>
-            </div>
-          </div>
-
-          {/* Quick links */}
-          <div>
-            <h4 className="text-xs font-display tracking-widest text-accent-gold uppercase mb-4">
-              Shop Categories
-            </h4>
-            <ul className="space-y-2 text-xs text-textSecondary">
-              <li>
-                <Link
-                  to="/shop?category=kurtis"
-                  className="hover:text-primary transition-colors"
-                >
-                  Girls Kurtis
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/shop?category=ethnic"
-                  className="hover:text-primary transition-colors"
-                >
-                  Ethnic Wear
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/shop?category=suits"
-                  className="hover:text-primary transition-colors"
-                >
-                  Designer Suits
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/collections"
-                  className="hover:text-primary transition-colors"
-                >
-                  New Releases
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Customer Service */}
-          <div>
-            <h4 className="text-xs font-display tracking-widest text-accent-gold uppercase mb-4">
-              Customer Care
-            </h4>
-            <ul className="space-y-2 text-xs text-textSecondary">
-              <li>
-                <Link
-                  to="/contact"
-                  className="hover:text-primary transition-colors"
-                >
-                  Contact Us
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/shipping"
-                  className="hover:text-primary transition-colors"
-                >
-                  Shipping Policy
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/returns"
-                  className="hover:text-primary transition-colors"
-                >
-                  Returns & Refunds
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/faqs"
-                  className="hover:text-primary transition-colors"
-                >
-                  FAQs
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Offers Sign up */}
-          <div className="space-y-4">
-            <h4 className="text-xs font-display tracking-widest text-accent-gold uppercase">
-              Join the Club
-            </h4>
-            <p className="text-xs text-textSecondary leading-relaxed">
-              Subscribe to unlock early access to sales events and custom coupon
-              codes.
-            </p>
-            <form
-              onSubmit={handleJoinClub}
-              className="flex gap-x-2 border-b border-borderLight/30 pb-1"
-            >
-              <input
-                type="email"
-                placeholder="Enter email..."
-                value={subscriberEmail}
-                onChange={(e) => setSubscriberEmail(e.target.value)}
-                className="bg-transparent text-primary placeholder-textSecondary px-1 py-2 text-base md:text-sm focus:outline-none w-full font-sans border-0"
-              />
-              <button
-                type="submit"
-                className="hover:text-accent-gold text-primary px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0 font-display bg-transparent border-0 outline-none"
-              >
-                Join
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Footer Bottom Bar with Payment Partner Badges */}
-        <div className="border-t border-white/10 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-slate-400 font-sans tracking-wide">
-          <div>
-            © {new Date().getFullYear()} PARIWESH Luxury Ethnic Apparel. All Rights Reserved. Crafted with Pride in India.
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 select-none">
-            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[9px] font-extrabold tracking-wider text-slate-300">
-              UPI
-            </span>
-            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[9px] font-extrabold tracking-wider text-slate-300">
-              VISA
-            </span>
-            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[9px] font-extrabold tracking-wider text-slate-300">
-              MASTERCARD
-            </span>
-            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[9px] font-extrabold tracking-wider text-slate-300">
-              RUPAY
-            </span>
-            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[9px] font-extrabold tracking-wider text-slate-300">
-              NET BANKING
-            </span>
-            <span className="px-2 py-0.5 rounded bg-accent-gold/20 border border-accent-gold/40 text-[9px] font-extrabold tracking-wider text-accent-gold">
-              RAZORPAY 256-BIT SSL
-            </span>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       {/* FLOATING WHATSAPP BUTTON (Suitswala.in style) */}
       <a

@@ -1,6 +1,7 @@
 import React from "react";
 import { RiFolderImageLine, RiDeleteBinLine } from "react-icons/ri";
 import Button from "../../../components/admin/ui/Button.jsx";
+import ToggleSwitch from "../../../components/admin/ui/ToggleSwitch.jsx";
 
 const SlideshowTab = ({
   slideBarActive,
@@ -33,24 +34,14 @@ const SlideshowTab = ({
         </p>
       </div>
 
-      <div className="pt-4 border-t border-slate-200 flex justify-between items-center bg-[#FAF9F6] p-4 rounded-xl border border-slate-200/80">
-        <div>
-          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-            Carousel Slider Active Status
-          </h4>
-          <p className="text-[10px] text-slate-500 mt-1">
-            If disabled, the spotlight image slider on the homepage will be
-            hidden.
-          </p>
-        </div>
-        <select
-          value={String(slideBarActive)}
-          onChange={(e) => setSlideBarActive(e.target.value === "true")}
-          className="bg-white border border-slate-200 text-xs rounded-lg p-2 text-slate-700 outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880] font-semibold"
-        >
-          <option value="true">Active (Show Slideshow)</option>
-          <option value="false">Inactive (Hide Slideshow)</option>
-        </select>
+      <div className="pt-4 border-t border-slate-200 bg-[#FAF9F6] p-4 rounded-xl border border-slate-200/80">
+        <ToggleSwitch
+          id="slideBarActiveSwitch"
+          checked={slideBarActive}
+          onChange={(val) => setSlideBarActive(val)}
+          label="Carousel Slider Active Status"
+          description="If disabled, the spotlight image slider on the homepage will be hidden"
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">

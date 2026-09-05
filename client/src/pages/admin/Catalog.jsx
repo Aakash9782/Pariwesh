@@ -641,8 +641,8 @@ const Catalog = () => {
               />
             </div>
             <Input
-              label="Banner URL"
-              placeholder="Banner image URL"
+              label="Custom Banner URL (Optional — Leave blank to auto-use latest product)"
+              placeholder="https://res.cloudinary.com/... (or blank for auto latest product)"
               value={colForm.bannerUrl}
               onChange={(e) =>
                 setColForm({ ...colForm, bannerUrl: e.target.value })

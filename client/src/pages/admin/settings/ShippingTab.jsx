@@ -1,6 +1,7 @@
 import React from "react";
 import Button from "../../../components/admin/ui/Button.jsx";
 import Input from "../../../components/admin/ui/Input.jsx";
+import ToggleSwitch from "../../../components/admin/ui/ToggleSwitch.jsx";
 
 const ShippingTab = ({ shippingForm, setShippingForm, handleSaveShipping }) => {
   return (
@@ -8,25 +9,22 @@ const ShippingTab = ({ shippingForm, setShippingForm, handleSaveShipping }) => {
       onSubmit={handleSaveShipping}
       className="space-y-6 max-w-2xl text-slate-700 font-sans"
     >
+      <div className="bg-[#FAF9F6] p-4 rounded-xl border border-slate-200/80">
+        <ToggleSwitch
+          id="codEnabledSwitch"
+          checked={shippingForm.codEnabled === "true"}
+          onChange={(val) =>
+            setShippingForm({
+              ...shippingForm,
+              codEnabled: val ? "true" : "false",
+            })
+          }
+          label="Accept Cash On Delivery (COD)"
+          description="If disabled, customers will only be allowed to checkout using prepaid online payments"
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5.5">
-        <div className="space-y-1">
-          <label className="block text-xs font-semibold text-slate-700">
-            Enable Cash On Delivery (COD)
-          </label>
-          <select
-            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-md text-xs text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880]"
-            value={shippingForm.codEnabled}
-            onChange={(e) =>
-              setShippingForm({
-                ...shippingForm,
-                codEnabled: e.target.value,
-              })
-            }
-          >
-            <option value="true">Accept COD payments</option>
-            <option value="false">Only Pre-paid online payments</option>
-          </select>
-        </div>
         <Input
           type="number"
           label="Base Delivery Fee Charge (INR)"

@@ -399,7 +399,7 @@ const ProductDetails = () => {
     : "";
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 text-slate-800">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-28 md:py-12 text-slate-800">
       <SEO
         title={seoTitle}
         description={seoDesc}
@@ -1247,32 +1247,78 @@ const ProductDetails = () => {
         onSelectSize={(sz) => setSelectedSize(sz)}
       />
 
-      {/* MOBILE STICKY PURCHASE BAR */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 px-4 py-3 flex items-center justify-between shadow-[0_-4px_25px_rgba(0,0,0,0.1)]">
-        <div className="space-y-0.5 text-left">
-          <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold block">
-            {selectedSize ? `Size: ${selectedSize}` : "Choose Size"}
-          </span>
-          <span className="text-base font-extrabold text-[#8a1c14] font-sans tracking-tight">
-            {formatCurrency(product.price * quantity)}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            disabled={loading}
-            className="rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider border border-slate-300/80 text-slate-800 bg-white/90 backdrop-blur-sm hover:bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] active:scale-95 active:translate-y-[1px] cursor-pointer disabled:opacity-50"
-          >
-            {loading ? "Adding..." : "Add to Bag"}
-          </button>
-          <button
-            type="button"
-            onClick={handleBuyNow}
-            className="rounded-xl px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wider bg-gradient-to-b from-[#d2b68e] to-[#a8865a] hover:from-[#dbbf97] hover:to-[#b39062] text-white shadow-[0_4px_14px_rgba(197,168,128,0.35),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-1px_0_rgba(0,0,0,0.15)] border border-amber-200/40 active:scale-95 active:translate-y-[1px] cursor-pointer"
-          >
-            Buy Now
-          </button>
+      {/* MOBILE STICKY LUXURY PURCHASE DOCK */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#FDFBF7]/95 backdrop-blur-2xl border-t border-[#c5a880]/35 px-3.5 py-2.5 shadow-[0_-8px_30px_rgba(0,0,0,0.12)]">
+        <div className="flex items-center justify-between gap-3">
+          {/* Left: Thumbnail + Price & Quick Size */}
+          <div className="flex items-center space-x-2.5 min-w-0">
+            {activeImage && (
+              <img
+                src={getOptimizedImageUrl(activeImage, 100)}
+                alt={product.name}
+                className="w-11 h-11 rounded-lg object-cover border border-[#c5a880]/40 shadow-xs shrink-0"
+              />
+            )}
+            <div className="space-y-0.5 min-w-0 text-left">
+              <div className="flex items-baseline space-x-1.5 font-sans">
+                <span className="text-sm font-extrabold text-[#8a1c14] tracking-tight">
+                  {formatCurrency(product.price * quantity)}
+                </span>
+                {product.mrp > product.price && (
+                  <span className="text-[10px] text-slate-400 line-through">
+                    {formatCurrency(product.mrp * quantity)}
+                  </span>
+                )}
+              </div>
+              {/* Quick Inline Size Switcher */}
+              {product.sizes && product.sizes.length > 0 && (
+                <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+                  {(product.sizes.filter((s) => s !== "S").length > 0
+                    ? product.sizes.filter((s) => s !== "S")
+                    : product.sizes
+                  ).map((sz) => {
+                    const isSelected = selectedSize === sz;
+                    return (
+                      <button
+                        key={sz}
+                        type="button"
+                        onClick={() => setSelectedSize(sz)}
+                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded transition-all shrink-0 cursor-pointer ${
+                          isSelected
+                            ? "bg-[#8a1c14] text-white shadow-2xs scale-105"
+                            : "bg-white text-slate-700 border border-slate-200 hover:border-[#c5a880]"
+                        }`}
+                      >
+                        {sz}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Fast Action Buttons */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={loading}
+              className="w-10 h-10 rounded-xl flex items-center justify-center border border-slate-300/90 text-slate-800 bg-white shadow-xs active:scale-95 transition-all duration-200 cursor-pointer disabled:opacity-50 shrink-0 hover:border-[#c5a880]"
+              title="Add to Bag"
+              aria-label="Add to Bag"
+            >
+              <RiShoppingBagLine size={17} />
+            </button>
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              className="rounded-xl px-4 py-2.5 text-xs font-extrabold uppercase tracking-[0.14em] bg-gradient-to-b from-[#d2b68e] to-[#a8865a] hover:from-[#dbbf97] hover:to-[#b39062] text-white shadow-[0_4px_14px_rgba(197,168,128,0.4),inset_0_1px_0_rgba(255,255,255,0.4)] border border-amber-200/40 active:scale-95 transition-all duration-200 cursor-pointer flex items-center space-x-1"
+            >
+              <span>Buy Now</span>
+              <RiArrowRightSLine size={15} />
+            </button>
+          </div>
         </div>
       </div>
     </div>

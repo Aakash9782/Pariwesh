@@ -1,6 +1,7 @@
 import React from "react";
 import Button from "../../../components/admin/ui/Button.jsx";
 import Input from "../../../components/admin/ui/Input.jsx";
+import ToggleSwitch from "../../../components/admin/ui/ToggleSwitch.jsx";
 
 const GeneralTab = ({
   generalForm,
@@ -89,55 +90,39 @@ const GeneralTab = ({
       </div>
 
       {/* Maintenance switch */}
-      <div className="pt-6 border-t border-slate-200 flex justify-between items-center bg-[#FAF9F6] p-4 rounded-xl border border-slate-200/80">
-        <div>
-          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-            Under Maintenance Lock
-          </h4>
-          <p className="text-[10px] text-slate-500 mt-1">
-            If enabled, public users will encounter a brief offline maintenance
-            page
-          </p>
-        </div>
-        <select
-          value={generalForm.maintenanceMode}
-          onChange={(e) =>
+      <div className="pt-6 border-t border-slate-200 bg-[#FAF9F6] p-4 rounded-xl border border-slate-200/80">
+        <ToggleSwitch
+          id="maintenanceModeSwitch"
+          checked={generalForm.maintenanceMode === "true"}
+          onChange={(val) =>
             setGeneralForm({
               ...generalForm,
-              maintenanceMode: e.target.value,
+              maintenanceMode: val ? "true" : "false",
             })
           }
-          className="bg-white border border-slate-200 text-xs rounded-lg p-2 text-slate-700 outline-none focus:border-[#c5a880] focus:ring-1 focus:ring-[#c5a880] font-semibold"
-        >
-          <option value="false">Off (Online Store Active)</option>
-          <option value="true">On (Lock Public Store)</option>
-        </select>
+          label="Under Maintenance Lock"
+          description="If enabled, public users will encounter a brief offline maintenance page"
+        />
       </div>
 
       {/* Live Offer / Special Launch Countdown Toggle Section */}
       <div className="pt-6 border-t border-slate-200 space-y-4">
-        <h3 className="text-xs font-bold tracking-widest uppercase text-[#c5a880] flex items-center">
-          Special Launch Countdown Settings
-        </h3>
+        <div className="bg-[#FAF9F6] p-4 rounded-xl border border-slate-200/80">
+          <ToggleSwitch
+            id="countdownActiveSwitch"
+            checked={generalForm.countdownActive === "true"}
+            onChange={(val) =>
+              setGeneralForm({
+                ...generalForm,
+                countdownActive: val ? "true" : "false",
+              })
+            }
+            label="Special Launch Countdown Bar"
+            description="Display countdown timer banner for festive & limited-period promotions"
+          />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="block text-xs font-semibold text-slate-700">
-              Countdown Status (ON/OFF)
-            </label>
-            <select
-              value={generalForm.countdownActive}
-              onChange={(e) =>
-                setGeneralForm({
-                  ...generalForm,
-                  countdownActive: e.target.value,
-                })
-              }
-              className="w-full h-10 px-3 bg-white border border-slate-200 rounded-md text-xs text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880]"
-            >
-              <option value="true">ON (Show Live Offer & Countdown)</option>
-              <option value="false">OFF (Hide completely)</option>
-            </select>
-          </div>
           <Input
             type="datetime-local"
             label="Countdown End Date & Time"
@@ -163,32 +148,25 @@ const GeneralTab = ({
           />
         </div>
       </div>
+
       {/* Announcement Bar Section */}
       <div className="pt-6 border-t border-slate-200 space-y-4">
-        <h3 className="text-xs font-bold tracking-widest uppercase text-[#c5a880] flex items-center">
-          Top Rotating Announcement Bar
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="block text-xs font-semibold text-slate-700">
-              Announcement Bar Status (ON/OFF)
-            </label>
-            <select
-              value={generalForm.announcementActive}
-              onChange={(e) =>
-                setGeneralForm({
-                  ...generalForm,
-                  announcementActive: e.target.value,
-                })
-              }
-              className="w-full h-10 px-3 bg-white border border-slate-200 rounded-md text-xs text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880]"
-            >
-              <option value="true">
-                ON (Show announcement scrolling marquee)
-              </option>
-              <option value="false">OFF (Hide marquee)</option>
-            </select>
-          </div>
+        <div className="bg-[#FAF9F6] p-4 rounded-xl border border-slate-200/80">
+          <ToggleSwitch
+            id="announcementActiveSwitch"
+            checked={generalForm.announcementActive === "true"}
+            onChange={(val) =>
+              setGeneralForm({
+                ...generalForm,
+                announcementActive: val ? "true" : "false",
+              })
+            }
+            label="Top Rotating Announcement Marquee"
+            description="Display infinite ticker banner on the website header for free shipping & discount codes"
+          />
+        </div>
+
+        <div>
           <Input
             label="Announcement Banner Text"
             value={generalForm.announcementText}

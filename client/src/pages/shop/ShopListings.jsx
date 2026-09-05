@@ -40,7 +40,7 @@ const ShopListings = () => {
   );
   const [selectedColor, setSelectedColor] = useState("all");
   const [selectedSize, setSelectedSize] = useState("all");
-  const [priceRange, setPriceRange] = useState(5000);
+  const [priceRange, setPriceRange] = useState(10000);
   const [sortBy, setSortBy] = useState("latest");
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("search") || "",
@@ -51,7 +51,7 @@ const ShopListings = () => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 6;
+  const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -74,6 +74,20 @@ const ShopListings = () => {
     };
     fetchProducts();
   }, []);
+
+  // Dynamic price ceiling derived from store inventory
+  const maxStorePrice = React.useMemo(() => {
+    if (!products.length) return 10000;
+    const maxP = Math.max(...products.map((p) => Number(p.price) || 0));
+    return Math.max(10000, Math.ceil(maxP / 1000) * 1000);
+  }, [products]);
+
+  // Adjust price range default when products load
+  useEffect(() => {
+    if (products.length > 0) {
+      setPriceRange((prev) => (prev < maxStorePrice ? maxStorePrice : prev));
+    }
+  }, [maxStorePrice, products.length]);
 
   // Keep track of search strings
   useEffect(() => {
@@ -145,7 +159,7 @@ const ShopListings = () => {
     setSelectedCategory("all");
     setSelectedColor("all");
     setSelectedSize("all");
-    setPriceRange(5000);
+    setPriceRange(maxStorePrice);
     setSearchQuery("");
     setSearchParams({});
   };
@@ -337,16 +351,16 @@ const ShopListings = () => {
             </div>
             <input
               type="range"
-              min="1000"
-              max="5000"
+              min="500"
+              max={maxStorePrice}
               step="500"
               value={priceRange}
               onChange={(e) => setPriceRange(Number(e.target.value))}
               className="w-full accent-accent-gold cursor-pointer"
             />
             <div className="flex justify-between text-[9px] text-slate-400 font-sans">
-              <span>₹1,000</span>
-              <span>₹5,000</span>
+              <span>₹500</span>
+              <span>{formatCurrency(maxStorePrice)}</span>
             </div>
           </div>
         </aside>
@@ -356,7 +370,7 @@ const ShopListings = () => {
           {isApiLoading || isLoading ? (
             // Load skeletons in loader state
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+              {[...Array(12)].map((_, i) => (
                 <ProductSkeleton key={i} />
               ))}
             </div>
@@ -430,7 +444,7 @@ const ShopListings = () => {
                         className="absolute inset-0 w-full h-full pointer-events-none fill-none stroke-accent-gold stroke-[1.8px] opacity-85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.15)]"
                         preserveAspectRatio="none"
                       >
-                        <path d="M 0,125 L 0,43.75 C 0,35 8,32.5 12,30 C 12,22.5 22,18.75 28,15 C 28,10 38,7.5 44,3.75 C 47,1.25 49,0 50,0 C 51,0 53,1.25 56,3.75 C 62,7.5 72,10 72,15 C 78,18.75 88,22.5 88,30 C 92,32.5 100,35 100,43.75 L 100,125" />
+                        <path d="M 0,125 L 0,7.5 C 0,6 8,5.5 12,5.1 C 12,3.8 22,3.2 28,2.5 C 28,1.7 38,1.2 44,0.6 C 47,0.2 49,0 50,0 C 51,0 53,0.2 56,0.6 C 62,1.2 72,1.7 72,2.5 C 78,3.2 88,3.8 88,5.1 C 92,5.5 100,6 100,7.5 L 100,125" />
                       </svg>
 
                       {/* Floating Rating Badge (Inspired by Reference Design) */}
@@ -768,16 +782,16 @@ const ShopListings = () => {
               </div>
               <input
                 type="range"
-                min="1000"
-                max="5000"
+                min="500"
+                max={maxStorePrice}
                 step="500"
                 value={priceRange}
                 onChange={(e) => setPriceRange(Number(e.target.value))}
                 className="w-full accent-accent-gold cursor-pointer"
               />
               <div className="flex justify-between text-[9px] text-slate-400 font-sans">
-                <span>₹1,000</span>
-                <span>₹5,000</span>
+                <span>₹500</span>
+                <span>{formatCurrency(maxStorePrice)}</span>
               </div>
             </div>
 

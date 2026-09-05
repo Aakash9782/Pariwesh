@@ -119,21 +119,27 @@ const DashboardModule = () => {
 
       oList.forEach((ord) => {
         const ordDate = new Date(ord.createdAt);
+        const status = (ord.orderStatus || "").toLowerCase();
+        const isCancelled = status === "cancelled" || status === "refunded";
         const amt =
           ord.pricing?.grandTotal || ord.pricing?.total || ord.totalPrice || 0;
-        totalRev += amt;
+
+        if (!isCancelled) {
+          totalRev += amt;
+        }
 
         if (ordDate >= today) {
           todayOrdersCount++;
-          todayRevenueSum += amt;
+          if (!isCancelled) {
+            todayRevenueSum += amt;
+          }
         }
 
-        if (ordDate >= firstOfMonth) {
+        if (ordDate >= firstOfMonth && !isCancelled) {
           monthlyRevenueSum += amt;
         }
 
         // Status counts map
-        const status = ord.orderStatus?.toLowerCase() || "";
         if (status === "placed" || status === "pending") pendingCount++;
         else if (status === "processing" || status === "packed")
           processingCount++;
@@ -190,6 +196,8 @@ const DashboardModule = () => {
         let sum = 0;
         let count = 0;
         oList.forEach((ord) => {
+          const s = (ord.orderStatus || "").toLowerCase();
+          if (s === "cancelled" || s === "refunded") return;
           const d = new Date(ord.createdAt);
           if (d >= dayStart && d < dayEnd) {
             sum +=

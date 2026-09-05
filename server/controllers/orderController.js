@@ -869,21 +869,87 @@ export const updateOrderStatus = async (req, res, next) => {
   }
 };
 
-// @desc    Delete order (Admin)
+// @desc    Delete order (Admin test cleanup / purge) with automatic stock restoration
 // @route   DELETE /api/v1/orders/:id
-// @access  Public
+// @access  Private/Admin
 export const deleteOrder = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const order = await Order.findByIdAndDelete(id);
+    const order = await Order.findById(id);
     if (!order) {
       return sendError(res, "Order not found", 404);
     }
 
-    await logActivity(req, `Order Deleted: ${order.orderId}`);
+    // 1. Auto-restore product stock if requested (default true)
+    const restoreStock = req.query.restoreStock !== "false";
+    if (restoreStock && Array.isArray(order.items)) {
+      for (const item of order.items) {
+        try {
+          const product = await Product.findById(item.productId || item._id);
+          if (product && product.sizesStock) {
+            const size = item.size || "M";
+            const currentStock = Number(product.get(`sizesStock.${size}`)) || 0;
+            product.set(
+              `sizesStock.${size}`,
+              currentStock + Number(item.quantity || 1),
+            );
+            await product.save();
+          }
+        } catch (stockErr) {
+          console.error(
+            "Non-blocking stock restoration error for item:",
+            item.name,
+            stockErr,
+          );
+        }
+      }
+    }
 
-    return sendSuccess(res, "Order deleted from queue");
+    // 2. Rollback coupon usage count if a coupon was used
+    if (order.pricing?.appliedCoupon) {
+      try {
+        const couponInstance = await Coupon.findOne({
+          code: order.pricing.appliedCoupon.toUpperCase().trim(),
+        });
+        if (couponInstance) {
+          couponInstance.ordersUsed = Math.max(
+            0,
+            (couponInstance.ordersUsed || 1) - 1,
+          );
+          const phone = order.customer?.phone || order.shippingAddress?.phone;
+          if (phone && Array.isArray(couponInstance.usedBy)) {
+            const usedIndex = couponInstance.usedBy.findIndex(
+              (u) => u.phone === phone,
+            );
+            if (usedIndex > -1) {
+              couponInstance.usedBy[usedIndex].usageCount = Math.max(
+                0,
+                couponInstance.usedBy[usedIndex].usageCount - 1,
+              );
+            }
+          }
+          await couponInstance.save();
+        }
+      } catch (couponErr) {
+        console.error("Non-blocking coupon rollback error:", couponErr);
+      }
+    }
+
+    const orderId = order.orderId;
+    await Order.findByIdAndDelete(id);
+
+    await logActivity(
+      req,
+      `Admin Purged Order #${orderId} (Stock Restored: ${restoreStock})`,
+    );
+
+    return sendSuccess(
+      res,
+      `Order #${orderId} deleted successfully and inventory restored`,
+      { orderId },
+    );
   } catch (error) {
+    console.error("Delete order error:", error);
     return sendError(res, error.message, 500);
   }
 };
@@ -1070,3 +1136,5 @@ export const retryShiprocketManifest = async (req, res, next) => {
     return sendError(res, `Manifest generation failed: ${error.message}`, 505);
   }
 };
+
+

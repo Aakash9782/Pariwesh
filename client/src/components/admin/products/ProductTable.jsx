@@ -248,98 +248,209 @@ const ProductTable = ({
         </div>
       )}
 
-      {/* Catalog Table */}
-      <Card className="overflow-x-auto p-0">
+      {/* Catalog Table Card with Responsive Dual View */}
+      <Card className="overflow-hidden p-0">
         {isLoading ? (
-          <table className="w-full text-left text-xs text-slate-600">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-widest text-[9px]">
-              <tr>
-                <th className="py-4.5 px-5 text-left font-sans">#</th>
-                <th className="py-4.5 px-5">Preview</th>
-                <th className="py-4.5 px-5">Product SKU Details</th>
-                <th className="py-4.5 px-5">Category</th>
-                <th className="py-4.5 px-5 text-right">MRP (Base)</th>
-                <th className="py-4.5 px-5 text-right">Sell Price</th>
-                <th className="py-4.5 px-5 text-center">Remaining Stock</th>
-                <th className="py-4.5 px-5 text-center">Status</th>
-                <th className="py-4.5 px-5 text-center font-mono">
-                  Operations
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <tr key={i} className="border-b border-slate-100">
-                  <td className="py-4.5 px-5 text-left">
-                    <SkeletonLoader className="h-4 w-4 rounded" />
-                  </td>
-                  <td className="py-4.5 px-5">
-                    <SkeletonLoader className="w-10 h-12 rounded" />
-                  </td>
-                  <td className="py-4.5 px-5 space-y-1.55">
-                    <SkeletonLoader className="h-4 w-32 rounded" />
-                    <SkeletonLoader className="h-3 w-20 rounded" />
-                  </td>
-                  <td className="py-4.5 px-5">
-                    <SkeletonLoader className="h-4 w-12 rounded" />
-                  </td>
-                  <td className="py-4.5 px-5 text-right">
-                    <SkeletonLoader className="h-4 w-12 ml-auto rounded" />
-                  </td>
-                  <td className="py-4.5 px-5 text-right">
-                    <SkeletonLoader className="h-4 w-12 ml-auto rounded" />
-                  </td>
-                  <td className="py-4.5 px-5 text-center">
-                    <SkeletonLoader className="h-4 w-14 mx-auto rounded" />
-                  </td>
-                  <td className="py-4.5 px-5 text-center">
-                    <SkeletonLoader className="h-4 w-16 mx-auto rounded" />
-                  </td>
-                  <td className="py-4.5 px-5 text-center">
-                    <div className="flex justify-center space-x-2">
-                      <SkeletonLoader className="h-6 w-8 rounded" />
-                      <SkeletonLoader className="h-6 w-8 rounded" />
-                      <SkeletonLoader className="h-6 w-8 rounded" />
-                    </div>
-                  </td>
+          <div>
+            {/* Desktop Skeletons */}
+            <table className="hidden md:table w-full text-left text-xs text-slate-600">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-widest text-[9px]">
+                <tr>
+                  <th className="py-4.5 px-5 text-left font-sans">#</th>
+                  <th className="py-4.5 px-5">Preview</th>
+                  <th className="py-4.5 px-5">Product SKU Details</th>
+                  <th className="py-4.5 px-5">Category</th>
+                  <th className="py-4.5 px-5 text-right">MRP (Base)</th>
+                  <th className="py-4.5 px-5 text-right">Sell Price</th>
+                  <th className="py-4.5 px-5 text-center">Remaining Stock</th>
+                  <th className="py-4.5 px-5 text-center">Status</th>
+                  <th className="py-4.5 px-5 text-center font-mono">Operations</th>
                 </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <tr key={i} className="border-b border-slate-100">
+                    <td className="py-4.5 px-5"><SkeletonLoader className="h-4 w-4 rounded" /></td>
+                    <td className="py-4.5 px-5"><SkeletonLoader className="w-10 h-12 rounded" /></td>
+                    <td className="py-4.5 px-5 space-y-1.5"><SkeletonLoader className="h-4 w-32 rounded" /><SkeletonLoader className="h-3 w-20 rounded" /></td>
+                    <td className="py-4.5 px-5"><SkeletonLoader className="h-4 w-12 rounded" /></td>
+                    <td className="py-4.5 px-5 text-right"><SkeletonLoader className="h-4 w-12 ml-auto rounded" /></td>
+                    <td className="py-4.5 px-5 text-right"><SkeletonLoader className="h-4 w-12 ml-auto rounded" /></td>
+                    <td className="py-4.5 px-5 text-center"><SkeletonLoader className="h-4 w-14 mx-auto rounded" /></td>
+                    <td className="py-4.5 px-5 text-center"><SkeletonLoader className="h-4 w-16 mx-auto rounded" /></td>
+                    <td className="py-4.5 px-5 text-center"><SkeletonLoader className="h-6 w-20 mx-auto rounded" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {/* Mobile Skeletons */}
+            <div className="md:hidden divide-y divide-slate-100 p-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="p-3 space-y-3">
+                  <div className="flex gap-3">
+                    <SkeletonLoader className="w-14 h-18 rounded-lg shrink-0" />
+                    <div className="space-y-2 flex-grow">
+                      <SkeletonLoader className="h-4 w-3/4" />
+                      <SkeletonLoader className="h-3 w-1/2" />
+                      <SkeletonLoader className="h-3 w-1/4" />
+                    </div>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
         ) : paginatedProducts.length === 0 ? (
           <div className="py-20 text-center text-slate-400 italic text-xs">
             No matching products found matching criteria
           </div>
         ) : (
-          <table className="w-full text-left text-xs bg-white">
-            <thead className="bg-[#FAF9F6] border-b border-slate-200 text-slate-500 font-bold uppercase tracking-widest text-[9px]">
-              <tr>
-                <th className="py-4.5 px-5">
-                  <input
-                    type="checkbox"
-                    checked={
-                      paginatedProducts.length > 0 &&
-                      paginatedProducts.every((p) =>
-                        selectedIds.includes(p._id),
-                      )
-                    }
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="cursor-pointer rounded text-accent-gold focus:ring-accent-gold/30 border-slate-300"
-                  />
-                </th>
-                <th className="py-4.5 px-5">Preview</th>
-                <th className="py-4.5 px-5">Product SKU Details</th>
-                <th className="py-4.5 px-5">Category</th>
-                <th className="py-4.5 px-5">Fabric Info</th>
-                <th className="py-4.5 text-right px-5">Pricing</th>
-                <th className="py-4.5 text-center px-5">Stock Levels</th>
-                <th className="py-4.5 text-center px-5 font-mono">Status</th>
-                <th className="py-4.5 text-center px-5 font-mono">
-                  Operations
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+          <>
+            {/* 1. DESKTOP VIEW (md+): Dense, multi-column data table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs bg-white">
+                <thead className="bg-[#FAF9F6] border-b border-slate-200 text-slate-500 font-bold uppercase tracking-widest text-[9px] sticky top-0 z-10">
+                  <tr>
+                    <th className="py-4.5 px-5">
+                      <input
+                        type="checkbox"
+                        checked={
+                          paginatedProducts.length > 0 &&
+                          paginatedProducts.every((p) =>
+                            selectedIds.includes(p._id),
+                          )
+                        }
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        className="cursor-pointer rounded text-accent-gold focus:ring-accent-gold/30 border-slate-300"
+                      />
+                    </th>
+                    <th className="py-4.5 px-5">Preview</th>
+                    <th className="py-4.5 px-5">Product SKU Details</th>
+                    <th className="py-4.5 px-5">Category</th>
+                    <th className="py-4.5 px-5">Fabric Info</th>
+                    <th className="py-4.5 text-right px-5">Pricing</th>
+                    <th className="py-4.5 text-center px-5">Stock Levels</th>
+                    <th className="py-4.5 text-center px-5 font-mono">Status</th>
+                    <th className="py-4.5 text-center px-5 font-mono">
+                      Operations
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedProducts.map((p, idx) => {
+                    const totalStock = Object.values(p.sizesStock || {}).reduce(
+                      (acc, val) => acc + val,
+                      0,
+                    );
+                    const isSelected = selectedIds.includes(p._id);
+                    return (
+                      <tr
+                        key={idx}
+                        className={`hover:bg-slate-50/50 transition-colors ${isSelected ? "bg-amber-50/15" : ""}`}
+                      >
+                        <td className="py-4 px-5">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) =>
+                              handleSelectOne(p._id, e.target.checked)
+                            }
+                            className="cursor-pointer rounded text-[#c5a880] focus:ring-[#c5a880]/30 border-slate-300"
+                          />
+                        </td>
+                        <td className="py-4 px-5">
+                          {p.images && p.images[0] ? (
+                            <div className="relative group cursor-zoom-in">
+                              <img
+                                src={p.images[0]}
+                                className="w-12 h-14 object-cover rounded border border-slate-200 group-hover:scale-105 transition"
+                                alt=""
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-12 h-14 bg-slate-50 rounded border border-slate-200 flex items-center justify-center text-slate-400">
+                              <RiFolderImageLine size={16} />
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-4 px-5 space-y-1">
+                          <p className="font-semibold text-slate-800 text-sm tracking-tight">
+                            {p.name}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-mono tracking-wider">
+                            {p.sku}
+                          </p>
+                        </td>
+                        <td className="py-4 px-5 font-semibold text-slate-500 capitalize font-mono text-[10px]">
+                          {p.category}
+                        </td>
+                        <td className="py-4 px-5 font-mono text-slate-400 text-[10px]">
+                          {p.fabric || "Cotton"}
+                        </td>
+                        <td className="py-4 text-right px-5 font-bold space-y-0.5 font-sans">
+                          <p className="text-slate-800">₹{p.price}</p>
+                          <p className="text-[10px] text-slate-400 line-through">
+                            ₹{p.mrp}
+                          </p>
+                        </td>
+                        <td className="py-4 text-center px-5 font-mono">
+                          <StatusPill
+                            status={
+                              totalStock === 0
+                                ? "cancelled"
+                                : totalStock <= 5
+                                  ? "pending"
+                                  : "delivered"
+                            }
+                            label={`${totalStock} Units`}
+                          />
+                        </td>
+                        <td className="py-4 text-center px-5">
+                          <span
+                            className={`px-2.5 py-0.5 border rounded text-[10px] font-bold uppercase tracking-wider ${
+                              p.status === "draft"
+                                ? "bg-slate-50 text-slate-500 border-slate-200"
+                                : p.status === "archived"
+                                  ? "bg-purple-50 text-purple-700 border-purple-200"
+                                  : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            }`}
+                          >
+                            {p.status || "active"}
+                          </span>
+                        </td>
+                        <td className="py-4 px-5">
+                          <div className="flex items-center space-x-1.5 justify-center">
+                            <button
+                              onClick={() => handleEditClick(p)}
+                              className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded text-slate-500 hover:text-[#c5a880] transition border border-slate-200"
+                              title="Edit SKU"
+                            >
+                              <RiEditLine size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleDuplicate(p)}
+                              className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded text-slate-500 hover:text-[#c5a880] transition border border-slate-200"
+                              title="Duplicate SKU"
+                            >
+                              <RiFileCopyLine size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(p._id, p.name)}
+                              className="p-1.5 bg-slate-50 hover:bg-rose-50 rounded text-slate-500 hover:text-rose-600 transition border border-slate-200"
+                              title="Delete SKU"
+                            >
+                              <RiDeleteBinLine size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 2. MOBILE VIEW (md:hidden): Responsive Cards eliminating horizontal scrolling */}
+            <div className="md:hidden divide-y divide-slate-100">
               {paginatedProducts.map((p, idx) => {
                 const totalStock = Object.values(p.sizesStock || {}).reduce(
                   (acc, val) => acc + val,
@@ -347,110 +458,118 @@ const ProductTable = ({
                 );
                 const isSelected = selectedIds.includes(p._id);
                 return (
-                  <tr
+                  <div
                     key={idx}
-                    className={`hover:bg-slate-50/50 transition-colors ${isSelected ? "bg-amber-50/15" : ""}`}
+                    className={`p-3.5 space-y-3 transition-colors ${
+                      isSelected ? "bg-amber-50/20" : "bg-white"
+                    }`}
                   >
-                    <td className="py-4 px-5">
+                    <div className="flex gap-3 items-start">
+                      {/* Checkbox */}
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={(e) =>
                           handleSelectOne(p._id, e.target.checked)
                         }
-                        className="cursor-pointer rounded text-[#c5a880] focus:ring-[#c5a880]/30 border-slate-300"
+                        className="mt-1 cursor-pointer rounded text-[#c5a880] focus:ring-[#c5a880]/30 border-slate-300"
                       />
-                    </td>
-                    <td className="py-4 px-5">
+
+                      {/* Thumbnail */}
                       {p.images && p.images[0] ? (
-                        <div className="relative group cursor-zoom-in">
-                          <img
-                            src={p.images[0]}
-                            className="w-12 h-14 object-cover rounded border border-slate-200 group-hover:scale-105 transition"
-                            alt=""
-                          />
-                        </div>
+                        <img
+                          src={p.images[0]}
+                          className="w-14 h-18 object-cover rounded-lg border border-slate-200 shrink-0"
+                          alt={p.name}
+                        />
                       ) : (
-                        <div className="w-12 h-14 bg-slate-50 rounded border border-slate-200 flex items-center justify-center text-slate-400">
-                          <RiFolderImageLine size={16} />
+                        <div className="w-14 h-18 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                          <RiFolderImageLine size={18} />
                         </div>
                       )}
-                    </td>
-                    <td className="py-4 px-5 space-y-1">
-                      <p className="font-semibold text-slate-800 text-sm tracking-tight">
-                        {p.name}
-                      </p>
-                      <p className="text-[10px] text-slate-400 font-mono tracking-wider">
-                        {p.sku}
-                      </p>
-                    </td>
-                    <td className="py-4 px-5 font-semibold text-slate-500 capitalize font-mono text-[10px]">
-                      {p.category}
-                    </td>
-                    <td className="py-4 px-5 font-mono text-slate-400 text-[10px]">
-                      {p.fabric || "Cotton"}
-                    </td>
-                    <td className="py-4 text-right px-5 font-bold space-y-0.5 font-sans">
-                      <p className="text-slate-800">₹{p.price}</p>
-                      <p className="text-[10px] text-slate-400 line-through">
-                        ₹{p.mrp}
-                      </p>
-                    </td>
-                    <td className="py-4 text-center px-5 font-mono">
+
+                      {/* Info */}
+                      <div className="min-w-0 flex-grow space-y-1">
+                        <div className="flex items-start justify-between gap-1">
+                          <p className="font-bold text-slate-900 text-xs tracking-tight leading-snug line-clamp-2">
+                            {p.name}
+                          </p>
+                          <span
+                            className={`px-1.5 py-0.5 border rounded text-[8.5px] font-bold uppercase shrink-0 ${
+                              p.status === "draft"
+                                ? "bg-slate-50 text-slate-500 border-slate-200"
+                                : p.status === "archived"
+                                ? "bg-purple-50 text-purple-700 border-purple-200"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            }`}
+                          >
+                            {p.status || "active"}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-mono">
+                          {p.sku}
+                        </p>
+                        <div className="flex items-baseline space-x-2 pt-0.5">
+                          <span className="font-extrabold text-slate-900 text-sm font-sans">
+                            ₹{p.price}
+                          </span>
+                          {p.mrp > p.price && (
+                            <span className="text-[10px] text-slate-400 line-through font-sans">
+                              ₹{p.mrp}
+                            </span>
+                          )}
+                          <span className="text-[9.5px] text-slate-500 font-medium capitalize ml-auto">
+                            {p.category}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stock & Quick Operations */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                       <StatusPill
                         status={
                           totalStock === 0
                             ? "cancelled"
                             : totalStock <= 5
-                              ? "pending"
-                              : "delivered"
+                            ? "pending"
+                            : "delivered"
                         }
-                        label={`${totalStock} Units`}
+                        label={`${totalStock} in stock`}
                       />
-                    </td>
-                    <td className="py-4 text-center px-5">
-                      <span
-                        className={`px-2.5 py-0.5 border rounded text-[10px] font-bold uppercase tracking-wider ${
-                          p.status === "draft"
-                            ? "bg-slate-50 text-slate-500 border-slate-200"
-                            : p.status === "archived"
-                              ? "bg-purple-50 text-purple-700 border-purple-200"
-                              : "bg-emerald-50 text-emerald-700 border border-emerald-200 border-emerald-200"
-                        }`}
-                      >
-                        {p.status || "active"}
-                      </span>
-                    </td>
-                    <td className="py-4 px-5">
-                      <div className="flex items-center space-x-1.5 justify-center">
+
+                      <div className="flex items-center gap-1.5">
                         <button
+                          type="button"
                           onClick={() => handleEditClick(p)}
-                          className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded text-slate-500 hover:text-[#c5a880] transition border border-slate-200"
-                          title="Edit SKU"
+                          className="px-2.5 py-1 bg-slate-50 hover:bg-slate-100 rounded-lg text-slate-700 hover:text-[#8a1c14] transition border border-slate-200 text-xs font-semibold flex items-center gap-1 cursor-pointer"
                         >
-                          <RiEditLine size={15} />
+                          <RiEditLine size={13} />
+                          <span>Edit</span>
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDuplicate(p)}
-                          className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded text-slate-500 hover:text-[#c5a880] transition border border-slate-200"
+                          className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-slate-900 transition border border-slate-200 cursor-pointer"
                           title="Duplicate SKU"
                         >
-                          <RiFileCopyLine size={15} />
+                          <RiFileCopyLine size={14} />
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDelete(p._id, p.name)}
-                          className="p-1.5 bg-slate-50 hover:bg-rose-50 rounded text-slate-500 hover:text-rose-600 transition border border-slate-200"
+                          className="p-1.5 bg-rose-50 hover:bg-rose-100 rounded-lg text-rose-600 transition border border-rose-200 cursor-pointer"
                           title="Delete SKU"
                         >
-                          <RiDeleteBinLine size={15} />
+                          <RiDeleteBinLine size={14} />
                         </button>
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
 
         {/* Pagination Controls and Page Size Dropdown */}

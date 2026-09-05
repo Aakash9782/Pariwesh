@@ -1,4 +1,5 @@
 import Product from "../models/Product.js";
+import Collection from "../models/Collection.js";
 import Setting from "../models/Setting.js";
 import { sendSuccess, sendError } from "../utils/responseFormatter.js";
 import {
@@ -323,6 +324,21 @@ export const createProduct = async (req, res, next) => {
       `Product Added: ${newProduct.name} (SKU: ${newProduct.sku})`,
     );
 
+    // Auto-link new product into matching collections (Model C Auto-Freshness)
+    try {
+      const matchSlugs = [
+        newProduct.category,
+        "new-arrivals",
+        ...(newProduct.bestSeller ? ["best-sellers"] : []),
+      ];
+      await Collection.updateMany(
+        { slug: { $in: matchSlugs } },
+        { $addToSet: { products: newProduct._id } },
+      );
+    } catch (colErr) {
+      console.warn("Could not auto-link product to collection:", colErr.message);
+    }
+
     return sendSuccess(
       res,
       "Product added to catalog successfully",
@@ -358,6 +374,16 @@ export const deleteProduct = async (req, res, next) => {
       req,
       `Product Deleted: ${product.name} (SKU: ${product.sku})`,
     );
+
+    // Unlink deleted product from collections
+    try {
+      await Collection.updateMany(
+        { products: id },
+        { $pull: { products: id } },
+      );
+    } catch (colErr) {
+      console.warn("Could not unlink product from collections:", colErr.message);
+    }
 
     return sendSuccess(res, "Product deleted from catalog");
   } catch (error) {

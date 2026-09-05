@@ -50,13 +50,16 @@ const AnalyticsPage = () => {
         const weeklyCounts = [0, 0, 0, 0, 0, 0, 0];
 
         list.forEach((ord) => {
+          const status = ord.orderStatus?.toLowerCase() || "";
+          const isCancelled = status === "cancelled" || status === "refunded";
           const val = ord.pricing?.grandTotal || ord.totalPrice || 0;
-          totalRev += val;
+          if (!isCancelled) {
+            totalRev += val;
+          }
 
           if (ord.paymentMethod === "COD") codCount++;
           else onlineCount++;
 
-          const status = ord.orderStatus?.toLowerCase() || "";
           if (
             status === "placed" ||
             status === "pending" ||

@@ -23,7 +23,31 @@ import {
   RiCalendarLine,
   RiSaveLine,
   RiArrowRightSLine,
+  RiWhatsappLine,
+  RiDeleteBinLine,
 } from "react-icons/ri";
+
+const getWhatsAppUrl = (order) => {
+  if (!order) return null;
+  const rawPhone =
+    order.customer?.phone ||
+    order.shippingAddress?.phone ||
+    "";
+  const cleanPhone = String(rawPhone).replace(/\D/g, "");
+  if (!cleanPhone) return null;
+  const phoneWithCountry =
+    cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+
+  const customerName =
+    order.customer?.name ||
+    order.shippingAddress?.fullName ||
+    "Valued Customer";
+  const orderId = order.orderId || "";
+
+  const message = `Namaste ${customerName} ji! ✨\n\nPariwesh se aapka order #${orderId} confirm ho gaya hai.\n\nThank you so much for choosing PARIWESH! We are preparing your royal ensemble with great love and care.\n\nWe would love to welcome you back again for your future traditional and festive celebrations. If you need any assistance with size or styling, feel free to reply directly here.\n\nWarm regards,\nTeam PARIWESH 🌸\nhttps://pariwesh.in`;
+
+  return `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`;
+};
 
 const COURIERS = [
   "Delhivery",
@@ -214,6 +238,30 @@ const OrdersPage = () => {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Delete Order (Purge Test Orders & Auto-Restore Inventory Stock)
+  const handleDeleteOrder = async (order) => {
+    if (!order) return;
+    const grandVal = order.pricing?.grandTotal || order.totalPrice || 0;
+    const confirmed = window.confirm(
+      `⚠️ PERMANENTLY DELETE ORDER #${order.orderId}?\n\n• Order record will be deleted from database.\n• Inventory stock will be RESTORED for ordered dress sizes.\n• Revenue (₹${grandVal}) will be removed from sales reports.\n\nProceed with deletion?`,
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await API.delete(`/orders/${order._id}`);
+      if (res.data?.success) {
+        alert(res.data?.message || `Order #${order.orderId} deleted & stock restored!`);
+        if (selectedOrder?._id === order._id) {
+          setSelectedOrder(null);
+        }
+        fetchOrders();
+      }
+    } catch (err) {
+      console.error("Delete order error:", err);
+      alert(err.response?.data?.message || "Failed to delete order");
     }
   };
 
@@ -533,10 +581,11 @@ const OrdersPage = () => {
       </Card>
 
       {/* Orders Table Panel */}
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto w-full">
+      <Card className="overflow-hidden p-0">
+        {/* DESKTOP TABLE VIEW (md+) */}
+        <div className="hidden md:block overflow-x-auto w-full">
           <table className="w-full text-left text-xs min-w-[900px] border-collapse">
-            <thead className="bg-[#FAF9F6] border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+            <thead className="bg-[#FAF9F6] border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[10px] sticky top-0 z-10">
               <tr>
                 <th className="py-4 px-5">Order ID</th>
                 <th className="py-4 px-5">Customer Billing Details</th>
@@ -606,6 +655,18 @@ const OrdersPage = () => {
                           </span>
                         )}
                       </p>
+                      {getWhatsAppUrl(ord) && (
+                        <a
+                          href={getWhatsAppUrl(ord)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Notify customer on WhatsApp"
+                          className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 border border-emerald-200 transition"
+                        >
+                          <RiWhatsappLine size={13} className="text-emerald-600" />
+                          <span>WhatsApp Notify</span>
+                        </a>
+                      )}
                     </td>
                     <td className="py-4 px-5 text-slate-600 font-mono text-[10px]">
                       {new Date(ord.createdAt).toLocaleDateString()}
@@ -643,23 +704,141 @@ const OrdersPage = () => {
                       </div>
                     </td>
                     <td className="py-4 text-center px-5 border-none">
-                      <button
-                        onClick={() => {
-                          setSelectedOrder(ord);
-                          setInternalNotes(ord.internalNotes || "");
-                          setCustomerNotes(ord.customerNotes || "");
-                          setShowNotesForm(false);
-                        }}
-                        className="text-[#c5a880] hover:underline font-semibold text-xs flex items-center justify-center mx-auto"
-                      >
-                        Inspect <RiArrowRightSLine className="ml-0.5" />
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedOrder(ord);
+                            setInternalNotes(ord.internalNotes || "");
+                            setCustomerNotes(ord.customerNotes || "");
+                            setShowNotesForm(false);
+                          }}
+                          className="text-[#c5a880] hover:underline font-semibold text-xs flex items-center justify-center"
+                        >
+                          Inspect <RiArrowRightSLine className="ml-0.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteOrder(ord)}
+                          title="Delete Order & Restore Stock"
+                          className="p-1 rounded text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                        >
+                          <RiDeleteBinLine size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* MOBILE RESPONSIVE ORDER CARDS (md:hidden) */}
+        <div className="md:hidden divide-y divide-slate-100">
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <SkeletonLoader className="h-4 w-24" />
+                  <SkeletonLoader className="h-5 w-20 rounded-full" />
+                </div>
+                <SkeletonLoader className="h-4 w-36" />
+                <div className="flex justify-between items-center pt-2">
+                  <SkeletonLoader className="h-4 w-16" />
+                  <SkeletonLoader className="h-7 w-20 rounded-lg" />
+                </div>
+              </div>
+            ))
+          ) : filteredOrders.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 italic text-xs">
+              No orders found matching criteria
+            </div>
+          ) : (
+            filteredOrders.map((ord, idx) => (
+              <div
+                key={idx}
+                className="p-4 space-y-3 bg-white hover:bg-slate-50/50 transition-colors"
+              >
+                {/* Header: Order ID & Status Pills */}
+                <div className="flex justify-between items-center">
+                  <span className="font-mono font-bold text-slate-900 text-xs tracking-wider">
+                    #{ord.orderId}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <StatusPill status={ord.orderStatus} />
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold ${
+                        ord.paymentStatus === "Paid"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                          : "bg-amber-50 text-amber-700 border border-amber-100"
+                      }`}
+                    >
+                      {ord.paymentStatus}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Customer Info & Order Metas */}
+                <div className="space-y-1">
+                  <p className="font-semibold text-slate-900 text-xs">
+                    {ord.customer?.name || "Patron"}
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-mono">
+                    {ord.customer?.phone || ord.shippingAddress?.phone || "No phone"} • {ord.paymentMethod}
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-mono">
+                    {new Date(ord.createdAt).toLocaleDateString()} • {ord.items?.reduce((ttl, itm) => ttl + itm.quantity, 0)} Units
+                  </p>
+                  {getWhatsAppUrl(ord) && (
+                    <div className="pt-1">
+                      <a
+                        href={getWhatsAppUrl(ord)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 active:bg-emerald-100 border border-emerald-200 transition"
+                      >
+                        <RiWhatsappLine size={14} className="text-emerald-600" />
+                        <span>WhatsApp Notify</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer: Price & Inspect Button */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  <div>
+                    <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Total Amount</span>
+                    <span className="font-bold text-slate-900 text-sm font-sans">
+                      ₹{ord.pricing?.grandTotal || ord.totalPrice}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteOrder(ord)}
+                      title="Delete Order & Restore Stock"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 transition cursor-pointer"
+                    >
+                      <RiDeleteBinLine size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedOrder(ord);
+                        setInternalNotes(ord.internalNotes || "");
+                        setCustomerNotes(ord.customerNotes || "");
+                        setShowNotesForm(false);
+                      }}
+                      className="px-3.5 py-1.5 rounded-lg bg-[#FAF9F6] hover:bg-amber-50/60 text-[#8a1c14] border border-[#c5a880]/40 font-bold text-xs flex items-center gap-1 transition shadow-2xs cursor-pointer"
+                    >
+                      <span>Inspect</span>
+                      <RiArrowRightSLine size={15} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </Card>
 
@@ -708,6 +887,17 @@ const OrdersPage = () => {
                   <p className="text-slate-500 text-xs font-mono mt-1 font-semibold">
                     Pincode: {selectedOrder.shippingAddress?.pincode}
                   </p>
+                  {getWhatsAppUrl(selectedOrder) && (
+                    <a
+                      href={getWhatsAppUrl(selectedOrder)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 w-full mt-3 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-xs"
+                    >
+                      <RiWhatsappLine size={16} />
+                      <span>Send WhatsApp Confirmation</span>
+                    </a>
+                  )}
                 </div>
 
                 <div className="bg-[#FAF9F6]/50 border border-slate-200 p-4 rounded-lg">
@@ -1016,78 +1206,96 @@ const OrdersPage = () => {
             </div>
 
             {/* Actions Bar */}
-            <div className="border-t border-slate-100 pt-4 shrink-0 grid grid-cols-2 md:grid-cols-4 gap-3 bg-white">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (selectedOrder.shippingInvoiceUrl) {
-                    window.open(selectedOrder.shippingInvoiceUrl, "_blank");
-                  } else if (selectedOrder.shiprocketOrderId) {
-                    handleRetryInvoice(selectedOrder);
-                  } else {
-                    handlePrintInvoice(selectedOrder);
+            <div className="border-t border-slate-100 pt-4 shrink-0 space-y-3 bg-white">
+              {/* Top: Operational Status & Documents */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (selectedOrder.shippingInvoiceUrl) {
+                      window.open(selectedOrder.shippingInvoiceUrl, "_blank");
+                    } else if (selectedOrder.shiprocketOrderId) {
+                      handleRetryInvoice(selectedOrder);
+                    } else {
+                      handlePrintInvoice(selectedOrder);
+                    }
+                  }}
+                  className="flex items-center justify-center space-x-1.5 border-slate-200"
+                >
+                  <RiPrinterLine size={15} />
+                  <span>Invoice PDF</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (selectedOrder.shippingLabelUrl) {
+                      window.open(selectedOrder.shippingLabelUrl, "_blank");
+                    } else if (selectedOrder.shiprocketOrderId) {
+                      handleRetryLabel(selectedOrder);
+                    } else {
+                      handlePrintLabel(selectedOrder);
+                    }
+                  }}
+                  className="flex items-center justify-center space-x-1.5 text-[#c5a880] border-[#c5a880]/30"
+                >
+                  <RiFileList3Line size={15} />
+                  <span>AWB Label</span>
+                </Button>
+
+                <select
+                  value={selectedOrder.orderStatus}
+                  onChange={(e) =>
+                    handleUpdateStatus(
+                      selectedOrder._id,
+                      e.target.value,
+                      selectedOrder.paymentStatus,
+                    )
                   }
-                }}
-                className="flex items-center justify-center space-x-1.5 border-slate-200"
-              >
-                <RiPrinterLine size={15} />
-                <span>Invoice PDF</span>
-              </Button>
+                  className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2.5 focus:outline-none focus:ring-1 focus:ring-[#c5a880]"
+                >
+                  <option value="Placed">Status: Placed</option>
+                  <option value="Confirmed">Status: Confirmed</option>
+                  <option value="Processing">Status: Processing</option>
+                  <option value="Packed">Status: Packed</option>
+                  <option value="Ready to Ship">
+                    Status: Ready to Ship (Auto-Shiprocket)
+                  </option>
+                  <option value="Shipped">Status: Shipped (Manual AWB)</option>
+                  <option value="Delivered">Status: Mark Delivered</option>
+                  <option value="Cancelled">Status: Cancel Booking</option>
+                </select>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (selectedOrder.shippingLabelUrl) {
-                    window.open(selectedOrder.shippingLabelUrl, "_blank");
-                  } else if (selectedOrder.shiprocketOrderId) {
-                    handleRetryLabel(selectedOrder);
-                  } else {
-                    handlePrintLabel(selectedOrder);
+                <select
+                  value={selectedOrder.paymentStatus}
+                  onChange={(e) =>
+                    handleUpdatePaymentStatus(selectedOrder._id, e.target.value)
                   }
-                }}
-                className="flex items-center justify-center space-x-1.5 text-[#c5a880] border-[#c5a880]/30"
-              >
-                <RiFileList3Line size={15} />
-                <span>AWB Label</span>
-              </Button>
+                  className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2.5 focus:outline-none focus:ring-1 focus:ring-[#c5a880]"
+                >
+                  <option value="Pending">Payment: Pending</option>
+                  <option value="Paid">Payment: Completed</option>
+                  <option value="Failed">Payment: Failed</option>
+                  <option value="Refunded">Payment: Refunded</option>
+                </select>
+              </div>
 
-              <select
-                value={selectedOrder.orderStatus}
-                onChange={(e) =>
-                  handleUpdateStatus(
-                    selectedOrder._id,
-                    e.target.value,
-                    selectedOrder.paymentStatus,
-                  )
-                }
-                className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2.5 focus:outline-none focus:ring-1 focus:ring-[#c5a880]"
-              >
-                <option value="Placed">Status: Placed</option>
-                <option value="Confirmed">Status: Confirmed</option>
-                <option value="Processing">Status: Processing</option>
-                <option value="Packed">Status: Packed</option>
-                <option value="Ready to Ship">
-                  Status: Ready to Ship (Auto-Shiprocket)
-                </option>
-                <option value="Shipped">Status: Shipped (Manual AWB)</option>
-                <option value="Delivered">Status: Mark Delivered</option>
-                <option value="Cancelled">Status: Cancel Booking</option>
-              </select>
-
-              <select
-                value={selectedOrder.paymentStatus}
-                onChange={(e) =>
-                  handleUpdatePaymentStatus(selectedOrder._id, e.target.value)
-                }
-                className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2.5 focus:outline-none focus:ring-1 focus:ring-[#c5a880]"
-              >
-                <option value="Pending">Payment: Pending</option>
-                <option value="Paid">Payment: Completed</option>
-                <option value="Failed">Payment: Failed</option>
-                <option value="Refunded">Payment: Refunded</option>
-              </select>
+              {/* Bottom: Administrative Danger / Cleanup */}
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-[10px] uppercase font-bold text-slate-400">
+                  Administrative Actions
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteOrder(selectedOrder)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 transition cursor-pointer"
+                >
+                  <RiDeleteBinLine size={14} />
+                  <span>Delete Order (Restore Stock)</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
