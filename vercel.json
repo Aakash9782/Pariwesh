@@ -6,6 +6,10 @@
       "source": "/sitemap.xml",
       "destination": "https://api.pariwesh.in/api/v1/seo/sitemap"
     },
+    {
+      "source": "/google-merchant-feed.xml",
+      "destination": "https://api.pariwesh.in/api/v1/seo/google-merchant-feed.xml"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

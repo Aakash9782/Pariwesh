@@ -12,6 +12,12 @@
   force = true
 
 [[redirects]]
+  from = "/google-merchant-feed.xml"
+  to = "https://api.pariwesh.in/api/v1/seo/google-merchant-feed.xml"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

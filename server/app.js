@@ -25,7 +25,7 @@ import categoryRouter from "./routes/categoryRoutes.js";
 import brandRouter from "./routes/brandRoutes.js";
 import emailRouter from "./routes/emailRoutes.js";
 import seoRouter from "./routes/seoRoutes.js";
-import { getSitemap } from "./controllers/seoController.js";
+import { getSitemap, getGoogleMerchantFeed } from "./controllers/seoController.js";
 import shippingRouter from "./routes/shippingRoutes.js";
 
 const app = express();
@@ -162,6 +162,8 @@ app.get("/", (req, res) => {
 });
 
 app.get("/sitemap.xml", getSitemap);
+app.get("/google-merchant-feed.xml", getGoogleMerchantFeed);
+app.get("/feeds/google-merchant.xml", getGoogleMerchantFeed);
 
 // 6. ROUTE REGISTRATIONS
 app.use("/api/v1/settings", settingRouter);
