@@ -62,7 +62,7 @@ const CampaignBanners = ({ banners, settingsLoading }) => {
               className="w-full shrink-0 relative overflow-hidden block"
             >
               <img
-                src={optimizeCloudinaryUrl(banner.image || "/hero.png", 1200)}
+                src={optimizeCloudinaryUrl(banner.image || "/hero.png", 850)}
                 alt={banner.title || `Campaign Banner ${idx + 1}`}
                 loading="lazy"
                 decoding="async"

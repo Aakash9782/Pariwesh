@@ -721,10 +721,12 @@ const Home = () => {
                     <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[2px] transition-transform duration-300 group-hover:scale-105 border border-accent-gold/40 group-hover:border-accent-gold shadow-md">
                       <div className="w-full h-full rounded-full overflow-hidden relative">
                         <img
-                          src={optimizeCloudinaryUrl(cat.image)}
+                          src={optimizeCloudinaryUrl(cat.image, 180)}
                           alt={cat.title}
                           loading="lazy"
                           decoding="async"
+                          width="96"
+                          height="96"
                           className="w-full h-full object-cover group-hover:scale-[1.12] transition-transform duration-500 ease-out"
                         />
                         <div className="absolute inset-0 bg-secondary/10 group-hover:bg-transparent transition-colors duration-300"></div>
@@ -761,10 +763,12 @@ const Home = () => {
               <Skeleton className="absolute inset-0 w-full h-full rounded-none" />
             ) : (
               <img
-                src={optimizeCloudinaryUrl(dynStoryImage)}
+                src={optimizeCloudinaryUrl(dynStoryImage, 700)}
                 alt="Atelier Craftsmanship"
                 loading="lazy"
                 decoding="async"
+                width="600"
+                height="450"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
             )}

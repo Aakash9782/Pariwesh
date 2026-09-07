@@ -16,33 +16,23 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
       <div className="hidden md:block w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 lg:py-5">
         <div className="relative h-[560px] lg:h-[600px] w-full rounded-[32px] overflow-hidden bg-[#FBF9F5] border border-[#c5a880]/30 shadow-[0_20px_50px_rgba(0,0,0,0.06)]">
           {/* Right Image Showcase Area (Shifted right with perfect breathing space) */}
-          <div className="absolute right-0 top-0 bottom-0 w-[64%] lg:w-[66%] flex items-center justify-end pr-8 lg:pr-14 pl-12 z-0 overflow-hidden bg-[#F8F5EE]">
-            {/* Ambient Blurred Backdrop for Seamless Color Harmony */}
-            <motion.img
-              key={`desk-bg-${activeSlide}`}
-              src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide], 60)}
-              alt=""
-              initial={activeSlide === 0 ? false : { opacity: 0 }}
-              animate={{ opacity: 0.18 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.7 }}
-              className="absolute inset-0 w-full h-full object-cover blur-3xl scale-125 pointer-events-none"
-              aria-hidden="true"
-            />
-
+          <div className="absolute right-0 top-0 bottom-0 w-[64%] lg:w-[66%] flex items-center justify-end pr-8 lg:pr-14 pl-12 z-0 overflow-hidden bg-gradient-to-br from-[#F8F5EE] via-[#F4EFE5] to-[#EBE4D5]">
             {/* Main Foreground Model Image - Shifted right & fitted with breathing headroom */}
             <AnimatePresence mode="wait">
               <motion.img
                 key={activeSlide}
-                src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide], 900)}
+                src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide], 850)}
                 alt="Pariwesh Collection"
+                width="600"
+                height="550"
                 initial={activeSlide === 0 ? false : { opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.6, ease: "easeInOut" }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
                 className="relative z-10 h-[92%] max-w-full object-contain object-right drop-shadow-[0_20px_45px_rgba(0,0,0,0.12)]"
                 fetchPriority={activeSlide === 0 ? "high" : "auto"}
                 loading={activeSlide === 0 ? "eager" : "lazy"}
+                decoding={activeSlide === 0 ? "sync" : "async"}
               />
             </AnimatePresence>
           </div>
@@ -208,33 +198,23 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
       <div className="md:hidden w-full px-3 sm:px-4 py-3 bg-white">
         <div className="relative rounded-[24px] overflow-hidden bg-[#FBF9F5] border border-[#c5a880]/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
           {/* Image Showcase Area - Image FITS completely with zero cropping */}
-          <div className="relative h-[340px] xs:h-[380px] w-full flex items-center justify-center overflow-hidden bg-[#F7F4EC]">
-            {/* Ambient Blurred Backdrop */}
-            <motion.img
-              key={`mob-bg-${activeSlide}`}
-              src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide], 60)}
-              alt=""
-              initial={activeSlide === 0 ? false : { opacity: 0 }}
-              animate={{ opacity: 0.25 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6 }}
-              className="absolute inset-0 w-full h-full object-cover blur-xl scale-115 pointer-events-none"
-              aria-hidden="true"
-            />
-
+          <div className="relative h-[340px] xs:h-[380px] w-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#F7F4EC] via-[#F3EFE4] to-[#E9E2D2]">
             {/* Main Fitted Model Image */}
             <AnimatePresence mode="wait">
               <motion.img
                 key={activeSlide}
-                src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide], 550)}
+                src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide], 500)}
                 alt="Pariwesh Collection Mobile"
+                width="380"
+                height="380"
                 initial={activeSlide === 0 ? false : { opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
                 className="relative z-10 max-h-full max-w-full object-contain drop-shadow-md"
                 fetchPriority={activeSlide === 0 ? "high" : "auto"}
                 loading={activeSlide === 0 ? "eager" : "lazy"}
+                decoding={activeSlide === 0 ? "sync" : "async"}
               />
             </AnimatePresence>
 

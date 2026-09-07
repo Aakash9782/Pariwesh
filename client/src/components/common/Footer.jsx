@@ -71,6 +71,8 @@ const Footer = () => {
             alt="Pariwesh Traditional Silhouettes"
             loading="lazy"
             decoding="async"
+            width="210"
+            height="350"
             className="h-[92%] w-auto object-contain object-right drop-shadow-xl opacity-90"
           />
         </div>
@@ -358,6 +360,10 @@ const Footer = () => {
               <img
                 src="/pariwesh-woman-art.png"
                 alt="Pariwesh Lookbook Silhouette"
+                loading="lazy"
+                decoding="async"
+                width="140"
+                height="140"
                 className="w-full h-auto object-contain drop-shadow-md"
               />
             </div>

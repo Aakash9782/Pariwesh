@@ -34,10 +34,12 @@ const ProductImageSlider = ({ images, alt }) => {
         return (
           <img
             key={img + "-" + idx}
-            src={optimizeCloudinaryUrl(img, 600)}
+            src={optimizeCloudinaryUrl(img, 400)}
             alt={alt}
-            loading={idx === 0 ? "eager" : "lazy"}
+            loading="lazy"
             decoding="async"
+            width="400"
+            height="500"
             className={`absolute inset-0 w-full h-full object-cover transform-gpu group-hover:scale-[1.12] transition-all duration-[1000ms] ease-in-out origin-top ${
               idx === currentIndex
                 ? "opacity-100 z-[2]"
