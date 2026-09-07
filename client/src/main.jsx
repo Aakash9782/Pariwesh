@@ -17,15 +17,27 @@ const Cart = lazy(() => import("./pages/shop/Cart.jsx"));
 const Wishlist = lazy(() => import("./pages/shop/Wishlist.jsx"));
 const Login = lazy(() => import("./pages/auth/Login.jsx"));
 const Profile = lazy(() => import("./pages/profile/Profile.jsx"));
-import {
-  About,
-  Contact,
-  PrivacyPolicy,
-  Terms,
-  ShippingPolicy,
-  ReturnPolicy,
-  CancellationPolicy,
-} from "./pages/static/StaticPages.jsx";
+const About = lazy(() =>
+  import("./pages/static/StaticPages.jsx").then((m) => ({ default: m.About })),
+);
+const Contact = lazy(() =>
+  import("./pages/static/StaticPages.jsx").then((m) => ({ default: m.Contact })),
+);
+const PrivacyPolicy = lazy(() =>
+  import("./pages/static/StaticPages.jsx").then((m) => ({ default: m.PrivacyPolicy })),
+);
+const Terms = lazy(() =>
+  import("./pages/static/StaticPages.jsx").then((m) => ({ default: m.Terms })),
+);
+const ShippingPolicy = lazy(() =>
+  import("./pages/static/StaticPages.jsx").then((m) => ({ default: m.ShippingPolicy })),
+);
+const ReturnPolicy = lazy(() =>
+  import("./pages/static/StaticPages.jsx").then((m) => ({ default: m.ReturnPolicy })),
+);
+const CancellationPolicy = lazy(() =>
+  import("./pages/static/StaticPages.jsx").then((m) => ({ default: m.CancellationPolicy })),
+);
 import { AlertProvider } from "./contexts/AlertContext.jsx";
 import ScrollToTop from "./components/common/ScrollToTop.jsx";
 import MetaPixelTracker from "./components/common/MetaPixelTracker.jsx";

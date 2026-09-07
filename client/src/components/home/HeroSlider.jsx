@@ -20,9 +20,9 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
             {/* Ambient Blurred Backdrop for Seamless Color Harmony */}
             <motion.img
               key={`desk-bg-${activeSlide}`}
-              src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide])}
+              src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide], 60)}
               alt=""
-              initial={{ opacity: 0 }}
+              initial={activeSlide === 0 ? false : { opacity: 0 }}
               animate={{ opacity: 0.18 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.7 }}
@@ -34,14 +34,14 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
             <AnimatePresence mode="wait">
               <motion.img
                 key={activeSlide}
-                src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide])}
+                src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide], 900)}
                 alt="Pariwesh Collection"
-                initial={{ opacity: 0, scale: 0.98 }}
+                initial={activeSlide === 0 ? false : { opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.6, ease: "easeInOut" }}
                 className="relative z-10 h-[92%] max-w-full object-contain object-right drop-shadow-[0_20px_45px_rgba(0,0,0,0.12)]"
-                fetchpriority={activeSlide === 0 ? "high" : "auto"}
+                fetchPriority={activeSlide === 0 ? "high" : "auto"}
                 loading={activeSlide === 0 ? "eager" : "lazy"}
               />
             </AnimatePresence>
@@ -212,9 +212,9 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
             {/* Ambient Blurred Backdrop */}
             <motion.img
               key={`mob-bg-${activeSlide}`}
-              src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide])}
+              src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide], 60)}
               alt=""
-              initial={{ opacity: 0 }}
+              initial={activeSlide === 0 ? false : { opacity: 0 }}
               animate={{ opacity: 0.25 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.6 }}
@@ -226,14 +226,14 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
             <AnimatePresence mode="wait">
               <motion.img
                 key={activeSlide}
-                src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide])}
+                src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide], 550)}
                 alt="Pariwesh Collection Mobile"
-                initial={{ opacity: 0, scale: 0.97 }}
+                initial={activeSlide === 0 ? false : { opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
                 className="relative z-10 max-h-full max-w-full object-contain drop-shadow-md"
-                fetchpriority={activeSlide === 0 ? "high" : "auto"}
+                fetchPriority={activeSlide === 0 ? "high" : "auto"}
                 loading={activeSlide === 0 ? "eager" : "lazy"}
               />
             </AnimatePresence>
