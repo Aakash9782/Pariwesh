@@ -110,11 +110,8 @@ const Home = () => {
       localStorage.getItem("slideImg5"),
     ].filter(Boolean);
     const fallbackImages = [
-      "/hero.png",
-      "/hero.png",
-      "/hero.png",
-      "/hero.png",
-      "/hero.png",
+      "https://res.cloudinary.com/ag1y6hht/image/upload/v1786455681/pariwesh/branding/k6antr9fp5fsmoh2rqje.webp",
+      "https://res.cloudinary.com/ag1y6hht/image/upload/v1786455684/pariwesh/branding/afbm96t3d1zvhmzr2cyf.webp",
     ];
     return {
       active:
@@ -145,38 +142,46 @@ const Home = () => {
       {
         title: "Designer Suits",
         desc: "Anarkalis & Shararas",
-        image: "/hero.png",
+        image:
+          "https://res.cloudinary.com/ag1y6hht/image/upload/v1786469511/pariwesh/branding/qa60obplqlfvl22etfrf.webp",
         path: "/shop?category=ethnic",
       },
       {
         title: "Premium Kurtis",
         desc: "Everyday Tunics",
-        image: "/hero.png",
+        image:
+          "https://res.cloudinary.com/ag1y6hht/image/upload/v1786469512/pariwesh/branding/koccofqqa25dpzb0tnbs.jpg",
         path: "/shop?category=kurtis",
       },
       {
         title: "Co-Ord Sets",
         desc: "Modern Ethnic",
-        image: "/hero.png",
+        image:
+          "https://res.cloudinary.com/ag1y6hht/image/upload/v1786469512/pariwesh/branding/alycelwkqig0v2jihgar.webp",
         path: "/shop?category=suits",
       },
       {
         title: "Best Sellers",
         desc: "Top Trending",
-        image: "/hero.png",
+        image:
+          "https://res.cloudinary.com/ag1y6hht/image/upload/v1786469513/pariwesh/branding/pplpu2q5mphur1ibgoye.webp",
         path: "/shop?tag=Best Seller",
       },
       {
         title: "New Arrivals",
         desc: "Fresh Designs",
-        image: "/hero.png",
+        image:
+          "https://res.cloudinary.com/ag1y6hht/image/upload/v1786469514/pariwesh/branding/kamnlpss5rjxgshulntw.webp",
         path: "/shop?tag=New Arrival",
       },
     ];
   });
 
   const [dynStoryImage, setDynStoryImage] = useState(() => {
-    return localStorage.getItem("homeStoryImage") || "/hero.png";
+    return (
+      localStorage.getItem("homeStoryImage") ||
+      "https://res.cloudinary.com/ag1y6hht/image/upload/v1786469506/pariwesh/branding/njoe76zn0iop6wts2xo5.png"
+    );
   });
 
   const [dynVibeMoods, setDynVibeMoods] = useState(() => {
