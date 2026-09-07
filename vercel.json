@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm run build --prefix client",
+  "outputDirectory": "client/dist",
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://api.pariwesh.in/api/v1/seo/sitemap"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
