@@ -552,10 +552,10 @@ const MainLayout = () => {
 
       {/* 4. MAIN PAGE DISPLAY OUTLET */}
       <main className="flex-grow overflow-x-hidden">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 10 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.22, ease: "easeInOut" }}

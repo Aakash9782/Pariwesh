@@ -18,7 +18,7 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
           {/* Right Image Showcase Area (Shifted right with perfect breathing space) */}
           <div className="absolute right-0 top-0 bottom-0 w-[64%] lg:w-[66%] flex items-center justify-end pr-8 lg:pr-14 pl-12 z-0 overflow-hidden bg-gradient-to-br from-[#F8F5EE] via-[#F4EFE5] to-[#EBE4D5]">
             {/* Main Foreground Model Image - Shifted right & fitted with breathing headroom */}
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               <motion.img
                 key={activeSlide}
                 src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide], 850)}
@@ -200,7 +200,7 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
           {/* Image Showcase Area - Image FITS completely with zero cropping */}
           <div className="relative h-[340px] xs:h-[380px] w-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#F7F4EC] via-[#F3EFE4] to-[#E9E2D2]">
             {/* Main Fitted Model Image */}
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               <motion.img
                 key={activeSlide}
                 src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide], 500)}
