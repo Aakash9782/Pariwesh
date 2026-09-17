@@ -1,12 +1,11 @@
-import React, { useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   RiCloseLine,
   RiPrinterLine,
-  RiDownloadLine,
   RiExternalLinkLine,
-  RiShieldCheckLine,
 } from "react-icons/ri";
+import API from "../../services/api.js";
 
 /**
  * Utility: Number to Indian Rupees in words
@@ -40,59 +39,191 @@ const numberToWordsInr = (num) => {
   const b = [
     "",
     "",
-    "Twenty",
-    "Thirty",
-    "Forty",
-    "Fifty",
-    "Sixty",
-    "Seventy",
-    "Eighty",
-    "Ninety",
+    "Twenty ",
+    "Thirty ",
+    "Forty ",
+    "Fifty ",
+    "Sixty ",
+    "Seventy ",
+    "Eighty ",
+    "Ninety ",
   ];
 
-  const inWords = (n) => {
+  const inWords = (val) => {
     let str = "";
-    if (n > 9999999) {
-      str += inWords(Math.floor(n / 10000000)) + "Crore ";
-      n %= 10000000;
+    if (val > 9999999) {
+      str += inWords(Math.floor(val / 10000000)) + "Crore ";
+      val %= 10000000;
     }
-    if (n > 99999) {
-      str += inWords(Math.floor(n / 100000)) + "Lakh ";
-      n %= 100000;
+    if (val > 99999) {
+      str += inWords(Math.floor(val / 100000)) + "Lakh ";
+      val %= 100000;
     }
-    if (n > 999) {
-      str += inWords(Math.floor(n / 1000)) + "Thousand ";
-      n %= 1000;
+    if (val > 999) {
+      str += inWords(Math.floor(val / 1000)) + "Thousand ";
+      val %= 1000;
     }
-    if (n > 99) {
-      str += inWords(Math.floor(n / 100)) + "Hundred ";
-      n %= 100;
+    if (val > 99) {
+      str += inWords(Math.floor(val / 100)) + "Hundred ";
+      val %= 100;
     }
-    if (n > 0) {
-      if (n < 20) str += a[n];
+    if (val > 0) {
+      if (str !== "") str += "And ";
+      if (val < 20) str += a[val];
       else {
-        str += b[Math.floor(n / 10)];
-        if (n % 10) str += " " + a[n % 10];
+        str += b[Math.floor(val / 10)];
+        if (val % 10) str += a[val % 10];
       }
     }
     return str;
   };
 
-  return `${inWords(n).trim()} Rupees Only`;
+  return `${inWords(n).replace(/\s+/g, " ").trim()} Rupees Only`;
 };
 
 /**
- * Robust helper: checks if the destination is within Rajasthan (Intra-state CGST+SGST)
+ * Robust helper: Indian GST State Code mapping (all 36 States & UTs)
  */
-export const isRajasthanState = (stateStr = "") => {
+export const getStateCode = (stateStr = "", gstin = "") => {
+  if (gstin && typeof gstin === "string" && /^\d{2}/.test(gstin.trim())) {
+    return gstin.trim().slice(0, 2);
+  }
   const s = String(stateStr || "").toLowerCase().trim();
+  const stateCodeMap = {
+    "jammu and kashmir": "01",
+    jk: "01",
+    "himachal pradesh": "02",
+    hp: "02",
+    punjab: "03",
+    pb: "03",
+    chandigarh: "04",
+    ch: "04",
+    uttarakhand: "05",
+    uk: "05",
+    haryana: "06",
+    hr: "06",
+    delhi: "07",
+    dl: "07",
+    rajasthan: "08",
+    rj: "08",
+    "uttar pradesh": "09",
+    up: "09",
+    bihar: "10",
+    br: "10",
+    sikkim: "11",
+    sk: "11",
+    "arunachal pradesh": "12",
+    ar: "12",
+    nagaland: "13",
+    nl: "13",
+    manipur: "14",
+    mn: "14",
+    mizoram: "15",
+    mz: "15",
+    tripura: "16",
+    tr: "16",
+    meghalaya: "17",
+    ml: "17",
+    assam: "18",
+    as: "18",
+    "west bengal": "19",
+    wb: "19",
+    jharkhand: "20",
+    jh: "20",
+    odisha: "21",
+    or: "21",
+    chhattisgarh: "22",
+    cg: "22",
+    "madhya pradesh": "23",
+    mp: "23",
+    gujarat: "24",
+    gj: "24",
+    maharashtra: "27",
+    mh: "27",
+    "andhra pradesh": "28",
+    ap: "28",
+    karnataka: "29",
+    ka: "29",
+    goa: "30",
+    ga: "30",
+    kerala: "32",
+    kl: "32",
+    "tamil nadu": "33",
+    tn: "33",
+    puducherry: "34",
+    py: "34",
+    telangana: "36",
+    ts: "36",
+    andhra: "37",
+    ladakh: "38",
+  };
+
+  for (const [key, code] of Object.entries(stateCodeMap)) {
+    if (s === key || s.includes(key)) {
+      return code;
+    }
+  }
+  return "08";
+};
+
+/**
+ * Checks if a given state is intra-state matching the seller's state
+ */
+export const isRajasthanState = (stateStr = "", sellerState = "Rajasthan") => {
+  const s = String(stateStr || "").toLowerCase().trim();
+  const seller = String(sellerState || "Rajasthan").toLowerCase().trim();
   return (
     s === "08" ||
     s === "rj" ||
+    s.includes(seller) ||
     s.includes("rajasthan") ||
     s.includes("rajastan") ||
     s.startsWith("raj")
   );
+};
+
+/**
+ * Dynamically parse address into clean display lines
+ */
+export const splitAddressLines = (addressStr = "", fallback = []) => {
+  if (!addressStr || typeof addressStr !== "string") return fallback;
+  const lines = addressStr.includes("\n")
+    ? addressStr.split(/\r?\n/)
+    : addressStr.split(",");
+  const clean = lines.map((l) => l.trim()).filter(Boolean);
+  return clean.length > 0 ? clean : fallback;
+};
+
+/**
+ * Detect Indian State from an address string
+ */
+export const detectStateFromAddress = (addressStr = "", defaultState = "Rajasthan") => {
+  if (!addressStr || typeof addressStr !== "string") return defaultState;
+  const indianStates = [
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+    "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+    "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+    "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+    "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+    "Delhi", "Jammu and Kashmir", "Ladakh", "Chandigarh", "Puducherry"
+  ];
+  for (const st of indianStates) {
+    if (new RegExp(`\\b${st}\\b`, "i").test(addressStr)) {
+      return st;
+    }
+  }
+  return defaultState;
+};
+
+/**
+ * Format Date as DD/MM/YYYY
+ */
+const formatDateDdMmYyyy = (dateVal) => {
+  const d = new Date(dateVal || Date.now());
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
 };
 
 /**
@@ -111,57 +242,69 @@ export const buildPrintableInvoiceHtml = (order, brandSettings = {}) => {
       ? rawLogo
       : `${origin}${rawLogo.startsWith("/") ? "" : "/"}${rawLogo}`;
 
-  const seller = {
-    name: brandSettings.brandName || "PARIWESH",
-    tagline: "Royal Ethnic Attire",
-    logoUrl: logoSrc,
-    address:
-      brandSettings.registeredAddress ||
-      "Plot No. 12, Sanganer Industrial Area, Jaipur, Rajasthan - 302029",
-    gstin: brandSettings.gstinNumber || "08AAPPP1234A1Z9",
-    state: "Rajasthan (08)",
-    phone: brandSettings.supportPhone || "+91 97826 81155",
-    email: brandSettings.supportEmail || "contact@pariwesh.co",
-  };
-
-  const invoiceNo = `INV-${order.orderId}`;
-  const invoiceDate = new Date(order.createdAt || Date.now()).toLocaleDateString(
-    "en-IN",
-    {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    },
+  const brandName = brandSettings.brandName || "PARIWESH";
+  const sellerGstin = (brandSettings.gstinNumber || "").trim();
+  const sellerPhone =
+    brandSettings.supportPhone || brandSettings.phone || "";
+  const addressLines = splitAddressLines(brandSettings.registeredAddress, [
+    "13 Goutam Vihar Gajsinghpura",
+    "Ajmer Road Jaipur",
+    "Jaipur 302021",
+    "Rajasthan, India",
+  ]);
+  const sellerState = detectStateFromAddress(
+    brandSettings.registeredAddress,
+    "Rajasthan"
   );
+  const sellerStateCode = getStateCode(sellerState, sellerGstin);
+
+  const invoiceNo =
+    order.invoiceNumber ||
+    (order.orderId ? `INV-${order.orderId}` : `INV-${Date.now().toString().slice(-6)}`);
+  const invoiceDate = formatDateDdMmYyyy(
+    order.invoiceDate || order.createdAt || Date.now()
+  );
+  const orderDate = formatDateDdMmYyyy(order.createdAt || Date.now());
 
   const customerName =
     order.shippingAddress?.fullName || order.customer?.name || "Customer";
   const customerPhone =
     order.shippingAddress?.phone || order.customer?.phone || "";
-  const customerEmail =
-    order.shippingAddress?.email || order.customer?.email || "";
   const customerStreet = order.shippingAddress?.street || "";
   const customerCity = order.shippingAddress?.city || "";
   const customerState = order.shippingAddress?.state || "Rajasthan";
   const customerPincode = order.shippingAddress?.pincode || "";
+  const customerStateCode = getStateCode(customerState);
 
   // Intra-state vs Inter-state determination
-  const isIntraState = isRajasthanState(customerState);
+  const isIntraState = isRajasthanState(customerState, sellerState);
 
-  // Items calculation with 5% inclusive GST
+  // Courier and payment info
+  const awbNumber = order.awbCode || order.trackingId || "";
+  const courierName =
+    order.courierName ||
+    order.shippingProvider ||
+    (awbNumber ? "Surface Courier" : "Standard Dispatch");
+  const paymentMethodDisplay = String(
+    order.paymentMethod || "Prepaid"
+  ).toUpperCase();
+  const eWaybillNo = order.eWaybillNo || "";
+
+  // Items calculation with dynamic GST rate per item
   const items = (order.items || []).map((item, idx) => {
     const qty = Number(item.quantity) || 1;
     const price = Number(item.price) || 0;
     const grossTotal = price * qty;
-    const taxableTotal = grossTotal / 1.05;
+    const gstRate = Number(item.gstRate ?? 5) || 5;
+    const taxableTotal = grossTotal / (1 + gstRate / 100);
     const gstTotal = grossTotal - taxableTotal;
     const hsn = item.hsnCode || "6204";
+    const sku = item.sku || item.productId || "-";
 
     return {
       sno: idx + 1,
-      name: item.name,
-      size: item.size || "-",
-      sku: item.sku || "-",
+      name: item.name || "Product Item",
+      sku,
       hsn,
       qty,
       unitPrice: price,
@@ -171,13 +314,12 @@ export const buildPrintableInvoiceHtml = (order, brandSettings = {}) => {
     };
   });
 
+  const totalQty = items.reduce((acc, i) => acc + i.qty, 0);
   const totalTaxable = items.reduce((acc, i) => acc + i.taxableTotal, 0);
   const totalGst = items.reduce((acc, i) => acc + i.gstTotal, 0);
-  const delivery = Number(order.pricing?.delivery) || 0;
-  const discount = Number(order.pricing?.discount) || 0;
   const grandTotal =
     Number(order.pricing?.grandTotal) ||
-    Math.round(totalTaxable + totalGst + delivery - discount);
+    items.reduce((acc, i) => acc + i.grossTotal, 0);
 
   const cgstAmount = isIntraState ? totalGst / 2 : 0;
   const sgstAmount = isIntraState ? totalGst / 2 : 0;
@@ -187,29 +329,27 @@ export const buildPrintableInvoiceHtml = (order, brandSettings = {}) => {
     .map(
       (item) => `
     <tr>
-      <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: center; font-size: 11px;">${item.sno}</td>
-      <td style="padding: 8px 6px; border: 1px solid #ddd; font-size: 11px;">
-        <strong style="color: #111;">${item.name}</strong>
-        <div style="color: #666; font-size: 10px;">Size: ${item.size} | SKU: ${item.sku}</div>
+      <td style="padding: 6px 8px; border: 1px solid #000; vertical-align: top; font-size: 11px; text-align: left;">
+        <strong>${item.name}</strong><br />
+        <span style="font-size: 10px; color: #111;">SKU : ${item.sku}</span>
       </td>
-      <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: center; font-size: 11px;">${item.hsn}</td>
-      <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: center; font-size: 11px;">${item.qty}</td>
-      <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: right; font-size: 11px;">₹${item.unitPrice.toFixed(2)}</td>
-      <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: right; font-size: 11px;">₹${item.taxableTotal.toFixed(2)}</td>
-      <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: center; font-size: 11px;">5%</td>
+      <td style="padding: 6px 4px; border: 1px solid #000; text-align: center; vertical-align: top; font-size: 11px;">${item.hsn}</td>
+      <td style="padding: 6px 4px; border: 1px solid #000; text-align: center; vertical-align: top; font-size: 11px;">${item.qty}</td>
+      <td style="padding: 6px 6px; border: 1px solid #000; text-align: right; vertical-align: top; font-size: 11px;">${item.unitPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td style="padding: 6px 6px; border: 1px solid #000; text-align: right; vertical-align: top; font-size: 11px;">${item.taxableTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       ${
         isIntraState
           ? `
-        <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: right; font-size: 11px;">₹${(item.gstTotal / 2).toFixed(2)}</td>
-        <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: right; font-size: 11px;">₹${(item.gstTotal / 2).toFixed(2)}</td>
+        <td style="padding: 6px 6px; border: 1px solid #000; text-align: right; vertical-align: top; font-size: 11px;">${(item.gstTotal / 2).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td style="padding: 6px 6px; border: 1px solid #000; text-align: right; vertical-align: top; font-size: 11px;">${(item.gstTotal / 2).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       `
           : `
-        <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: right; font-size: 11px;">₹${item.gstTotal.toFixed(2)}</td>
+        <td style="padding: 6px 6px; border: 1px solid #000; text-align: right; vertical-align: top; font-size: 11px;">${item.gstTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       `
       }
-      <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: right; font-size: 11px; font-weight: bold;">₹${item.grossTotal.toFixed(2)}</td>
+      <td style="padding: 6px 6px; border: 1px solid #000; text-align: right; vertical-align: top; font-size: 11px; font-weight: bold;">${item.grossTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
     </tr>
-  `,
+  `
     )
     .join("");
 
@@ -222,131 +362,87 @@ export const buildPrintableInvoiceHtml = (order, brandSettings = {}) => {
   <style>
     @page {
       size: A4 portrait;
-      margin: 12mm 10mm;
+      margin: 10mm;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      color: #222;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #000;
       background: #fff;
       margin: 0;
       padding: 0;
-      font-size: 12px;
-      line-height: 1.4;
+      font-size: 11px;
+      line-height: 1.35;
     }
     .invoice-card {
       width: 100%;
-      max-width: 800px;
+      max-width: 780px;
       margin: 0 auto;
-      border: 1px solid #ccc;
-      padding: 24px;
-      box-sizing: border-box;
+      border: 2px solid #000;
+      padding: 18px 22px;
       background: #fff;
     }
-    .brand-title {
-      font-size: 24px;
-      font-weight: 800;
-      letter-spacing: 3px;
-      color: #926f34;
-      margin: 0;
-      text-transform: uppercase;
-    }
-    .brand-sub {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: #777;
-      margin-top: 2px;
-    }
-    .tax-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      background: #fbf6ec;
-      border: 1px solid #d4af37;
-      color: #926f34;
-      font-weight: bold;
-      font-size: 11px;
-      letter-spacing: 1px;
-      border-radius: 3px;
-    }
-    .header-grid {
-      display: flex;
-      justify-content: space-between;
-      border-bottom: 2px solid #926f34;
-      padding-bottom: 16px;
-      margin-bottom: 16px;
-    }
-    .meta-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
-      background: #fafafa;
-      padding: 12px;
-      border: 1px solid #eee;
-      border-radius: 4px;
-    }
-    .meta-box h4 {
-      margin: 0 0 6px 0;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #926f34;
-      font-weight: 700;
-    }
-    table.data-table {
+    .header-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
-    table.data-table th {
-      background: #f4ede2;
-      border: 1px solid #d0c0a5;
-      padding: 8px 6px;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #333;
-      font-weight: 700;
+    .two-col-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 14px;
     }
-    .totals-grid {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 12px;
-      gap: 20px;
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #000;
+      margin-bottom: 14px;
+    }
+    .items-table th {
+      background-color: #d8d8d8;
+      border: 1px solid #000;
+      padding: 6px 4px;
+      font-size: 10.5px;
+      font-weight: bold;
+      text-align: center;
+      color: #000;
+    }
+    .items-table td {
+      border: 1px solid #000;
+    }
+    .net-total-row td {
+      background-color: #d8d8d8;
+      font-weight: bold;
+      border: 1px solid #000;
+      padding: 6px 6px;
+      font-size: 11px;
     }
     .words-box {
-      flex: 1;
-      font-size: 11px;
-      background: #fcfcfc;
-      border: 1px dashed #ccc;
-      padding: 10px;
-      border-radius: 4px;
+      width: 100%;
+      border: 1.5px solid #000;
+      margin-bottom: 14px;
     }
-    .summary-table {
-      width: 320px;
+    .words-box td {
+      padding: 7px 12px;
+      font-size: 11.5px;
+    }
+    .terms-box {
+      width: 100%;
+      border: 1.5px solid #000;
       border-collapse: collapse;
     }
-    .summary-table td {
-      padding: 5px 8px;
-      font-size: 11px;
+    .terms-box td {
+      padding: 8px 12px;
+      vertical-align: top;
     }
-    .summary-table tr.grand-row td {
-      border-top: 2px solid #926f34;
-      font-size: 14px;
-      font-weight: 800;
-      color: #926f34;
-      padding-top: 8px;
-    }
-    .footer-notes {
-      border-top: 1px solid #ddd;
-      margin-top: 20px;
-      padding-top: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-    }
-    .signatory {
-      text-align: right;
+    .reverse-charge {
+      font-size: 10.5px;
+      margin-top: 5px;
+      color: #000;
     }
     @media print {
       body {
@@ -354,173 +450,154 @@ export const buildPrintableInvoiceHtml = (order, brandSettings = {}) => {
         padding: 0;
       }
       .invoice-card {
-        border: none;
-        padding: 0;
+        border: 2px solid #000;
         max-width: 100%;
+        padding: 16px 20px;
       }
     }
   </style>
 </head>
 <body>
   <div class="invoice-card">
-    <div class="header-grid">
-      <div>
-        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 8px;">
-          <img id="invoice-logo" src="${logoSrc}" alt="${seller.name}" style="height: 48px; max-width: 170px; object-fit: contain;" onerror="this.style.display='none'" />
-          <div>
-            <h1 class="brand-title" style="font-size: 22px; line-height: 1.1;">${seller.name}</h1>
-            <div class="brand-sub">${seller.tagline}</div>
+    <!-- Top Header: Logo on Left | TAX INVOICE + Powered by Brand on Right -->
+    <table class="header-table">
+      <tr>
+        <td style="vertical-align: middle; width: 50%;">
+          <img id="invoice-logo" src="${logoSrc}" alt="${brandName}" style="height: 52px; max-width: 180px; object-fit: contain; display: block;" onerror="this.style.display='none'" />
+        </td>
+        <td style="vertical-align: middle; text-align: right; width: 50%;">
+          <div style="font-size: 18px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;">TAX INVOICE</div>
+          <div style="font-size: 11px; color: #222; margin-top: 2px;">Powered by ${brandName}</div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Two-Column Block: Sold By | Delivered To -->
+    <table class="two-col-table">
+      <tr>
+        <!-- Left Column: Sold By -->
+        <td style="width: 50%; vertical-align: top; padding-right: 15px;">
+          <div style="font-weight: bold; font-size: 13px; margin-bottom: 4px; text-align: center;">Sold By:</div>
+          <div style="font-size: 11px; line-height: 1.35;">
+            <strong>${brandName}</strong><br />
+            ${addressLines.join("<br />")}<br />
+            ${sellerState ? `${sellerState}<br />` : ""}
+            State Code : ${sellerStateCode}<br />
+            ${sellerPhone ? `Ph: ${sellerPhone}<br />` : ""}
+            ${sellerGstin ? `GSTIN No.: ${sellerGstin}` : ""}
           </div>
-        </div>
-        <div style="margin-top: 8px; font-size: 11px; color: #444; line-height: 1.45;">
-          ${seller.address}<br />
-          <strong>GSTIN:</strong> ${seller.gstin} | <strong>State:</strong> ${seller.state}<br />
-          <strong>Email:</strong> ${seller.email} | <strong>Phone:</strong> ${seller.phone}
-        </div>
-      </div>
-      <div style="text-align: right;">
-        <span class="tax-badge">TAX INVOICE</span>
-        <div style="margin-top: 10px; font-size: 11px;">
-          <div><strong>Invoice No:</strong> ${invoiceNo}</div>
-          <div><strong>Date:</strong> ${invoiceDate}</div>
-          <div><strong>Order ID:</strong> ${order.orderId}</div>
-          <div><strong>Payment Mode:</strong> ${order.paymentMethod || "Prepaid"} (${order.paymentStatus || "Paid"})</div>
-        </div>
-      </div>
-    </div>
+          <div style="margin-top: 14px; font-size: 11px; line-height: 1.45;">
+            <div><strong>Invoice No. :</strong> ${invoiceNo}</div>
+            <div><strong>Invoice Date :</strong> ${invoiceDate}</div>
+            <div><strong>Order No. :</strong> ${order.orderId || "-"}</div>
+            <div><strong>Order Date :</strong> ${orderDate}</div>
+          </div>
+        </td>
 
-    <div class="meta-grid">
-      <div class="meta-box">
-        <h4>Billed & Shipped To:</h4>
-        <div style="font-size: 12px; font-weight: bold; color: #111;">${customerName}</div>
-        <div style="font-size: 11px; color: #444; margin-top: 2px;">
-          ${customerStreet}<br />
-          ${customerCity ? `${customerCity}, ` : ""}${customerState} - ${customerPincode}<br />
-          <strong>Phone:</strong> ${customerPhone}
-          ${customerEmail ? `<br /><strong>Email:</strong> ${customerEmail}` : ""}
-        </div>
-      </div>
-      <div class="meta-box">
-        <h4>Place of Supply & Tax Details:</h4>
-        <div style="font-size: 11px; color: #444;">
-          <strong>Place of Supply:</strong> ${customerState}<br />
-          <strong>Tax Type:</strong> ${
-            isIntraState
-              ? "Intra-State (CGST 2.5% + SGST 2.5%)"
-              : "Inter-State (IGST 5.0%)"
-          }<br />
-          <strong>Prices:</strong> Inclusive of 5% GST<br />
-          <strong>Reverse Charge:</strong> No
-        </div>
-      </div>
-    </div>
+        <!-- Right Column: Delivered To -->
+        <td style="width: 50%; vertical-align: top; padding-left: 15px;">
+          <div style="font-weight: bold; font-size: 13px; margin-bottom: 4px; text-align: center;">Delivered To:</div>
+          <div style="font-size: 11px; line-height: 1.35;">
+            <strong>${customerName}</strong><br />
+            ${customerStreet}<br />
+            ${customerCity ? `${customerCity} ` : ""}${customerPincode}<br />
+            ${customerState}<br />
+            India<br />
+            State Code : ${customerStateCode}
+            ${customerPhone ? `<br />Ph: ${customerPhone}` : ""}
+          </div>
+          <div style="margin-top: 14px; font-size: 11px; line-height: 1.45;">
+            <div><strong>Payment Method :</strong> ${paymentMethodDisplay}</div>
+            <div><strong>Shipped By :</strong> ${courierName}</div>
+            <div><strong>AWB No. :</strong> ${awbNumber || "-"}</div>
+            <div><strong>eWaybill No. :</strong> ${eWaybillNo || "-"}</div>
+          </div>
+        </td>
+      </tr>
+    </table>
 
-    <table class="data-table">
+    <!-- Main Items Table -->
+    <table class="items-table">
       <thead>
         <tr>
-          <th style="width: 30px;">#</th>
-          <th>Item Description</th>
-          <th style="width: 50px;">HSN</th>
-          <th style="width: 35px;">Qty</th>
-          <th style="width: 70px;">Rate</th>
-          <th style="width: 75px;">Taxable</th>
-          <th style="width: 45px;">GST</th>
+          <th style="width: 36%;">Description</th>
+          <th style="width: 8%;">HSN</th>
+          <th style="width: 5%;">Qty</th>
+          <th style="width: 12%;">Unit Price</th>
+          <th style="width: 13%;">Taxable Value</th>
           ${
             isIntraState
               ? `
-            <th style="width: 65px;">CGST</th>
-            <th style="width: 65px;">SGST</th>
+            <th style="width: 8%;">CGST</th>
+            <th style="width: 8%;">SGST</th>
           `
               : `
-            <th style="width: 75px;">IGST</th>
+            <th style="width: 16%;">IGST</th>
           `
           }
-          <th style="width: 80px;">Total</th>
+          <th style="width: 13%;">Total</th>
         </tr>
       </thead>
       <tbody>
         ${itemRowsHtml}
-      </tbody>
-    </table>
-
-    <div class="totals-grid">
-      <div class="words-box">
-        <div style="color: #666; font-size: 10px; text-transform: uppercase;">Amount in Words:</div>
-        <strong style="color: #222; font-size: 11px;">${numberToWordsInr(grandTotal)}</strong>
-
-        <div style="margin-top: 14px; font-size: 10px; color: #666;">
-          <strong>Declaration:</strong><br />
-          We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.
-        </div>
-      </div>
-
-      <div>
-        <table class="summary-table">
-          <tr>
-            <td style="color: #555;">Taxable Subtotal:</td>
-            <td style="text-align: right; font-weight: 600;">₹${totalTaxable.toFixed(2)}</td>
-          </tr>
+        <tr class="net-total-row">
+          <td style="text-align: center; font-weight: bold;">Net Total</td>
+          <td style="border: 1px solid #000;"></td>
+          <td style="text-align: center; font-weight: bold;">${totalQty}</td>
+          <td style="border: 1px solid #000;"></td>
+          <td style="border: 1px solid #000; text-align: right;">${totalTaxable.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
           ${
             isIntraState
               ? `
-            <tr>
-              <td style="color: #555;">CGST (2.5%):</td>
-              <td style="text-align: right; font-weight: 600;">₹${cgstAmount.toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td style="color: #555;">SGST (2.5%):</td>
-              <td style="text-align: right; font-weight: 600;">₹${sgstAmount.toFixed(2)}</td>
-            </tr>
+            <td style="border: 1px solid #000; text-align: right;">${cgstAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td style="border: 1px solid #000; text-align: right;">${sgstAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
           `
               : `
-            <tr>
-              <td style="color: #555;">IGST (5.0%):</td>
-              <td style="text-align: right; font-weight: 600;">₹${igstAmount.toFixed(2)}</td>
-            </tr>
+            <td style="border: 1px solid #000; text-align: right;">${igstAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
           `
           }
-          <tr>
-            <td style="color: #555;">Total Tax (5%):</td>
-            <td style="text-align: right; font-weight: 600;">₹${totalGst.toFixed(2)}</td>
-          </tr>
-          ${
-            delivery > 0
-              ? `
-            <tr>
-              <td style="color: #555;">Shipping / Delivery:</td>
-              <td style="text-align: right; font-weight: 600;">₹${delivery.toFixed(2)}</td>
-            </tr>
-          `
-              : ""
-          }
-          ${
-            discount > 0
-              ? `
-            <tr>
-              <td style="color: #c62828;">Discount Applied:</td>
-              <td style="text-align: right; font-weight: 600; color: #c62828;">-₹${discount.toFixed(2)}</td>
-            </tr>
-          `
-              : ""
-          }
-          <tr class="grand-row">
-            <td>Grand Total:</td>
-            <td style="text-align: right;">₹${grandTotal.toLocaleString("en-IN")}</td>
-          </tr>
-        </table>
-      </div>
-    </div>
+          <td style="text-align: right; font-weight: bold;">${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        </tr>
+      </tbody>
+    </table>
 
-    <div class="footer-notes">
-      <div style="font-size: 10px; color: #888;">
-        This is a computer-generated invoice. No physical signature is required.
-      </div>
-      <div class="signatory">
-        <div style="font-size: 11px; font-weight: bold; color: #333;">For ${seller.name}</div>
-        <div style="margin-top: 24px; font-size: 10px; color: #666; border-top: 1px dashed #aaa; padding-top: 4px;">Authorized Signatory</div>
-      </div>
+    <!-- Net Amount Payable (In Words) Box -->
+    <table class="words-box">
+      <tr>
+        <td style="font-weight: bold; width: 45%; text-align: left;">
+          Net Amount Payable (In Words):
+        </td>
+        <td style="text-align: right; font-weight: 500;">
+          ${numberToWordsInr(grandTotal)}
+        </td>
+      </tr>
+    </table>
+
+    <!-- Bottom Box: Legal Policy on Left | Authorised Signature on Right -->
+    <table class="terms-box">
+      <tr>
+        <td style="width: 60%; border-right: 1.5px solid #000; font-size: 10.5px; line-height: 1.45;">
+          <div>All disputes are subject to ${sellerState} jurisdiction only.</div>
+          <div style="margin-top: 8px;">
+            Goods once sold will only be taken back or exchanged as per the store's exchange/return policy.
+          </div>
+        </td>
+        <td style="width: 40%; text-align: center; vertical-align: top;">
+          <div style="font-size: 11px; font-weight: bold;">Authorised Signature for</div>
+          <div style="font-size: 13px; font-weight: 900; text-transform: uppercase; margin-top: 3px;">
+            ${brandName}
+          </div>
+          <div style="height: 38px;"></div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Reverse Charge Note -->
+    <div class="reverse-charge">
+      Whether tax is payable under reverse charge:No
     </div>
   </div>
+
   <script>
     function triggerPrint() {
       setTimeout(function() {
@@ -551,64 +628,113 @@ const TaxInvoiceModal = ({
   order,
   brandSettings = {},
 }) => {
+  const [liveSettings, setLiveSettings] = useState(brandSettings || {});
+
+  useEffect(() => {
+    if (
+      brandSettings &&
+      brandSettings.brandName &&
+      brandSettings.registeredAddress
+    ) {
+      setLiveSettings(brandSettings);
+      return;
+    }
+
+    let isMounted = true;
+    API.get("/settings")
+      .then((res) => {
+        if (isMounted && res?.data?.data) {
+          setLiveSettings((prev) => ({ ...res.data.data, ...brandSettings }));
+        }
+      })
+      .catch(() => {
+        if (typeof window !== "undefined") {
+          const cachedName = localStorage.getItem("brandName");
+          const cachedLogo = localStorage.getItem("brandLogoUrl");
+          if (cachedName || cachedLogo) {
+            setLiveSettings((prev) => ({
+              ...prev,
+              brandName: cachedName || prev.brandName,
+              brandLogoUrl: cachedLogo || prev.brandLogoUrl,
+            }));
+          }
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [brandSettings]);
+
   if (!isOpen || !order) return null;
 
   const rawLogo =
-    brandSettings.brandLogoUrl ||
+    liveSettings.brandLogoUrl ||
     (typeof window !== "undefined"
       ? localStorage.getItem("brandLogoUrl")
       : "") ||
     "/logo.png";
 
-  const seller = {
-    name: brandSettings.brandName || "PARIWESH",
-    tagline: "Royal Ethnic Attire",
-    logoUrl: rawLogo,
-    address:
-      brandSettings.registeredAddress ||
-      "Plot No. 12, Sanganer Industrial Area, Jaipur, Rajasthan - 302029",
-    gstin: brandSettings.gstinNumber || "08AAPPP1234A1Z9",
-    state: "Rajasthan (08)",
-    phone: brandSettings.supportPhone || "+91 97826 81155",
-    email: brandSettings.supportEmail || "contact@pariwesh.co",
-  };
-
-  const invoiceNo = `INV-${order.orderId}`;
-  const invoiceDate = new Date(order.createdAt || Date.now()).toLocaleDateString(
-    "en-IN",
-    {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    },
+  const brandName = liveSettings.brandName || "PARIWESH";
+  const sellerGstin = (liveSettings.gstinNumber || "").trim();
+  const sellerPhone =
+    liveSettings.supportPhone || liveSettings.phone || "";
+  const addressLines = splitAddressLines(liveSettings.registeredAddress, [
+    "13 Goutam Vihar Gajsinghpura",
+    "Ajmer Road Jaipur",
+    "Jaipur 302021",
+    "Rajasthan, India",
+  ]);
+  const sellerState = detectStateFromAddress(
+    liveSettings.registeredAddress,
+    "Rajasthan"
   );
+  const sellerStateCode = getStateCode(sellerState, sellerGstin);
+
+  const invoiceNo =
+    order.invoiceNumber ||
+    (order.orderId ? `INV-${order.orderId}` : `INV-${Date.now().toString().slice(-6)}`);
+  const invoiceDate = formatDateDdMmYyyy(
+    order.invoiceDate || order.createdAt || Date.now()
+  );
+  const orderDate = formatDateDdMmYyyy(order.createdAt || Date.now());
 
   const customerName =
     order.shippingAddress?.fullName || order.customer?.name || "Customer";
   const customerPhone =
     order.shippingAddress?.phone || order.customer?.phone || "";
-  const customerEmail =
-    order.shippingAddress?.email || order.customer?.email || "";
   const customerStreet = order.shippingAddress?.street || "";
   const customerCity = order.shippingAddress?.city || "";
   const customerState = order.shippingAddress?.state || "Rajasthan";
   const customerPincode = order.shippingAddress?.pincode || "";
+  const customerStateCode = getStateCode(customerState);
 
-  const isIntraState = isRajasthanState(customerState);
+  const isIntraState = isRajasthanState(customerState, sellerState);
+
+  const awbNumber = order.awbCode || order.trackingId || "";
+  const courierName =
+    order.courierName ||
+    order.shippingProvider ||
+    (awbNumber ? "Surface Courier" : "Standard Dispatch");
+  const paymentMethodDisplay = String(
+    order.paymentMethod || "Prepaid"
+  ).toUpperCase();
+  const eWaybillNo = order.eWaybillNo || "";
 
   const items = (order.items || []).map((item, idx) => {
     const qty = Number(item.quantity) || 1;
     const price = Number(item.price) || 0;
     const grossTotal = price * qty;
-    const taxableTotal = grossTotal / 1.05;
+    const gstRate = Number(item.gstRate ?? 5) || 5;
+    const taxableTotal = grossTotal / (1 + gstRate / 100);
     const gstTotal = grossTotal - taxableTotal;
     const hsn = item.hsnCode || "6204";
+    const sku = item.sku || item.productId || "-";
 
     return {
       sno: idx + 1,
-      name: item.name,
-      size: item.size || "-",
-      sku: item.sku || "-",
+      name: item.name || "Product Item",
+      sku,
       hsn,
       qty,
       unitPrice: price,
@@ -618,20 +744,19 @@ const TaxInvoiceModal = ({
     };
   });
 
+  const totalQty = items.reduce((acc, i) => acc + i.qty, 0);
   const totalTaxable = items.reduce((acc, i) => acc + i.taxableTotal, 0);
   const totalGst = items.reduce((acc, i) => acc + i.gstTotal, 0);
-  const delivery = Number(order.pricing?.delivery) || 0;
-  const discount = Number(order.pricing?.discount) || 0;
   const grandTotal =
     Number(order.pricing?.grandTotal) ||
-    Math.round(totalTaxable + totalGst + delivery - discount);
+    items.reduce((acc, i) => acc + i.grossTotal, 0);
 
   const cgstAmount = isIntraState ? totalGst / 2 : 0;
   const sgstAmount = isIntraState ? totalGst / 2 : 0;
   const igstAmount = !isIntraState ? totalGst : 0;
 
   const handlePrint = () => {
-    const html = buildPrintableInvoiceHtml(order, brandSettings);
+    const html = buildPrintableInvoiceHtml(order, liveSettings);
     const printWindow = window.open("", "_blank", "width=850,height=900");
     if (printWindow) {
       printWindow.document.open();
@@ -639,27 +764,27 @@ const TaxInvoiceModal = ({
       printWindow.document.close();
     } else {
       alert(
-        "Please allow popups for this site to print or save the Tax Invoice.",
+        "Please allow popups for this site to print or save the Tax Invoice."
       );
     }
   };
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-black/60 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-black/65 backdrop-blur-sm">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.2 }}
-          className="bg-white rounded-lg shadow-2xl border border-borderLight w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden text-neutral-800"
+          className="bg-white rounded-lg shadow-2xl border border-neutral-200 w-full max-w-3xl max-h-[95vh] flex flex-col overflow-hidden text-neutral-900 font-sans"
         >
           {/* Top Actions Bar */}
           <div className="bg-neutral-900 text-white px-5 py-3.5 flex items-center justify-between border-b border-neutral-800 flex-shrink-0">
             <div className="flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-accent-gold inline-block"></span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
               <h3 className="text-sm font-semibold tracking-wide font-sans text-neutral-100">
-                Tax Invoice Preview &mdash; {invoiceNo}
+                Tax Invoice &mdash; {invoiceNo}
               </h3>
             </div>
             <div className="flex items-center gap-2">
@@ -677,7 +802,7 @@ const TaxInvoiceModal = ({
               )}
               <button
                 onClick={handlePrint}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-accent-gold text-neutral-950 hover:bg-[#d5b88f] rounded shadow transition"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white rounded shadow transition"
               >
                 <RiPrinterLine size={15} />
                 Print / Save PDF
@@ -692,339 +817,279 @@ const TaxInvoiceModal = ({
             </div>
           </div>
 
-          {/* Scrollable Invoice Canvas */}
-          <div className="p-6 overflow-y-auto flex-1 bg-neutral-50/50">
-            <div className="bg-white p-6 sm:p-8 rounded border border-neutral-200 shadow-sm max-w-3xl mx-auto space-y-6">
-              {/* Header */}
-              <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-accent-gold pb-5 gap-4">
+          {/* Scrollable Invoice Canvas (100% Dynamic - Zero Hardcoding) */}
+          <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-neutral-100 flex justify-center">
+            <div className="bg-white border-2 border-black p-5 sm:p-7 w-full max-w-2xl text-[11px] leading-tight text-black shadow-lg">
+              {/* Top Header: Logo on Left | TAX INVOICE + Powered by Brand on Right */}
+              <div className="flex justify-between items-center pb-4 mb-3 border-b border-neutral-300">
                 <div>
-                  <div className="flex items-center gap-3.5 mb-2">
-                    <img
-                      src={seller.logoUrl}
-                      alt={seller.name}
-                      className="h-12 w-auto object-contain max-w-[160px]"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
-                    <div>
-                      <h1 className="text-2xl font-extrabold tracking-widest text-[#926f34] uppercase">
-                        {seller.name}
-                      </h1>
-                      <p className="text-[10px] tracking-widest uppercase text-neutral-500 font-semibold mt-0.5">
-                        {seller.tagline}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-xs text-neutral-600 mt-2 space-y-0.5">
-                    <p>{seller.address}</p>
-                    <p>
-                      <span className="font-semibold text-neutral-800">
-                        GSTIN:
-                      </span>{" "}
-                      {seller.gstin} &nbsp;|&nbsp;{" "}
-                      <span className="font-semibold text-neutral-800">
-                        State:
-                      </span>{" "}
-                      {seller.state}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-neutral-800">
-                        Email:
-                      </span>{" "}
-                      {seller.email} &nbsp;|&nbsp;{" "}
-                      <span className="font-semibold text-neutral-800">
-                        Phone:
-                      </span>{" "}
-                      {seller.phone}
-                    </p>
-                  </div>
+                  <img
+                    src={rawLogo}
+                    alt={brandName}
+                    className="h-12 w-auto object-contain"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                    }}
+                  />
                 </div>
-
-                <div className="sm:text-right w-full sm:w-auto">
-                  <span className="inline-block px-3 py-1 bg-amber-50 border border-amber-300 text-[#926f34] text-xs font-bold tracking-wider uppercase rounded">
-                    Tax Invoice
-                  </span>
-                  <div className="text-xs text-neutral-700 mt-2.5 space-y-1">
-                    <p>
-                      <span className="text-neutral-500 font-medium">
-                        Invoice No:
-                      </span>{" "}
-                      <strong className="text-neutral-900">{invoiceNo}</strong>
-                    </p>
-                    <p>
-                      <span className="text-neutral-500 font-medium">
-                        Invoice Date:
-                      </span>{" "}
-                      {invoiceDate}
-                    </p>
-                    <p>
-                      <span className="text-neutral-500 font-medium">
-                        Order ID:
-                      </span>{" "}
-                      {order.orderId}
-                    </p>
-                    <p>
-                      <span className="text-neutral-500 font-medium">
-                        Payment:
-                      </span>{" "}
-                      <span className="font-semibold">
-                        {order.paymentMethod || "COD"}
-                      </span>{" "}
-                      ({order.paymentStatus || "Pending"})
-                    </p>
-                  </div>
+                <div className="text-right">
+                  <h2 className="text-lg font-black tracking-wide uppercase">
+                    TAX INVOICE
+                  </h2>
+                  <p className="text-xs text-neutral-700 font-medium mt-0.5">
+                    Powered by {brandName}
+                  </p>
                 </div>
               </div>
 
-              {/* Bill To / Ship To / Tax Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-neutral-50 p-4 rounded border border-neutral-200 text-xs">
+              {/* Two-Column Block: Sold By | Delivered To */}
+              <div className="grid grid-cols-2 gap-6 pb-4">
+                {/* Left: Sold By */}
                 <div>
-                  <h4 className="font-bold text-[11px] uppercase tracking-wider text-[#926f34] mb-1.5">
-                    Billed & Shipped To:
-                  </h4>
-                  <div className="font-bold text-neutral-900 text-sm">
-                    {customerName}
+                  <div className="font-black text-xs uppercase text-center mb-1">
+                    Sold By:
                   </div>
-                  <div className="text-neutral-600 mt-1 space-y-0.5">
+                  <div className="text-[11px] leading-snug space-y-0.5">
+                    <p className="font-bold">{brandName}</p>
+                    {addressLines.map((line, idx) => (
+                      <p key={idx}>{line}</p>
+                    ))}
+                    {sellerState && <p>{sellerState}</p>}
+                    <p>State Code : {sellerStateCode}</p>
+                    {sellerPhone && <p>Ph: {sellerPhone}</p>}
+                    {sellerGstin && <p>GSTIN No.: {sellerGstin}</p>}
+                  </div>
+                  <div className="mt-3.5 text-[11px] leading-relaxed">
+                    <p>
+                      <strong>Invoice No. :</strong> {invoiceNo}
+                    </p>
+                    <p>
+                      <strong>Invoice Date :</strong> {invoiceDate}
+                    </p>
+                    <p>
+                      <strong>Order No. :</strong> {order.orderId || "-"}
+                    </p>
+                    <p>
+                      <strong>Order Date :</strong> {orderDate}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right: Delivered To */}
+                <div>
+                  <div className="font-black text-xs uppercase text-center mb-1">
+                    Delivered To:
+                  </div>
+                  <div className="text-[11px] leading-snug space-y-0.5">
+                    <p className="font-bold">{customerName}</p>
                     <p>{customerStreet}</p>
                     <p>
-                      {customerCity ? `${customerCity}, ` : ""}
-                      {customerState} - {customerPincode}
+                      {customerCity ? `${customerCity} ` : ""}
+                      {customerPincode}
                     </p>
-                    <p>
-                      <strong className="text-neutral-700">Phone:</strong>{" "}
-                      {customerPhone}
-                    </p>
-                    {customerEmail && (
-                      <p>
-                        <strong className="text-neutral-700">Email:</strong>{" "}
-                        {customerEmail}
-                      </p>
-                    )}
+                    <p>{customerState}</p>
+                    <p>India</p>
+                    <p>State Code : {customerStateCode}</p>
+                    {customerPhone && <p>Ph: {customerPhone}</p>}
                   </div>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-[11px] uppercase tracking-wider text-[#926f34] mb-1.5">
-                    Place of Supply & GST:
-                  </h4>
-                  <div className="text-neutral-600 space-y-1">
+                  <div className="mt-3.5 text-[11px] leading-relaxed">
                     <p>
-                      <strong className="text-neutral-700">
-                        Place of Supply:
-                      </strong>{" "}
-                      {customerState}
+                      <strong>Payment Method :</strong> {paymentMethodDisplay}
                     </p>
                     <p>
-                      <strong className="text-neutral-700">Tax Type:</strong>{" "}
-                      <span className="inline-block px-1.5 py-0.5 bg-neutral-200/80 rounded text-[11px] font-medium text-neutral-800">
-                        {isIntraState
-                          ? "Intra-State (CGST 2.5% + SGST 2.5%)"
-                          : "Inter-State (IGST 5.0%)"}
-                      </span>
+                      <strong>Shipped By :</strong> {courierName}
                     </p>
-                    <p className="text-[11px] text-neutral-500">
-                      * Selling prices are inclusive of 5% GST.
+                    <p>
+                      <strong>AWB No. :</strong> {awbNumber || "-"}
+                    </p>
+                    <p>
+                      <strong>eWaybill No. :</strong> {eWaybillNo || "-"}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Itemized Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+              {/* Items Table */}
+              <div className="mb-3">
+                <table className="w-full border-collapse border border-black text-[10.5px]">
                   <thead>
-                    <tr className="bg-amber-100/50 text-neutral-800 border-y border-amber-200 text-[11px] uppercase tracking-wider">
-                      <th className="py-2.5 px-2 text-center w-8">#</th>
-                      <th className="py-2.5 px-2">Item Description</th>
-                      <th className="py-2.5 px-2 text-center">HSN</th>
-                      <th className="py-2.5 px-2 text-center">Qty</th>
-                      <th className="py-2.5 px-2 text-right">Selling Price</th>
-                      <th className="py-2.5 px-2 text-right">Taxable</th>
-                      <th className="py-2.5 px-2 text-center">GST</th>
+                    <tr className="bg-[#d8d8d8] text-black font-bold text-center">
+                      <th className="border border-black py-1.5 px-2 text-left w-[36%]">
+                        Description
+                      </th>
+                      <th className="border border-black py-1.5 px-1 w-[8%]">
+                        HSN
+                      </th>
+                      <th className="border border-black py-1.5 px-1 w-[6%]">
+                        Qty
+                      </th>
+                      <th className="border border-black py-1.5 px-1.5 text-right w-[12%]">
+                        Unit Price
+                      </th>
+                      <th className="border border-black py-1.5 px-1.5 text-right w-[13%]">
+                        Taxable Value
+                      </th>
                       {isIntraState ? (
                         <>
-                          <th className="py-2.5 px-2 text-right">CGST</th>
-                          <th className="py-2.5 px-2 text-right">SGST</th>
+                          <th className="border border-black py-1.5 px-1 w-[8%] text-right">
+                            CGST
+                          </th>
+                          <th className="border border-black py-1.5 px-1 w-[8%] text-right">
+                            SGST
+                          </th>
                         </>
                       ) : (
-                        <th className="py-2.5 px-2 text-right">IGST</th>
+                        <th className="border border-black py-1.5 px-1 w-[16%] text-right">
+                          IGST
+                        </th>
                       )}
-                      <th className="py-2.5 px-2 text-right">Total</th>
+                      <th className="border border-black py-1.5 px-1.5 text-right w-[13%]">
+                        Total
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-200">
-                    {items.map((it) => (
-                      <tr key={it.sno} className="hover:bg-neutral-50/80">
-                        <td className="py-2 px-2 text-center text-neutral-400">
-                          {it.sno}
-                        </td>
-                        <td className="py-2 px-2">
-                          <strong className="text-neutral-900 block">
-                            {it.name}
-                          </strong>
-                          <span className="text-[10px] text-neutral-500">
-                            Size: {it.size} | SKU: {it.sku}
+                  <tbody>
+                    {items.map((it, idx) => (
+                      <tr key={idx} className="align-top">
+                        <td className="border border-black py-1.5 px-2 text-left">
+                          <strong className="text-black block">{it.name}</strong>
+                          <span className="text-[9.5px] text-neutral-800">
+                            SKU : {it.sku}
                           </span>
                         </td>
-                        <td className="py-2 px-2 text-center font-mono text-neutral-600">
+                        <td className="border border-black py-1.5 px-1 text-center font-mono">
                           {it.hsn}
                         </td>
-                        <td className="py-2 px-2 text-center font-medium">
+                        <td className="border border-black py-1.5 px-1 text-center font-bold">
                           {it.qty}
                         </td>
-                        <td className="py-2 px-2 text-right">
-                          ₹{it.unitPrice.toFixed(2)}
+                        <td className="border border-black py-1.5 px-1.5 text-right">
+                          {it.unitPrice.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </td>
-                        <td className="py-2 px-2 text-right font-medium text-neutral-700">
-                          ₹{it.taxableTotal.toFixed(2)}
-                        </td>
-                        <td className="py-2 px-2 text-center text-neutral-600">
-                          5%
+                        <td className="border border-black py-1.5 px-1.5 text-right">
+                          {it.taxableTotal.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </td>
                         {isIntraState ? (
                           <>
-                            <td className="py-2 px-2 text-right text-neutral-600">
-                              ₹{(it.gstTotal / 2).toFixed(2)}
+                            <td className="border border-black py-1.5 px-1 text-right">
+                              {(it.gstTotal / 2).toLocaleString("en-IN", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
                             </td>
-                            <td className="py-2 px-2 text-right text-neutral-600">
-                              ₹{(it.gstTotal / 2).toFixed(2)}
+                            <td className="border border-black py-1.5 px-1 text-right">
+                              {(it.gstTotal / 2).toLocaleString("en-IN", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
                             </td>
                           </>
                         ) : (
-                          <td className="py-2 px-2 text-right text-neutral-600">
-                            ₹{it.gstTotal.toFixed(2)}
+                          <td className="border border-black py-1.5 px-1 text-right">
+                            {it.gstTotal.toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
                           </td>
                         )}
-                        <td className="py-2 px-2 text-right font-bold text-neutral-900">
-                          ₹{it.grossTotal.toFixed(2)}
+                        <td className="border border-black py-1.5 px-1.5 text-right font-bold">
+                          {it.grossTotal.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </td>
                       </tr>
                     ))}
+                    <tr className="bg-[#d8d8d8] font-bold">
+                      <td className="border border-black py-1.5 px-2 text-center">
+                        Net Total
+                      </td>
+                      <td className="border border-black py-1.5 px-1"></td>
+                      <td className="border border-black py-1.5 px-1 text-center">
+                        {totalQty}
+                      </td>
+                      <td className="border border-black py-1.5 px-1.5"></td>
+                      <td className="border border-black py-1.5 px-1.5 text-right">
+                        {totalTaxable.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      {isIntraState ? (
+                        <>
+                          <td className="border border-black py-1.5 px-1 text-right">
+                            {cgstAmount.toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td className="border border-black py-1.5 px-1 text-right">
+                            {sgstAmount.toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </td>
+                        </>
+                      ) : (
+                        <td className="border border-black py-1.5 px-1 text-right">
+                          {igstAmount.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </td>
+                      )}
+                      <td className="border border-black py-1.5 px-1.5 text-right font-black">
+                        {grandTotal.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
 
-              {/* Totals & Summary */}
-              <div className="flex flex-col sm:flex-row justify-between gap-6 pt-2 border-t border-neutral-200">
-                <div className="flex-1 space-y-3">
-                  <div className="bg-neutral-50 p-3 rounded border border-dashed border-neutral-300 text-xs">
-                    <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-wider block">
-                      Amount in Words
-                    </span>
-                    <p className="font-semibold text-neutral-800 mt-0.5">
-                      {numberToWordsInr(grandTotal)}
-                    </p>
-                  </div>
+              {/* Net Amount Payable (In Words) Box */}
+              <div className="border-[1.5px] border-black px-3 py-2 mb-3 flex justify-between items-center">
+                <span className="font-bold text-xs">
+                  Net Amount Payable (In Words):
+                </span>
+                <span className="font-medium text-xs text-right">
+                  {numberToWordsInr(grandTotal)}
+                </span>
+              </div>
 
-                  <div className="text-[11px] text-neutral-500 leading-relaxed">
-                    <p className="font-semibold text-neutral-700">
-                      Declaration:
-                    </p>
-                    <p>
-                      We declare that this invoice shows the actual price of the
-                      goods described and that all particulars are true and
-                      correct.
-                    </p>
-                  </div>
+              {/* Bottom Box: Legal Policy on Left | Authorised Signature on Right */}
+              <div className="border-[1.5px] border-black grid grid-cols-12">
+                <div className="col-span-7 p-2.5 border-r-[1.5px] border-black text-[10px] leading-relaxed">
+                  <p>All disputes are subject to {sellerState} jurisdiction only.</p>
+                  <p className="mt-2">
+                    Goods once sold will only be taken back or exchanged as per
+                    the store's exchange/return policy.
+                  </p>
                 </div>
-
-                <div className="w-full sm:w-80">
-                  <table className="w-full text-xs">
-                    <tbody className="divide-y divide-neutral-100">
-                      <tr>
-                        <td className="py-1.5 text-neutral-600">
-                          Taxable Subtotal:
-                        </td>
-                        <td className="py-1.5 text-right font-medium text-neutral-800">
-                          ₹{totalTaxable.toFixed(2)}
-                        </td>
-                      </tr>
-                      {isIntraState ? (
-                        <>
-                          <tr>
-                            <td className="py-1.5 text-neutral-600">
-                              CGST (2.5%):
-                            </td>
-                            <td className="py-1.5 text-right font-medium text-neutral-800">
-                              ₹{cgstAmount.toFixed(2)}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="py-1.5 text-neutral-600">
-                              SGST (2.5%):
-                            </td>
-                            <td className="py-1.5 text-right font-medium text-neutral-800">
-                              ₹{sgstAmount.toFixed(2)}
-                            </td>
-                          </tr>
-                        </>
-                      ) : (
-                        <tr>
-                          <td className="py-1.5 text-neutral-600">
-                            IGST (5.0%):
-                          </td>
-                          <td className="py-1.5 text-right font-medium text-neutral-800">
-                            ₹{igstAmount.toFixed(2)}
-                          </td>
-                        </tr>
-                      )}
-                      <tr>
-                        <td className="py-1.5 text-neutral-600">
-                          Total GST (5%):
-                        </td>
-                        <td className="py-1.5 text-right font-semibold text-neutral-800">
-                          ₹{totalGst.toFixed(2)}
-                        </td>
-                      </tr>
-                      {delivery > 0 && (
-                        <tr>
-                          <td className="py-1.5 text-neutral-600">
-                            Shipping Charge:
-                          </td>
-                          <td className="py-1.5 text-right font-medium text-neutral-800">
-                            ₹{delivery.toFixed(2)}
-                          </td>
-                        </tr>
-                      )}
-                      {discount > 0 && (
-                        <tr>
-                          <td className="py-1.5 text-red-600">
-                            Discount Applied:
-                          </td>
-                          <td className="py-1.5 text-right font-semibold text-red-600">
-                            -₹{discount.toFixed(2)}
-                          </td>
-                        </tr>
-                      )}
-                      <tr className="border-t-2 border-accent-gold">
-                        <td className="py-2.5 text-sm font-extrabold text-[#926f34]">
-                          Grand Total:
-                        </td>
-                        <td className="py-2.5 text-right text-base font-extrabold text-[#926f34]">
-                          ₹{grandTotal.toLocaleString("en-IN")}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div className="col-span-5 p-2.5 text-center flex flex-col justify-between">
+                  <div>
+                    <p className="text-[11px] font-bold">
+                      Authorised Signature for
+                    </p>
+                    <p className="text-xs font-black uppercase mt-1">
+                      {brandName}
+                    </p>
+                  </div>
+                  <div className="h-6"></div>
                 </div>
               </div>
 
-              {/* Signatory Footer */}
-              <div className="pt-4 border-t border-neutral-200 flex flex-col sm:flex-row justify-between items-end text-xs text-neutral-500 gap-4">
-                <p className="text-[11px] text-neutral-400">
-                  Computer generated Tax Invoice. Does not require physical
-                  signature.
-                </p>
-                <div className="text-right">
-                  <p className="font-bold text-neutral-800">
-                    For {seller.name}
-                  </p>
-                  <div className="mt-8 border-t border-neutral-300 pt-1 text-[10px] text-neutral-500">
-                    Authorized Signatory
-                  </div>
-                </div>
+              {/* Reverse Charge Note */}
+              <div className="text-[10px] mt-1 text-neutral-800">
+                Whether tax is payable under reverse charge:No
               </div>
             </div>
           </div>
@@ -1035,3 +1100,4 @@ const TaxInvoiceModal = ({
 };
 
 export default TaxInvoiceModal;
+

@@ -13,6 +13,7 @@ import SkeletonLoader from "../../components/admin/ui/SkeletonLoader.jsx";
 import Modal from "../../components/admin/ui/Modal.jsx";
 import EmptyState from "../../components/admin/ui/EmptyState.jsx";
 import TaxInvoiceModal from "../../components/common/TaxInvoiceModal.jsx";
+import ShippingLabelModal from "../../components/common/ShippingLabelModal.jsx";
 import {
   RiSearchLine,
   RiPrinterLine,
@@ -95,6 +96,7 @@ const OrdersPage = () => {
   });
   const [shipSaving, setShipSaving] = useState(false);
   const [invoiceModalOrder, setInvoiceModalOrder] = useState(null);
+  const [labelModalOrder, setLabelModalOrder] = useState(null);
   const [brandSettings, setBrandSettings] = useState({});
 
   const fetchOrders = async () => {
@@ -305,12 +307,9 @@ const OrdersPage = () => {
     setInvoiceModalOrder(order);
   };
 
-  // Print AWB Shipping Label Builder
+  // Print AWB Shipping Label Builder (In-house 4x6 Thermal & Laser)
   const handlePrintLabel = (order) => {
-    alert(
-      "No real Shiprocket shipping label PDF has been generated for this order.",
-      "warning",
-    );
+    setLabelModalOrder(order);
   };
 
   // Retry / Generate Shiprocket Label
@@ -983,23 +982,30 @@ const OrdersPage = () => {
                         Shiprocket Documents & Logistics
                       </p>
                       <div className="flex flex-wrap gap-1.5 items-center">
+                        <button
+                          type="button"
+                          onClick={() => setLabelModalOrder(selectedOrder)}
+                          className="inline-flex items-center text-[9px] bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold px-2 py-1 rounded border border-emerald-200 transition"
+                        >
+                          AWB Label
+                        </button>
                         {selectedOrder.shippingLabelUrl ? (
                           <a
                             href={selectedOrder.shippingLabelUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center text-[9px] bg-[#c5a880]/15 hover:bg-[#c5a880]/25 text-[#c5a880] font-bold px-2 py-1 rounded transition"
+                            className="inline-flex items-center text-[9px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1 rounded transition"
                           >
-                            Label PDF
+                            Shiprocket Label
                           </a>
                         ) : selectedOrder.shiprocketShipmentId &&
                           selectedOrder.awbCode ? (
                           <button
                             type="button"
                             onClick={() => handleRetryLabel(selectedOrder)}
-                            className="text-[9px] bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded border border-amber-250 border-amber-200 transition"
+                            className="text-[9px] bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold px-2 py-1 rounded border border-slate-200 transition"
                           >
-                            Regen Label
+                            Regen SR Label
                           </button>
                         ) : null}
 
@@ -1236,16 +1242,8 @@ const OrdersPage = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    if (selectedOrder.shippingLabelUrl) {
-                      window.open(selectedOrder.shippingLabelUrl, "_blank");
-                    } else if (selectedOrder.shiprocketOrderId) {
-                      handleRetryLabel(selectedOrder);
-                    } else {
-                      handlePrintLabel(selectedOrder);
-                    }
-                  }}
-                  className="flex items-center justify-center space-x-1.5 text-[#c5a880] border-[#c5a880]/30"
+                  onClick={() => setLabelModalOrder(selectedOrder)}
+                  className="flex items-center justify-center space-x-1.5 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
                 >
                   <RiFileList3Line size={15} />
                   <span>AWB Label</span>
@@ -1392,6 +1390,15 @@ const OrdersPage = () => {
           isOpen={!!invoiceModalOrder}
           onClose={() => setInvoiceModalOrder(null)}
           order={invoiceModalOrder}
+          brandSettings={brandSettings}
+        />
+      )}
+
+      {labelModalOrder && (
+        <ShippingLabelModal
+          isOpen={!!labelModalOrder}
+          onClose={() => setLabelModalOrder(null)}
+          order={labelModalOrder}
           brandSettings={brandSettings}
         />
       )}

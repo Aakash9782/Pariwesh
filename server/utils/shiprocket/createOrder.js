@@ -31,6 +31,19 @@ export const createShiprocketOrder = async (order) => {
     .slice(0, 16)
     .replace("T", " ");
 
+  // Compute realistic parcel weight & dimensions from ordered garment units
+  const totalUnits = (order.items || []).reduce(
+    (sum, it) => sum + (Number(it.quantity) || 1),
+    0,
+  );
+  const calculatedWeight = Math.max(
+    0.5,
+    Math.round(totalUnits * 0.45 * 100) / 100,
+  );
+  const length = 28;
+  const breadth = Math.min(25, 18 + totalUnits * 2);
+  const height = Math.min(15, 3 + totalUnits * 2);
+
   const payload = {
     order_id: order.orderId,
     order_date: orderDate,
@@ -53,10 +66,10 @@ export const createShiprocketOrder = async (order) => {
       Number(order.pricing?.subtotal) || Number(order.pricing?.grandTotal),
     total_discount: Number(order.pricing?.discount || 0),
     shipping_charges: Number(order.pricing?.delivery || 0),
-    length: 10,
-    breadth: 10,
-    height: 5,
-    weight: 0.5,
+    length,
+    breadth,
+    height,
+    weight: calculatedWeight,
   };
 
   const res = await authorizedRequest("/v1/external/orders/create/adhoc", {
