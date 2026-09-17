@@ -123,6 +123,7 @@ export const createOrder = async (req, res, next) => {
         image: item.image || (product.images && product.images[0]) || "",
         gstRate: product.gst || 0,
         gstAmount: 0, // Will be computed after finalDiscount is determined
+        hsnCode: product.hsnCode || "6204",
       });
     }
 

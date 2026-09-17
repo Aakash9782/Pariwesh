@@ -151,6 +151,10 @@ const orderDetailsBlock = (order) => {
           : ""
       }
       <tr>
+        <td style="padding:4px 0;color:${brand.muted};">GST (5% Inclusive)</td>
+        <td style="padding:4px 0;text-align:right;color:${brand.dark};">${formatInr(pricing.gst || Math.round(((Number(pricing.subtotal) || 0) * 5) / 105))}</td>
+      </tr>
+      <tr>
         <td style="padding:10px 0 0;border-top:1px solid ${brand.border};font-weight:700;color:${brand.dark};">Grand Total</td>
         <td style="padding:10px 0 0;border-top:1px solid ${brand.border};text-align:right;font-weight:700;color:${brand.gold};font-size:16px;">${formatInr(pricing.grandTotal)}</td>
       </tr>
@@ -163,6 +167,12 @@ const orderDetailsBlock = (order) => {
         <td style="padding:4px 0;text-align:right;color:${brand.dark};">${escapeHtml(order.orderStatus || "-")}</td>
       </tr>
     </table>
+
+    <div style="margin-top:22px;text-align:center;">
+      <a href="${process.env.CLIENT_URL || "https://pariwesh.co"}/profile" style="display:inline-block;padding:10px 22px;background:${brand.gold};color:${brand.dark};text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;border-radius:2px;">
+        View Order & Tax Invoice
+      </a>
+    </div>
   `;
 };
 

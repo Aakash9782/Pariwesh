@@ -12,6 +12,7 @@ import Badge from "../../components/admin/ui/Badge.jsx";
 import SkeletonLoader from "../../components/admin/ui/SkeletonLoader.jsx";
 import Modal from "../../components/admin/ui/Modal.jsx";
 import EmptyState from "../../components/admin/ui/EmptyState.jsx";
+import TaxInvoiceModal from "../../components/common/TaxInvoiceModal.jsx";
 import {
   RiSearchLine,
   RiPrinterLine,
@@ -93,6 +94,8 @@ const OrdersPage = () => {
     shippingProvider: "Delhivery",
   });
   const [shipSaving, setShipSaving] = useState(false);
+  const [invoiceModalOrder, setInvoiceModalOrder] = useState(null);
+  const [brandSettings, setBrandSettings] = useState({});
 
   const fetchOrders = async () => {
     try {
@@ -111,6 +114,13 @@ const OrdersPage = () => {
 
   useEffect(() => {
     fetchOrders();
+    API.get("/settings")
+      .then((res) => {
+        if (res.data?.success && res.data?.data) {
+          setBrandSettings(res.data.data);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Update filters dynamically when searchParams changes
@@ -290,12 +300,9 @@ const OrdersPage = () => {
     }
   };
 
-  // Print Invoice Builder (Dynamic Popup Styled HTML)
+  // Print Tax Invoice (In-house Branded Rule 46 Compliant Modal)
   const handlePrintInvoice = (order) => {
-    alert(
-      "No real Shiprocket invoice PDF has been generated for this order.",
-      "warning",
-    );
+    setInvoiceModalOrder(order);
   };
 
   // Print AWB Shipping Label Builder
@@ -996,22 +1003,29 @@ const OrdersPage = () => {
                           </button>
                         ) : null}
 
+                        <button
+                          type="button"
+                          onClick={() => setInvoiceModalOrder(selectedOrder)}
+                          className="inline-flex items-center text-[9px] bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold px-2 py-1 rounded border border-amber-200 transition"
+                        >
+                          Tax Invoice
+                        </button>
                         {selectedOrder.shippingInvoiceUrl ? (
                           <a
                             href={selectedOrder.shippingInvoiceUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center text-[9px] bg-slate-105 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1 rounded transition"
+                            className="inline-flex items-center text-[9px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1 rounded transition"
                           >
-                            Tax Invoice
+                            Shiprocket PDF
                           </a>
                         ) : selectedOrder.shiprocketOrderId ? (
                           <button
                             type="button"
                             onClick={() => handleRetryInvoice(selectedOrder)}
-                            className="text-[9px] bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded border border-amber-200 transition"
+                            className="text-[9px] bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold px-2 py-1 rounded border border-slate-200 transition"
                           >
-                            Regen Invoice
+                            Regen SR PDF
                           </button>
                         ) : null}
 
@@ -1212,19 +1226,11 @@ const OrdersPage = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    if (selectedOrder.shippingInvoiceUrl) {
-                      window.open(selectedOrder.shippingInvoiceUrl, "_blank");
-                    } else if (selectedOrder.shiprocketOrderId) {
-                      handleRetryInvoice(selectedOrder);
-                    } else {
-                      handlePrintInvoice(selectedOrder);
-                    }
-                  }}
+                  onClick={() => setInvoiceModalOrder(selectedOrder)}
                   className="flex items-center justify-center space-x-1.5 border-slate-200"
                 >
                   <RiPrinterLine size={15} />
-                  <span>Invoice PDF</span>
+                  <span>Tax Invoice</span>
                 </Button>
 
                 <Button
@@ -1379,6 +1385,15 @@ const OrdersPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {invoiceModalOrder && (
+        <TaxInvoiceModal
+          isOpen={!!invoiceModalOrder}
+          onClose={() => setInvoiceModalOrder(null)}
+          order={invoiceModalOrder}
+          brandSettings={brandSettings}
+        />
       )}
     </div>
   );

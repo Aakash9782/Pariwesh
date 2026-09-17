@@ -18,7 +18,10 @@ export const createShiprocketOrder = async (order) => {
     name: item.name || "Product Item",
     sku: item.sku || "PROD-GENERIC",
     units: Number(item.quantity) || 1,
-    selling_price: String(item.price || 0),
+    selling_price: Number(item.price || 0),
+    discount: 0,
+    tax: Number(item.gstRate ?? 5) || 5,
+    hsn: Number(item.hsnCode || 6204) || 6204,
   }));
 
   // Build order payload
@@ -47,7 +50,9 @@ export const createShiprocketOrder = async (order) => {
     order_items: orderItems,
     payment_method: order.paymentMethod === "COD" ? "COD" : "Prepaid",
     sub_total:
-      Number(order.pricing.subtotal) || Number(order.pricing.grandTotal),
+      Number(order.pricing?.subtotal) || Number(order.pricing?.grandTotal),
+    total_discount: Number(order.pricing?.discount || 0),
+    shipping_charges: Number(order.pricing?.delivery || 0),
     length: 10,
     breadth: 10,
     height: 5,

@@ -46,7 +46,6 @@ const GeneralTab = ({
           }
         />
         <Input
-          type="email"
           label="Help-Desk Support Email"
           value={generalForm.supportEmail}
           onChange={(e) =>
@@ -57,6 +56,18 @@ const GeneralTab = ({
           }
         />
       </div>
+
+      <Input
+        label="Registered Tax Invoice Business Address"
+        value={generalForm.registeredAddress || ""}
+        onChange={(e) =>
+          setGeneralForm({
+            ...generalForm,
+            registeredAddress: e.target.value,
+          })
+        }
+        placeholder="e.g. Plot No. 12, Sanganer Industrial Area, Jaipur, Rajasthan - 302029"
+      />
 
       {/* Logo Section */}
       <div className="space-y-3 pt-6 border-t border-slate-200">

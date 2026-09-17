@@ -11,9 +11,11 @@ import {
   RiRefreshLine,
   RiTruckLine,
   RiShoppingBagLine,
+  RiPrinterLine,
 } from "react-icons/ri";
 import Button from "../../components/common/Button.jsx";
 import Input from "../../components/form/Input.jsx";
+import TaxInvoiceModal from "../../components/common/TaxInvoiceModal.jsx";
 import {
   updateQuantityInCart,
   removeFromCart,
@@ -121,6 +123,8 @@ const Cart = () => {
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState("");
+  const [placedOrderObj, setPlacedOrderObj] = useState(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [address, setAddress] = useState({
     fullName: user?.name || "",
@@ -312,8 +316,10 @@ const Cart = () => {
     orderId,
     paid = false,
     purchased = null,
+    fullOrderData = null,
   ) => {
     setPlacedOrderId(orderId);
+    if (fullOrderData) setPlacedOrderObj(fullOrderData);
     setPaymentConfirmed(paid);
     setOrderSuccess(true);
 
@@ -380,7 +386,12 @@ const Cart = () => {
     }
   };
 
-  const openRazorpayCheckout = async (checkout, orderId, purchasedItems) => {
+  const openRazorpayCheckout = async (
+    checkout,
+    orderId,
+    purchasedItems,
+    fullOrderData = null,
+  ) => {
     const ok = await loadRazorpayScript();
     if (!ok || !window.Razorpay) {
       showAlert(
@@ -415,7 +426,12 @@ const Cart = () => {
               metaTracking: getMetaTrackingCookies(),
             });
             if (verifyRes.data?.success) {
-              await finalizeOrderSuccess(orderId, true, purchasedItems);
+              await finalizeOrderSuccess(
+                orderId,
+                true,
+                purchasedItems,
+                fullOrderData,
+              );
               resolve(true);
             } else {
               showAlert(
@@ -572,6 +588,7 @@ const Cart = () => {
             orderData.razorpayCheckout,
             orderId,
             orderItemsPayload,
+            orderData,
           );
           if (!success) {
             setFailedOrder({
@@ -597,7 +614,12 @@ const Cart = () => {
           });
         } else {
           // Cash On Delivery (COD) Order
-          await finalizeOrderSuccess(orderId, false, orderItemsPayload);
+          await finalizeOrderSuccess(
+            orderId,
+            false,
+            orderItemsPayload,
+            orderData,
+          );
         }
       } else {
         showAlert("Failed to place order. Please try again.", "Order Failed");
@@ -707,13 +729,32 @@ const Cart = () => {
               : " (Pending Collection)"}
           </p>
         </div>
-        <div className="pt-6 flex justify-center">
+        <div className="pt-6 flex flex-col sm:flex-row justify-center items-center gap-3">
+          {placedOrderObj && (
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => setShowInvoiceModal(true)}
+              className="flex items-center gap-2 border-accent-gold text-accent-gold hover:bg-accent-gold/10"
+            >
+              <RiPrinterLine size={16} />
+              <span>View & Print Tax Invoice</span>
+            </Button>
+          )}
           <Link to="/shop">
             <Button variant="primary" size="md">
               Continue Shopping
             </Button>
           </Link>
         </div>
+
+        {showInvoiceModal && placedOrderObj && (
+          <TaxInvoiceModal
+            isOpen={showInvoiceModal}
+            onClose={() => setShowInvoiceModal(false)}
+            order={placedOrderObj}
+          />
+        )}
       </div>
     );
   }

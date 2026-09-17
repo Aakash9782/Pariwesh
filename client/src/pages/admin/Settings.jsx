@@ -46,6 +46,8 @@ const SettingsPage = () => {
     supportPhone: "+91 97826 81155",
     supportEmail: "contact@pariwesh.co",
     gstinNumber: "08AAPPP1234A1Z9",
+    registeredAddress:
+      "Plot No. 12, Sanganer Industrial Area, Jaipur, Rajasthan - 302029",
     maintenanceMode: "false",
     countdownActive: "true",
     countdownTitle: "Limited Collection Closes In:",
@@ -153,6 +155,9 @@ const SettingsPage = () => {
           supportPhone: data.supportPhone || "+91 97826 81155",
           supportEmail: data.supportEmail || "contact@pariwesh.co",
           gstinNumber: data.gstinNumber || "08AAPPP1234A1Z9",
+          registeredAddress:
+            data.registeredAddress ||
+            "Plot No. 12, Sanganer Industrial Area, Jaipur, Rajasthan - 302029",
           maintenanceMode: data.maintenanceMode || "false",
           countdownActive:
             data.countdownActive === undefined

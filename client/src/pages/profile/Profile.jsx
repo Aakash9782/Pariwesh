@@ -9,10 +9,12 @@ import {
   RiDeleteBinLine,
   RiAddLine,
   RiCloseLine,
+  RiPrinterLine,
 } from "react-icons/ri";
 import Button from "../../components/common/Button.jsx";
 import Skeleton from "../../components/common/Skeleton.jsx";
 import Input from "../../components/form/Input.jsx";
+import TaxInvoiceModal from "../../components/common/TaxInvoiceModal.jsx";
 import { logoutSuccess, updateProfile } from "../../redux/slices/authSlice.js";
 import API from "../../services/api.js";
 import SEO from "../../components/common/SEO.jsx";
@@ -63,6 +65,18 @@ const Profile = () => {
   const [orders, setOrders] = useState([]);
   const [returns, setReturns] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [invoiceModalOrder, setInvoiceModalOrder] = useState(null);
+  const [brandSettings, setBrandSettings] = useState({});
+
+  useEffect(() => {
+    API.get("/settings")
+      .then((res) => {
+        if (res.data?.success && res.data?.data) {
+          setBrandSettings(res.data.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchUserOrders = async () => {
     try {
@@ -566,6 +580,16 @@ const Profile = () => {
                             {ord.orderStatus}
                           </span>
                         </div>
+                        <div className="flex items-center sm:items-end">
+                          <button
+                            type="button"
+                            onClick={() => setInvoiceModalOrder(ord)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 border border-accent-gold/40 text-accent-gold text-[10px] font-bold uppercase tracking-wider rounded transition"
+                            title="View / Print Official Tax Invoice"
+                          >
+                            <RiPrinterLine size={12} /> Tax Invoice
+                          </button>
+                        </div>
                       </div>
                       <div className="p-6 divide-y divide-borderLight">
                         {ord.items.map((it, iIdx) => {
@@ -1026,6 +1050,15 @@ const Profile = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {invoiceModalOrder && (
+        <TaxInvoiceModal
+          isOpen={!!invoiceModalOrder}
+          onClose={() => setInvoiceModalOrder(null)}
+          order={invoiceModalOrder}
+          brandSettings={brandSettings}
+        />
       )}
     </div>
   );

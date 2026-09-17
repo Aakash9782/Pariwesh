@@ -41,6 +41,10 @@ const OrderItemSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  hsnCode: {
+    type: String,
+    default: "6204",
+  },
 });
 
 const OrderSchema = new mongoose.Schema(
