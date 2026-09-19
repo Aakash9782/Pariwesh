@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 import Order from "../models/Order.js";
 import User from "../models/User.js";
 import Coupon from "../models/Coupon.js";
@@ -359,10 +360,12 @@ export const createOrder = async (req, res, next) => {
           if (!orderUser) {
             const fallbackEmail =
               guestEmail || `customer_${guestPhone.replace(/\D/g, "")}@pariwesh.in`;
+            const defaultPassword = await bcrypt.hash(guestPhone, 10);
             orderUser = await User.create({
               name: guestName,
               phone: guestPhone,
               email: fallbackEmail,
+              password: defaultPassword,
               role: "customer",
               isVerified: true,
               addresses: [shippingAddress],

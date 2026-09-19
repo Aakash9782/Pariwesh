@@ -345,7 +345,7 @@ export const loginUser = async (req, res) => {
     if (!user.password) {
       return sendError(
         res,
-        "This account has no password yet. Please sign up again to set one.",
+        "This account was created via Quick Checkout. Please use your 10-digit mobile number as the password, or click 'Forgot Password' to set your password.",
         400,
       );
     }
