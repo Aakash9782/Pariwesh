@@ -144,7 +144,7 @@ const Home = () => {
         desc: "Anarkalis & Shararas",
         image:
           "https://res.cloudinary.com/ag1y6hht/image/upload/v1786469511/pariwesh/branding/qa60obplqlfvl22etfrf.webp",
-        path: "/shop?category=ethnic",
+        path: "/shop?category=suits",
       },
       {
         title: "Premium Kurtis",
@@ -158,7 +158,7 @@ const Home = () => {
         desc: "Modern Ethnic",
         image:
           "https://res.cloudinary.com/ag1y6hht/image/upload/v1786469512/pariwesh/branding/alycelwkqig0v2jihgar.webp",
-        path: "/shop?category=suits",
+        path: "/shop?category=co-ord-sets",
       },
       {
         title: "Best Sellers",

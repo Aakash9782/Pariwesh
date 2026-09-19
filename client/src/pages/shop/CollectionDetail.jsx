@@ -97,16 +97,45 @@ const CollectionDetail = () => {
       }
     : null;
 
+  const itemListSchema =
+    products.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          name: `${collection.name} Collection`,
+          description:
+            collection.description ||
+            `Explore handcrafted ${collection.name} ethnic wear at PARIWESH`,
+          numberOfItems: products.length,
+          itemListElement: products.slice(0, 10).map((prod, idx) => ({
+            "@type": "ListItem",
+            position: idx + 1,
+            url: `https://pariwesh.in/product/${prod.slug || prod._id}`,
+            name: prod.name,
+            image: prod.images?.[0] || "",
+            offers: {
+              "@type": "Offer",
+              priceCurrency: "INR",
+              price: prod.price || 0,
+              availability:
+                (prod.stock || 0) > 0
+                  ? "https://schema.org/InStock"
+                  : "https://schema.org/OutOfStock",
+            },
+          })),
+        }
+      : null;
+
   return (
     <div className="pb-20">
       <SEO
-        title={`${collection.name} Edit - Exclusive Traditional Wear`}
+        title={`${collection.name} - Farshi Salwar Suit Sets for Women`}
         description={
           collection.description ||
-          `Browse the exclusive ${collection.name} edit at PARIWESH.`
+          `Browse the exclusive ${collection.name} collection at PARIWESH. Handcrafted modal cotton suits, embroidered silhouettes, free delivery & COD available.`
         }
-        keywords={`pariwesh, ${collection.name}, designer collection, luxury ethnic`}
-        structuredData={breadcrumbSchema}
+        keywords={`pariwesh, ${collection.name}, farshi suit set, designer collection, luxury ethnic wear`}
+        structuredData={[breadcrumbSchema, itemListSchema].filter(Boolean)}
       />
       {/* Editorial Luxury Header: Responsive Dual Layout */}
       <section className="relative overflow-hidden bg-[#0d0c0b] border-b border-[#c5a880]/20">

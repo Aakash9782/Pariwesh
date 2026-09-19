@@ -194,7 +194,7 @@ const MainLayout = () => {
     { title: "BEST SELLING", path: "/shop?tag=Best Seller", badge: "Hot" },
     { title: "NEW ARRIVAL", path: "/shop?tag=New Arrival", badge: "New" },
     { title: "READYMADE DRESSES", path: "/shop?category=ethnic" },
-    { title: "CORD SETS", path: "/shop?category=kurtis" },
+    { title: "CO-ORD SETS", path: "/shop?category=co-ord-sets" },
     { title: "SUMMER SALE IS LIVE", path: "/shop", badge: "Sale" },
     { title: "PREMIUM DRESSES", path: "/shop?category=suits" },
     { title: "ALL COLLECTION", path: "/collections" },

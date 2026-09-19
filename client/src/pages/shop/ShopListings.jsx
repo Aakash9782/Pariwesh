@@ -188,8 +188,27 @@ const ShopListings = () => {
     );
   };
 
-  const categoriesList = ["all", "kurtis", "suits", "ethnic"];
-  const colorsList = ["all", "Gold", "Red", "Ivory", "Green", "Blue", "Pink"];
+  // Dynamically extract unique categories from actual store products (Zero hardcoding)
+  const categoriesList = React.useMemo(() => {
+    const cats = new Set(["all"]);
+    products.forEach((p) => {
+      if (p.category && String(p.category).trim()) {
+        cats.add(String(p.category).trim().toLowerCase());
+      }
+    });
+    return Array.from(cats);
+  }, [products]);
+
+  const colorsList = React.useMemo(() => {
+    const cols = new Set(["all"]);
+    products.forEach((p) => {
+      if (p.color && String(p.color).trim()) {
+        cols.add(String(p.color).trim());
+      }
+    });
+    return Array.from(cols);
+  }, [products]);
+
   const sizesList = ["all", "M", "L", "XL", "XXL"];
 
   const categoryTitle =
