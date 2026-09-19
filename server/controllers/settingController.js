@@ -55,7 +55,9 @@ export const updateSetting = async (req, res, next) => {
     if (
       (key === "brandLogoUrl" ||
         key.startsWith("slideImg") ||
-        key === "homeStoryImage") &&
+        key === "homeStoryImage" ||
+        key === "saleBannerDesktop" ||
+        key === "saleBannerMobile") &&
       value &&
       value.startsWith("data:image")
     ) {

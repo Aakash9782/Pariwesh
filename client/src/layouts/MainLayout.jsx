@@ -122,6 +122,16 @@ const MainLayout = () => {
     () => localStorage.getItem("announcementActive") !== "false",
   );
 
+  const [saleEventActive, setSaleEventActive] = useState(
+    () => localStorage.getItem("saleEventActive") !== "false",
+  );
+  const [saleNavTitle, setSaleNavTitle] = useState(
+    () => localStorage.getItem("saleNavTitle") || "NAVRATRI SALE IS LIVE",
+  );
+  const [saleNavBadge, setSaleNavBadge] = useState(
+    () => localStorage.getItem("saleNavBadge") || "Sale",
+  );
+
   React.useEffect(() => {
     const fetchLogoFromDB = async () => {
       try {
@@ -148,6 +158,22 @@ const MainLayout = () => {
             setAnnouncementActive(isActive);
             localStorage.setItem("announcementActive", String(isActive));
           }
+
+          if (res.data.data.saleEventActive !== undefined) {
+            const isSaleAct =
+              res.data.data.saleEventActive === "true" ||
+              res.data.data.saleEventActive === true;
+            setSaleEventActive(isSaleAct);
+            localStorage.setItem("saleEventActive", String(isSaleAct));
+          }
+          if (res.data.data.saleNavTitle !== undefined) {
+            setSaleNavTitle(res.data.data.saleNavTitle);
+            localStorage.setItem("saleNavTitle", res.data.data.saleNavTitle);
+          }
+          if (res.data.data.saleNavBadge !== undefined) {
+            setSaleNavBadge(res.data.data.saleNavBadge);
+            localStorage.setItem("saleNavBadge", res.data.data.saleNavBadge);
+          }
         }
       } catch (err) {
         console.error("Failed to load brand settings from DB:", err);
@@ -163,6 +189,15 @@ const MainLayout = () => {
       );
       setAnnouncementActive(
         localStorage.getItem("announcementActive") !== "false",
+      );
+      setSaleEventActive(
+        localStorage.getItem("saleEventActive") !== "false",
+      );
+      setSaleNavTitle(
+        localStorage.getItem("saleNavTitle") || "NAVRATRI SALE IS LIVE",
+      );
+      setSaleNavBadge(
+        localStorage.getItem("saleNavBadge") || "Sale",
       );
     };
     window.addEventListener("logo-updated", handleUpdate);
@@ -195,7 +230,16 @@ const MainLayout = () => {
     { title: "NEW ARRIVAL", path: "/shop?tag=New Arrival", badge: "New" },
     { title: "READYMADE DRESSES", path: "/shop?category=ethnic" },
     { title: "CO-ORD SETS", path: "/shop?category=co-ord-sets" },
-    { title: "SUMMER SALE IS LIVE", path: "/shop", badge: "Sale" },
+    ...(saleEventActive
+      ? [
+          {
+            title: saleNavTitle || "NAVRATRI SALE IS LIVE",
+            path: "/sale",
+            badge: saleNavBadge || "Sale",
+            isSale: true,
+          },
+        ]
+      : []),
     { title: "PREMIUM DRESSES", path: "/shop?category=suits" },
     { title: "ALL COLLECTION", path: "/collections" },
     { title: "TRACK YOUR ORDER", path: "/profile" },

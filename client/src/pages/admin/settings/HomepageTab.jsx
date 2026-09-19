@@ -8,8 +8,6 @@ const HomepageTab = ({
   setStoryImage,
   categories,
   setCategories,
-  vibeMoods,
-  setVibeMoods,
   campaignBanners,
   setCampaignBanners,
   campaignBannersActive,
@@ -62,24 +60,6 @@ const HomepageTab = ({
     setCategories(copy);
   };
 
-  const handleMoodImageChange = (e, index, imgKey) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const copy = [...vibeMoods];
-        copy[index] = { ...copy[index], [imgKey]: reader.result };
-        setVibeMoods(copy);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleMoodFieldChange = (index, field, value) => {
-    const copy = [...vibeMoods];
-    copy[index] = { ...copy[index], [field]: value };
-    setVibeMoods(copy);
-  };
 
   const handleCampaignImageChange = (e, index) => {
     const file = e.target.files[0];
@@ -212,112 +192,6 @@ const HomepageTab = ({
         </div>
       </div>
 
-      {/* VIBE GRID SECTIONS (Moods) */}
-      <div className="space-y-6 pt-8 border-t border-slate-100">
-        <div>
-          <h3 className="text-sm font-bold tracking-widest uppercase text-[#c5a880]">
-            Pick Your Vibe (Mood Grids)
-          </h3>
-          <p className="text-[11px] text-slate-500 mt-1">
-            Configure titles, paths, background images, and inset foreground
-            images for the 4 mood blocks.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {vibeMoods.map((mood, idx) => (
-            <div
-              key={idx}
-              className="p-4 bg-[#FAF9F6] border border-slate-200/80 rounded-xl space-y-4"
-            >
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] uppercase font-black tracking-widest text-[#c5a880]">
-                  Vibe Mood #{idx + 1}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                {/* Background Image */}
-                <div className="space-y-2">
-                  <label className="text-[9px] uppercase font-bold text-slate-500 block">
-                    Background Image
-                  </label>
-                  {mood.bgImg ? (
-                    <div className="w-full h-24 bg-white border border-slate-200 rounded overflow-hidden flex items-center justify-center">
-                      <img
-                        src={mood.bgImg}
-                        className="w-full h-full object-cover filter grayscale"
-                        alt="BG Preview"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-24 bg-slate-100 border border-slate-200 rounded flex items-center justify-center text-[8px] text-slate-400 italic">
-                      No BG
-                    </div>
-                  )}
-                  <label className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-[8px] uppercase font-black tracking-widest text-slate-600 py-1.5 px-3 rounded-lg cursor-pointer transition text-center block">
-                    Upload BG
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleMoodImageChange(e, idx, "bgImg")}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-
-                {/* Inset Image */}
-                <div className="space-y-2">
-                  <label className="text-[9px] uppercase font-bold text-slate-500 block">
-                    Foreground Inset Photo
-                  </label>
-                  {mood.insetImg ? (
-                    <div className="w-full h-24 bg-white border border-slate-200 rounded overflow-hidden flex items-center justify-center">
-                      <img
-                        src={mood.insetImg}
-                        className="w-full h-full object-cover"
-                        alt="Inset Preview"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-24 bg-slate-100 border border-slate-200 rounded flex items-center justify-center text-[8px] text-slate-400 italic">
-                      No Inset
-                    </div>
-                  )}
-                  <label className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-[8px] uppercase font-black tracking-widest text-slate-600 py-1.5 px-3 rounded-lg cursor-pointer transition text-center block">
-                    Upload Inset
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        handleMoodImageChange(e, idx, "insetImg")
-                      }
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  label="Title"
-                  value={mood.title || ""}
-                  onChange={(e) =>
-                    handleMoodFieldChange(idx, "title", e.target.value)
-                  }
-                />
-                <Input
-                  label="Navigation URL Path"
-                  value={mood.path || ""}
-                  onChange={(e) =>
-                    handleMoodFieldChange(idx, "path", e.target.value)
-                  }
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* CAMPAIGN BANNERS SECTIONS */}
       <div className="space-y-6 pt-8 border-t border-slate-100">

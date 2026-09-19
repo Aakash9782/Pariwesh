@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Icon from "../../theme/icons.jsx";
@@ -6,6 +6,18 @@ import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 import { RiAwardLine, RiLeafLine, RiShieldCheckLine } from "react-icons/ri";
 
 const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 768 : true,
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   if (!sliderConfig.active || sliderConfig.images.length === 0) return null;
 
   return (
@@ -13,7 +25,8 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
       {/* ======================================================== */}
       {/* DESKTOP HERO BANNER: Royal S-Curve with Fitted Showcase  */}
       {/* ======================================================== */}
-      <div className="hidden md:block w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 lg:py-5">
+      {isDesktop && (
+        <div className="hidden md:block w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 lg:py-5">
         <div className="relative h-[560px] lg:h-[600px] w-full rounded-[32px] overflow-hidden bg-[#FBF9F5] border border-[#c5a880]/30 shadow-[0_20px_50px_rgba(0,0,0,0.06)]">
           {/* Right Image Showcase Area (Shifted right with perfect breathing space) */}
           <div className="absolute right-0 top-0 bottom-0 w-[64%] lg:w-[66%] flex items-center justify-end pr-8 lg:pr-14 pl-12 z-0 overflow-hidden bg-gradient-to-br from-[#F8F5EE] via-[#F4EFE5] to-[#EBE4D5]">
@@ -191,11 +204,13 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
           )}
         </div>
       </div>
+      )}
 
       {/* ======================================================== */}
       {/* MOBILE HERO BANNER: Fitted Showcase & Editorial Card     */}
       {/* ======================================================== */}
-      <div className="md:hidden w-full px-3 sm:px-4 py-3 bg-white">
+      {!isDesktop && (
+        <div className="md:hidden w-full px-3 sm:px-4 py-3 bg-white">
         <div className="relative rounded-[24px] overflow-hidden bg-[#FBF9F5] border border-[#c5a880]/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
           {/* Image Showcase Area - Image FITS completely with zero cropping */}
           <div className="relative h-[340px] xs:h-[380px] w-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#F7F4EC] via-[#F3EFE4] to-[#E9E2D2]">
@@ -274,6 +289,7 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
           </div>
         </div>
       </div>
+    )}
     </section>
   );
 };

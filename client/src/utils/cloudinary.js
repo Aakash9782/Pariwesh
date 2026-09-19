@@ -48,8 +48,11 @@ export const optimizeCloudinaryUrl = (url, width, quality = "good") => {
       transformParts.push("q_auto");
     }
 
-    if (width) {
-      transformParts.push(`c_limit,w_${Math.round(width)}`);
+    // Use specified width or a safe high-res boundary cap (1200px)
+    // Cloudinary's c_limit will only downscale if the image exceeds the target width, never upscales.
+    const targetWidth = width !== undefined && width !== null ? Math.round(width) : 1200;
+    if (targetWidth > 0) {
+      transformParts.push(`c_limit,w_${targetWidth}`);
     }
 
     return `${prefix}${transformParts.join(",")}/${cleanPath}`;

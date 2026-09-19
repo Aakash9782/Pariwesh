@@ -8,6 +8,7 @@ import { store } from "./redux/store.js";
 import MainLayout from "./layouts/MainLayout.jsx";
 import Home from "./pages/Home.jsx";
 const ShopListings = lazy(() => import("./pages/shop/ShopListings.jsx"));
+const SalePage = lazy(() => import("./pages/shop/SalePage.jsx"));
 const ProductDetails = lazy(() => import("./pages/shop/ProductDetails.jsx"));
 const Collections = lazy(() => import("./pages/shop/Collections.jsx"));
 const CollectionDetail = lazy(
@@ -84,6 +85,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                 <Route path="/" element={<MainLayout />}>
                   <Route index element={<Home />} />
                   <Route path="shop" element={<ShopListings />} />
+                  <Route path="sale" element={<SalePage />} />
                   <Route path="product/:slug" element={<ProductDetails />} />
                   <Route path="collections" element={<Collections />} />
                   <Route

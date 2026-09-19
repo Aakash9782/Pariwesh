@@ -192,6 +192,285 @@ const GeneralTab = ({
         </div>
       </div>
 
+      {/* Festive & Event Campaign Manager (100% Dynamic - Navratri, Diwali, Wedding, etc.) */}
+      <div className="pt-6 border-t border-slate-200 space-y-4">
+        <div className="bg-[#FAF9F6] p-4.5 rounded-xl border border-slate-200/80 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                <span className="text-accent-gold">✦</span>
+                <span>Festive & Event Sale Campaign Manager</span>
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Control the festive sale navigation menu, ad banners, coupons, and countdown timer (Navratri, Diwali, Wedding, Summer, etc.)
+              </p>
+            </div>
+            <ToggleSwitch
+              id="saleEventActiveSwitch"
+              checked={
+                generalForm.saleEventActive === "true" ||
+                generalForm.saleEventActive === true
+              }
+              onChange={(val) =>
+                setGeneralForm({
+                  ...generalForm,
+                  saleEventActive: val ? "true" : "false",
+                })
+              }
+              label=""
+            />
+          </div>
+
+          {(generalForm.saleEventActive === "true" ||
+            generalForm.saleEventActive === true) && (
+            <div className="space-y-4 pt-2 border-t border-slate-200/60">
+              {/* Row 1: Navbar Title & Badge */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Navbar Menu Title (e.g. NAVRATRI SALE IS LIVE)"
+                  value={generalForm.saleNavTitle || ""}
+                  onChange={(e) =>
+                    setGeneralForm({
+                      ...generalForm,
+                      saleNavTitle: e.target.value,
+                    })
+                  }
+                  placeholder="e.g. NAVRATRI SALE IS LIVE"
+                />
+                <Input
+                  label="Navbar Badge Text (e.g. Sale, Festive, 50% Off)"
+                  value={generalForm.saleNavBadge || ""}
+                  onChange={(e) =>
+                    setGeneralForm({
+                      ...generalForm,
+                      saleNavBadge: e.target.value,
+                    })
+                  }
+                  placeholder="e.g. Sale"
+                />
+              </div>
+
+              {/* Row 2: Headline & Subtitle on Sale Landing */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Campaign Banner Headline"
+                  value={generalForm.saleHeadline || ""}
+                  onChange={(e) =>
+                    setGeneralForm({
+                      ...generalForm,
+                      saleHeadline: e.target.value,
+                    })
+                  }
+                  placeholder="e.g. Royal Festive Edit — Up to 50% Off"
+                />
+                <Input
+                  label="Campaign Subtitle / Tagline"
+                  value={generalForm.saleSubtitle || ""}
+                  onChange={(e) =>
+                    setGeneralForm({
+                      ...generalForm,
+                      saleSubtitle: e.target.value,
+                    })
+                  }
+                  placeholder="e.g. Handcrafted Zari & Cotton Silk Suits"
+                />
+              </div>
+
+              {/* Row 3: Promo Coupon & Discount Text */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Promo Coupon Code (1-Tap Copyable)"
+                  value={generalForm.salePromoCode || ""}
+                  onChange={(e) =>
+                    setGeneralForm({
+                      ...generalForm,
+                      salePromoCode: e.target.value.toUpperCase().trim(),
+                    })
+                  }
+                  placeholder="e.g. NAVRATRI15"
+                />
+                <Input
+                  label="Discount Callout Text"
+                  value={generalForm.saleDiscountText || ""}
+                  onChange={(e) =>
+                    setGeneralForm({
+                      ...generalForm,
+                      saleDiscountText: e.target.value,
+                    })
+                  }
+                  placeholder="e.g. EXTRA 15% OFF ON ORDERS ABOVE ₹1,999"
+                />
+              </div>
+
+              {/* Row 4: Countdown End Date & Min Discount Filter */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                    Sale Countdown End Date & Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={generalForm.saleEndDate || ""}
+                    onChange={(e) =>
+                      setGeneralForm({
+                        ...generalForm,
+                        saleEndDate: e.target.value,
+                      })
+                    }
+                    className="w-full h-10 px-3 border border-slate-300 rounded-lg text-xs text-slate-800 bg-white focus:outline-none focus:border-accent-gold"
+                  />
+                  <span className="text-[10px] text-slate-400">
+                    Live timer will tick down to this exact date/time
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                    Product Filter Criterion
+                  </label>
+                  <select
+                    value={generalForm.saleMinDiscount || "0"}
+                    onChange={(e) =>
+                      setGeneralForm({
+                        ...generalForm,
+                        saleMinDiscount: e.target.value,
+                      })
+                    }
+                    className="w-full h-10 px-3 border border-slate-300 rounded-lg text-xs text-slate-800 bg-white focus:outline-none focus:border-accent-gold"
+                  >
+                    <option value="0">All Discounted Suits (Price &lt; MRP)</option>
+                    <option value="20">Min 20% OFF or more</option>
+                    <option value="30">Min 30% OFF or more</option>
+                    <option value="40">Min 40% OFF or more</option>
+                    <option value="50">Min 50% OFF or more</option>
+                  </select>
+                  <span className="text-[10px] text-slate-400">
+                    Which products qualify for the festive sale showcase
+                  </span>
+                </div>
+              </div>
+
+              {/* Row 5: Banner Ad Images Upload (Desktop & Mobile) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                    Desktop Ad Poster (Optional)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {generalForm.saleBannerDesktop ? (
+                      <div className="h-16 w-28 bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+                        <img
+                          src={generalForm.saleBannerDesktop}
+                          alt="Desktop Banner"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-16 w-28 bg-slate-50 rounded-lg border border-dashed border-slate-200 flex items-center justify-center text-[9px] text-slate-400 text-center px-1">
+                        Royal Gradient (Default)
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded cursor-pointer border border-slate-300 transition text-center">
+                        Choose Desktop Image
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              const r = new FileReader();
+                              r.onloadend = () =>
+                                setGeneralForm((prev) => ({
+                                  ...prev,
+                                  saleBannerDesktop: r.result,
+                                }));
+                              r.readAsDataURL(file);
+                            }
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                      {generalForm.saleBannerDesktop && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setGeneralForm((prev) => ({
+                              ...prev,
+                              saleBannerDesktop: "",
+                            }))
+                          }
+                          className="text-[10px] text-red-600 hover:underline text-left cursor-pointer"
+                        >
+                          Remove Image
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                    Mobile Ad Poster (Optional)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {generalForm.saleBannerMobile ? (
+                      <div className="h-16 w-20 bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+                        <img
+                          src={generalForm.saleBannerMobile}
+                          alt="Mobile Banner"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-16 w-20 bg-slate-50 rounded-lg border border-dashed border-slate-200 flex items-center justify-center text-[9px] text-slate-400 text-center px-1">
+                        Fitted (Default)
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded cursor-pointer border border-slate-300 transition text-center">
+                        Choose Mobile Image
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              const r = new FileReader();
+                              r.onloadend = () =>
+                                setGeneralForm((prev) => ({
+                                  ...prev,
+                                  saleBannerMobile: r.result,
+                                }));
+                              r.readAsDataURL(file);
+                            }
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                      {generalForm.saleBannerMobile && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setGeneralForm((prev) => ({
+                              ...prev,
+                              saleBannerMobile: "",
+                            }))
+                          }
+                          className="text-[10px] text-red-600 hover:underline text-left cursor-pointer"
+                        >
+                          Remove Image
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="pt-2">
         <Button
           type="submit"

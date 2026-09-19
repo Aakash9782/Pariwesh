@@ -76,14 +76,14 @@ const PremiumBannerSlider = ({ adConfig, handleCopyCode, copiedCode }) => {
         .filter((s) => s.enabled !== false)
         .map((s) => ({
           id: s.id || `slide-${s.priority || 1}-${s.title}`,
-          desktopSrc: optimizeCloudinaryUrl(s.desktopImage || "/hero.png"),
+          desktopSrc: optimizeCloudinaryUrl(s.desktopImage || "/hero.png", 1200),
           tabletSrc:
-            optimizeCloudinaryUrl(s.tabletImage) ||
-            optimizeCloudinaryUrl(s.desktopImage || "/hero.png"),
+            optimizeCloudinaryUrl(s.tabletImage, 800) ||
+            optimizeCloudinaryUrl(s.desktopImage || "/hero.png", 800),
           mobileSrc:
-            optimizeCloudinaryUrl(s.mobileImage) ||
-            optimizeCloudinaryUrl(s.tabletImage) ||
-            optimizeCloudinaryUrl(s.desktopImage || "/hero.png"),
+            optimizeCloudinaryUrl(s.mobileImage, 500) ||
+            optimizeCloudinaryUrl(s.tabletImage, 500) ||
+            optimizeCloudinaryUrl(s.desktopImage || "/hero.png", 500),
           title: s.title || "GRAND FESTIVE PARIWESH SALE",
           subtitle: s.subtitle || "",
           categoryLabel: s.badge || "Special Promotion",
@@ -100,15 +100,16 @@ const PremiumBannerSlider = ({ adConfig, handleCopyCode, copiedCode }) => {
       // Legacy fallback structure parsing
       const adDesktopSrc = optimizeCloudinaryUrl(
         adConfig?.desktopImage || adConfig?.bannerImage,
+        1200,
       );
       if (adDesktopSrc) {
         campaignSlides.push({
           id: "legacy-campaign-row",
           desktopSrc: adDesktopSrc,
           tabletSrc:
-            optimizeCloudinaryUrl(adConfig?.tabletImage) || adDesktopSrc,
+            optimizeCloudinaryUrl(adConfig?.tabletImage, 800) || adDesktopSrc,
           mobileSrc:
-            optimizeCloudinaryUrl(adConfig?.mobileImage) || adDesktopSrc,
+            optimizeCloudinaryUrl(adConfig?.mobileImage, 500) || adDesktopSrc,
           title: adConfig?.title || "GRAND FESTIVE PARIWESH SALE",
           subtitle:
             adConfig?.subtitle || "Handcrafted Luxury suits up to 40% Off",

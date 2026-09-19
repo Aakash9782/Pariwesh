@@ -119,6 +119,9 @@ const ShopListings = () => {
     searchQuery,
   ]);
 
+  const isSaleOnly = searchParams.get("sale") === "true";
+  const tagParam = searchParams.get("tag");
+
   // Filter computation logic
   const filteredProducts = products
     .filter((product) => {
@@ -129,6 +132,16 @@ const ShopListings = () => {
       const sizeMatch =
         selectedSize === "all" || product.sizes.includes(selectedSize);
       const priceMatch = product.price <= priceRange;
+      const saleMatch =
+        !isSaleOnly ||
+        (Number(product.mrp) > Number(product.price || product.sellingPrice) ||
+          (product.tag && product.tag.toLowerCase().includes("sale")) ||
+          (product.tag && product.tag.toLowerCase().includes("offer")));
+      const tagMatch =
+        !tagParam ||
+        (product.tag &&
+          product.tag.toLowerCase() === tagParam.toLowerCase().trim());
+
       const searchMatch = searchQuery
         ? (() => {
             const query = searchQuery.trim().toLowerCase();
@@ -148,7 +161,15 @@ const ShopListings = () => {
             );
           })()
         : true;
-      return catMatch && colorMatch && sizeMatch && priceMatch && searchMatch;
+      return (
+        catMatch &&
+        colorMatch &&
+        sizeMatch &&
+        priceMatch &&
+        searchMatch &&
+        saleMatch &&
+        tagMatch
+      );
     })
     .sort((a, b) => {
       if (sortBy === "price-low") return a.price - b.price;

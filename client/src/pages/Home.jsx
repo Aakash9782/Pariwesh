@@ -184,16 +184,6 @@ const Home = () => {
     );
   });
 
-  const [dynVibeMoods, setDynVibeMoods] = useState(() => {
-    const cached = localStorage.getItem("homeVibeMoods");
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
-    }
-    return null;
-  });
 
   // Dynamic Flash Sale Countdown State
   const [countdownConfig, setCountdownConfig] = useState({
@@ -409,17 +399,6 @@ const Home = () => {
               console.error("Failed to parse homeCategories:", e);
             }
           }
-          if (settings.homeVibeMoods) {
-            try {
-              const parsed = JSON.parse(settings.homeVibeMoods);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setDynVibeMoods(parsed);
-                safeSetItem("homeVibeMoods", settings.homeVibeMoods);
-              }
-            } catch (e) {
-              console.error("Failed to parse homeVibeMoods:", e);
-            }
-          }
           if (settings.homeCampaignBanners) {
             try {
               const parsed = JSON.parse(settings.homeCampaignBanners);
@@ -496,15 +475,6 @@ const Home = () => {
           const parsed = JSON.parse(localCategories);
           if (Array.isArray(parsed) && parsed.length > 0) {
             setDynCategories(parsed);
-          }
-        } catch (e) {}
-      }
-      const localVibeMoods = localStorage.getItem("homeVibeMoods");
-      if (localVibeMoods) {
-        try {
-          const parsed = JSON.parse(localVibeMoods);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setDynVibeMoods(parsed);
           }
         } catch (e) {}
       }

@@ -71,7 +71,7 @@ const VibeGrid = ({ vibeMoods, settingsLoading }) => {
                 <div
                   className="absolute inset-0 bg-cover bg-center filter grayscale group-hover:grayscale-0 brightness-[0.4] group-hover:brightness-[0.5] transition-all duration-700 w-full h-full"
                   style={{
-                    backgroundImage: `url(${optimizeCloudinaryUrl(vibe.bgImg)})`,
+                    backgroundImage: `url(${optimizeCloudinaryUrl(vibe.bgImg, 500, "eco")})`,
                   }}
                 />
 
@@ -83,7 +83,7 @@ const VibeGrid = ({ vibeMoods, settingsLoading }) => {
                 {/* Smaller Color Inset Photo centered */}
                 <div className="w-[140px] aspect-[4/5] overflow-hidden shadow-2xl relative border-[3px] border-white z-10 transition-transform duration-500 group-hover:scale-105">
                   <img
-                    src={optimizeCloudinaryUrl(vibe.insetImg)}
+                    src={optimizeCloudinaryUrl(vibe.insetImg, 280)}
                     alt={vibe.title}
                     loading="lazy"
                     decoding="async"

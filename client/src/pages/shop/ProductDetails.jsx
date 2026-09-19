@@ -26,6 +26,7 @@ import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
 import SEO from "../../components/common/SEO.jsx";
 import SizeChartModal from "../../components/common/SizeChartModal.jsx";
+import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 import {
   syncCartNow,
   syncWishlistNow,
@@ -173,15 +174,8 @@ const ProductDetails = () => {
     fetchOffers();
   }, [slug]);
 
-  // Cloudinary image optimization utility
-  const getOptimizedImageUrl = (url, width) => {
-    if (!url) return "";
-    if (url.includes("cloudinary.com")) {
-      const resizeParams = width ? `c_limit,w_${width},` : "";
-      return url.replace("/upload/", `/upload/${resizeParams}f_auto,q_auto/`);
-    }
-    return url;
-  };
+  // Central Cloudinary image optimization utility
+  const getOptimizedImageUrl = (url, width) => optimizeCloudinaryUrl(url, width);
 
   if (fetching) {
     return (

@@ -55,6 +55,19 @@ const SettingsPage = () => {
     announcementText:
       "✨ USE CODE PARIWESHGOLD TO GET 15% OFF + FREE SHIPPING ON APPAREL ABOVE ₹1500 ✨",
     announcementActive: "true",
+    saleEventActive: "true",
+    saleNavTitle: "NAVRATRI SALE IS LIVE",
+    saleNavBadge: "Sale",
+    saleBannerDesktop: "",
+    saleBannerMobile: "",
+    saleHeadline: "Royal Festive Edit — Up to 50% Off",
+    saleSubtitle:
+      "Handcrafted Zari & Cotton Silk Ensembles. Limited Festive Quantities.",
+    salePromoCode: "NAVRATRI15",
+    saleDiscountText: "EXTRA 15% OFF ON ORDERS ABOVE ₹1,999",
+    saleEndDate: "",
+    saleMinDiscount: "30",
+    saleFilterTag: "",
   });
 
   // Shipping & Payment configs
@@ -80,32 +93,6 @@ const SettingsPage = () => {
     { title: "Co-Ord Sets", path: "/shop?category=suits", image: "" },
     { title: "Best Sellers", path: "/shop?tag=Best Seller", image: "" },
     { title: "New Arrivals", path: "/shop?tag=New Arrival", image: "" },
-  ]);
-  const [vibeMoods, setVibeMoods] = useState([
-    {
-      title: "Day To Dusk",
-      path: "/shop?tag=Best Seller",
-      bgImg: "",
-      insetImg: "",
-    },
-    {
-      title: "The Linen Edit",
-      path: "/shop?category=kurtis",
-      bgImg: "",
-      insetImg: "",
-    },
-    {
-      title: "Not So Boring",
-      path: "/shop?category=suits",
-      bgImg: "",
-      insetImg: "",
-    },
-    {
-      title: "Festive Essentials",
-      path: "/shop?category=ethnic",
-      bgImg: "",
-      insetImg: "",
-    },
   ]);
 
   const [campaignBanners, setCampaignBanners] = useState([
@@ -173,6 +160,25 @@ const SettingsPage = () => {
             data.announcementActive === undefined
               ? "true"
               : String(data.announcementActive),
+          saleEventActive:
+            data.saleEventActive === undefined
+              ? "true"
+              : String(data.saleEventActive),
+          saleNavTitle: data.saleNavTitle || "NAVRATRI SALE IS LIVE",
+          saleNavBadge: data.saleNavBadge || "Sale",
+          saleBannerDesktop: data.saleBannerDesktop || "",
+          saleBannerMobile: data.saleBannerMobile || "",
+          saleHeadline:
+            data.saleHeadline || "Royal Festive Edit — Up to 50% Off",
+          saleSubtitle:
+            data.saleSubtitle ||
+            "Handcrafted Zari & Cotton Silk Ensembles. Limited Festive Quantities.",
+          salePromoCode: data.salePromoCode || "NAVRATRI15",
+          saleDiscountText:
+            data.saleDiscountText || "EXTRA 15% OFF ON ORDERS ABOVE ₹1,999",
+          saleEndDate: data.saleEndDate || "",
+          saleMinDiscount: data.saleMinDiscount || "30",
+          saleFilterTag: data.saleFilterTag || "",
         });
         setShippingForm({
           codEnabled: data.codEnabled || "true",
@@ -197,16 +203,6 @@ const SettingsPage = () => {
             const parsed = JSON.parse(data.homeCategories);
             if (Array.isArray(parsed) && parsed.length > 0) {
               setCategories(parsed);
-            }
-          } catch (e) {
-            console.error(e);
-          }
-        }
-        if (data.homeVibeMoods) {
-          try {
-            const parsed = JSON.parse(data.homeVibeMoods);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setVibeMoods(parsed);
             }
           } catch (e) {
             console.error(e);
@@ -300,6 +296,18 @@ const SettingsPage = () => {
         "announcementActive",
         generalForm.announcementActive || "true",
       );
+      localStorage.setItem(
+        "saleEventActive",
+        generalForm.saleEventActive || "true",
+      );
+      localStorage.setItem(
+        "saleNavTitle",
+        generalForm.saleNavTitle || "NAVRATRI SALE IS LIVE",
+      );
+      localStorage.setItem(
+        "saleNavBadge",
+        generalForm.saleNavBadge || "Sale",
+      );
       window.dispatchEvent(new Event("settings-updated"));
       alert("General system parameters saved successfully!");
       fetchSettings();
@@ -348,7 +356,6 @@ const SettingsPage = () => {
       setSettingsLoading(true);
       await saveSettingKey("homeStoryImage", storyImage);
       await saveSettingKey("homeCategories", JSON.stringify(categories));
-      await saveSettingKey("homeVibeMoods", JSON.stringify(vibeMoods));
       await saveSettingKey(
         "homeCampaignBanners",
         JSON.stringify(campaignBanners),
@@ -600,8 +607,6 @@ const SettingsPage = () => {
                 setStoryImage={setStoryImage}
                 categories={categories}
                 setCategories={setCategories}
-                vibeMoods={vibeMoods}
-                setVibeMoods={setVibeMoods}
                 campaignBanners={campaignBanners}
                 setCampaignBanners={setCampaignBanners}
                 campaignBannersActive={campaignBannersActive}
