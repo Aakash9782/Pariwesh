@@ -249,7 +249,7 @@ const Home = () => {
                 tag: p.tag || p.tags || "",
                 sizes:
                   Array.isArray(p.sizes) && p.sizes.length > 0
-                    ? p.sizes.filter((s) => s !== "S")
+                    ? p.sizes
                     : ["M", "L", "XL", "XXL"],
                 sizesStock: p.sizesStock || { M: 10, L: 10, XL: 10, XXL: 10 },
               };
@@ -1033,7 +1033,7 @@ const Home = () => {
                       </span>
                       <div className="flex justify-center items-center gap-1.5 w-full px-1">
                         {(product.sizes && product.sizes.length > 0
-                          ? product.sizes.filter((s) => s !== "S")
+                          ? product.sizes
                           : ["M", "L", "XL", "XXL"]
                         ).map((size) => {
                           const isOutOfStock =
@@ -1096,7 +1096,7 @@ const Home = () => {
                       <span className="text-slate-400 font-semibold uppercase text-[9px] tracking-wider">Sizes:</span>
                       <div className="flex items-center space-x-1">
                         {(product.sizes && product.sizes.length > 0
-                          ? product.sizes.filter((s) => s !== "S")
+                          ? product.sizes
                           : ["M", "L", "XL", "XXL"]
                         ).map((sz) => {
                           const isOut =

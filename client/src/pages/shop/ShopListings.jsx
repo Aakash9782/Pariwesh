@@ -130,8 +130,23 @@ const ShopListings = () => {
         selectedSize === "all" || product.sizes.includes(selectedSize);
       const priceMatch = product.price <= priceRange;
       const searchMatch = searchQuery
-        ? product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.sku.toLowerCase().includes(searchQuery.toLowerCase())
+        ? (() => {
+            const query = searchQuery.trim().toLowerCase();
+            return (
+              (product.name && product.name.toLowerCase().includes(query)) ||
+              (product.sku && product.sku.toLowerCase().includes(query)) ||
+              (product.metaKeywords &&
+                product.metaKeywords.toLowerCase().includes(query)) ||
+              (product.subCategory &&
+                product.subCategory.toLowerCase().includes(query)) ||
+              (product.fabric &&
+                product.fabric.toLowerCase().includes(query)) ||
+              (product.tag && product.tag.toLowerCase().includes(query)) ||
+              (product.color && product.color.toLowerCase().includes(query)) ||
+              (product.category &&
+                product.category.toLowerCase().includes(query))
+            );
+          })()
         : true;
       return catMatch && colorMatch && sizeMatch && priceMatch && searchMatch;
     })
@@ -486,7 +501,7 @@ const ShopListings = () => {
                           </span>
                           <div className="flex justify-center items-center gap-1.5 w-full px-1">
                             {(product.sizes && product.sizes.length > 0
-                              ? product.sizes.filter((s) => s !== "S")
+                              ? product.sizes
                               : ["M", "L", "XL", "XXL"]
                             ).map((size) => {
                               const isOutOfStock =
@@ -549,7 +564,7 @@ const ShopListings = () => {
                           <span className="text-slate-400 font-semibold uppercase text-[9px] tracking-wider">Sizes:</span>
                           <div className="flex items-center space-x-1">
                             {(product.sizes && product.sizes.length > 0
-                              ? product.sizes.filter((s) => s !== "S")
+                              ? product.sizes
                               : ["M", "L", "XL", "XXL"]
                             ).map((sz) => {
                               const isOut =

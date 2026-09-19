@@ -228,13 +228,18 @@ export const ProductHierarchyTab = () => {
           </select>
         </div>
         <div className="flex flex-col">
-          <label className="text-xs font-semibold text-slate-700 block mb-1.5">
-            Search Keywords / Tags
-          </label>
+          <div className="flex justify-between items-center mb-1.5">
+            <label className="text-xs font-semibold text-slate-700">
+              Product Badge Tag
+            </label>
+            <span className="text-[10px] text-slate-400 font-sans">
+              (Card corner badge)
+            </span>
+          </div>
           <input
             type="text"
-            placeholder="comma block e.g. handblock, indigo, wedding, rayon"
-            value={form.tag}
+            placeholder="e.g. Festive Wear, Trending, Best Seller, Handcrafted"
+            value={form.tag || ""}
             onChange={(e) => setForm({ ...form, tag: e.target.value })}
             className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent-gold/20 focus:border-accent-gold transition"
           />
@@ -392,17 +397,18 @@ export const ProductDetailsTab = () => {
       colorGroup: sibling.colorGroup || "",
       color: sibling.color || "Ivory",
       colorHex: sibling.colorHex || "#F5F5F0",
-      sizes: sibling.sizes?.filter((s) => s !== "S") || [
+      sizes: (sibling.sizes && sibling.sizes.length > 0) ? sibling.sizes : [
         "M",
         "L",
         "XL",
         "XXL",
       ],
-      sizesStock: {
-        M: sibling.sizesStock?.M ?? 10,
-        L: sibling.sizesStock?.L ?? 10,
-        XL: sibling.sizesStock?.XL ?? 10,
-        XXL: sibling.sizesStock?.XXL ?? 10,
+      sizesStock: sibling.sizesStock || {
+        S: 0,
+        M: 10,
+        L: 10,
+        XL: 10,
+        XXL: 10,
       },
       mrp: sibling.mrp || "",
       price: sibling.price || "",
@@ -930,34 +936,98 @@ export const ProductVisibilityTab = () => {
         </div>
       </div>
 
-      {/* Size Stock Management inside Visibility tab */}
+      {/* Dynamic Size & Stock Management inside Visibility tab */}
       <div className="space-y-4 pt-6 border-t border-slate-100">
-        <h5 className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">
-          Available size stocks
-        </h5>
-        <div className="grid grid-cols-4 gap-3.5">
-          {["M", "L", "XL", "XXL"].map((sz, idx) => (
-            <div key={idx} className="flex flex-col text-center">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                Size {sz}
-              </label>
-              <input
-                type="number"
-                value={form.sizesStock?.[sz] || 0}
-                onChange={(e) =>
+        <div>
+          <h5 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+            Available Sizes & Inventory Management
+          </h5>
+          <p className="text-[11px] text-slate-500 mt-0.5 font-sans">
+            Click on size pills to enable or disable them for this product. Enter the available stock for each active size.
+          </p>
+        </div>
+
+        {/* Size Pills Toggle Bar */}
+        <div className="flex flex-wrap gap-2 pt-1">
+          {["XS", "S", "M", "L", "XL", "XXL", "3XL", "Free Size"].map((sz) => {
+            const isSelected = (form.sizes || []).includes(sz);
+            return (
+              <button
+                key={sz}
+                type="button"
+                onClick={() => {
+                  const currentSizes = form.sizes || ["M", "L", "XL", "XXL"];
+                  let updatedSizes;
+                  let updatedStock = { ...(form.sizesStock || {}) };
+                  if (isSelected) {
+                    updatedSizes = currentSizes.filter((s) => s !== sz);
+                  } else {
+                    updatedSizes = [...currentSizes, sz];
+                    if (updatedStock[sz] === undefined || updatedStock[sz] === 0) {
+                      updatedStock[sz] = 10;
+                    }
+                  }
                   setForm({
                     ...form,
-                    sizesStock: {
-                      ...form.sizesStock,
-                      [sz]: Number(e.target.value),
-                    },
-                  })
-                }
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-center text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent-gold/20 focus:border-accent-gold transition"
-              />
-            </div>
-          ))}
+                    sizes: updatedSizes,
+                    sizesStock: updatedStock,
+                  });
+                }}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold font-sans transition-all duration-200 cursor-pointer flex items-center space-x-1.5 ${
+                  isSelected
+                    ? "bg-[#8a1c14] text-white shadow-xs scale-105 border border-[#8a1c14]"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200"
+                }`}
+              >
+                <span>{isSelected ? "✓" : "+"}</span>
+                <span>{sz}</span>
+              </button>
+            );
+          })}
         </div>
+
+        {/* Dynamic Stock Input Matrix for Active Sizes */}
+        {(form.sizes || []).length > 0 ? (
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+            <div className="flex justify-between items-center">
+              <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                Stock Count By Active Size
+              </span>
+              <span className="text-[11px] text-slate-500 font-mono">
+                Total Stock: <strong className="text-[#8a1c14] font-bold">{Object.entries(form.sizesStock || {}).filter(([k]) => (form.sizes || []).includes(k)).reduce((acc, [, val]) => acc + (Number(val) || 0), 0)}</strong> units
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3">
+              {(form.sizes || []).map((sz) => (
+                <div key={sz} className="flex flex-col bg-white border border-slate-200 rounded-lg p-2 text-center shadow-2xs">
+                  <label className="text-[10px] font-bold text-slate-700 uppercase mb-1">
+                    {sz}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.sizesStock?.[sz] ?? 0}
+                    onChange={(e) => {
+                      const qty = Math.max(0, parseInt(e.target.value) || 0);
+                      setForm({
+                        ...form,
+                        sizesStock: {
+                          ...form.sizesStock,
+                          [sz]: qty,
+                        },
+                      });
+                    }}
+                    className="w-full bg-slate-50 border border-slate-200 rounded text-center text-xs py-1 text-slate-800 font-mono font-bold focus:bg-white focus:outline-none focus:ring-1 focus:ring-accent-gold"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 font-medium">
+            ⚠️ Please select at least one available size above.
+          </div>
+        )}
       </div>
 
       {/* Size Chart & Fit Guide Configuration */}

@@ -12,6 +12,28 @@ import {
 // Standard Brand Ethnic Wear Specifications (Inches)
 const DEFAULT_ETHNIC_SIZES = [
   {
+    size: "XS",
+    standard: "34",
+    bust: 34,
+    waist: 30,
+    hip: 38,
+    shoulder: 13.5,
+    length: 44,
+    bottomWaist: "24-28",
+    bottomLength: 36,
+  },
+  {
+    size: "S",
+    standard: "36",
+    bust: 36,
+    waist: 32,
+    hip: 40,
+    shoulder: 14,
+    length: 44.5,
+    bottomWaist: "26-30",
+    bottomLength: 36.5,
+  },
+  {
     size: "M",
     standard: "38",
     bust: 38,
@@ -54,6 +76,17 @@ const DEFAULT_ETHNIC_SIZES = [
     length: 46,
     bottomWaist: "40-44",
     bottomLength: 38.5,
+  },
+  {
+    size: "3XL",
+    standard: "46",
+    bust: 46,
+    waist: 42,
+    hip: 50,
+    shoulder: 16.5,
+    length: 46.5,
+    bottomWaist: "42-46",
+    bottomLength: 39,
   },
 ];
 

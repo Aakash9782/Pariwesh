@@ -620,12 +620,13 @@ const ProductsPage = () => {
       colorGroup: prod.colorGroup || "",
       color: prod.color || "Ivory",
       colorHex: prod.colorHex || "#F5F5F0",
-      sizes: prod.sizes?.filter((s) => s !== "S") || ["M", "L", "XL", "XXL"],
-      sizesStock: {
-        M: prod.sizesStock?.M ?? 10,
-        L: prod.sizesStock?.L ?? 10,
-        XL: prod.sizesStock?.XL ?? 10,
-        XXL: prod.sizesStock?.XXL ?? 10,
+      sizes: (prod.sizes && prod.sizes.length > 0) ? prod.sizes : ["M", "L", "XL", "XXL"],
+      sizesStock: prod.sizesStock || {
+        S: 0,
+        M: 10,
+        L: 10,
+        XL: 10,
+        XXL: 10,
       },
       sizeChart: prod.sizeChart || {
         type: "table",

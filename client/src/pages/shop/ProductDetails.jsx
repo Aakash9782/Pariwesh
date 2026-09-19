@@ -144,9 +144,9 @@ const ProductDetails = () => {
           setProduct(data);
           setActiveImage(data.images?.[0] || "");
           setActiveVideo(null);
-          const validSizes = (data.sizes || []).filter((s) => s !== "S");
+          const validSizes = data.sizes || [];
           setSelectedSize(
-            validSizes.length > 0 ? validSizes[0] : data.sizes?.[0] || "",
+            validSizes.length > 0 ? validSizes[0] : "",
           );
           trackViewContent(data);
         } else {
@@ -656,7 +656,6 @@ const ProductDetails = () => {
                 <div className="flex flex-col space-y-2">
                   <div className="flex flex-wrap gap-2.5 sm:gap-3">
                     {product.sizes
-                      .filter((sz) => sz !== "S")
                       .map((sz) => {
                         const isOutOfStock = product.sizesStock
                           ? Number(product.sizesStock[sz]) <= 0
@@ -1317,10 +1316,7 @@ const ProductDetails = () => {
               {/* Quick Inline Size Switcher */}
               {product.sizes && product.sizes.length > 0 && (
                 <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-                  {(product.sizes.filter((s) => s !== "S").length > 0
-                    ? product.sizes.filter((s) => s !== "S")
-                    : product.sizes
-                  ).map((sz) => {
+                  {product.sizes.map((sz) => {
                     const isSelected = selectedSize === sz;
                     return (
                       <button

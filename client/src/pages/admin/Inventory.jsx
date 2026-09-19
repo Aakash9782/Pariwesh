@@ -62,7 +62,7 @@ const InventoryPage = () => {
 
   const handleEditStockInit = (prod) => {
     setEditingId(prod._id);
-    setEditStockState(prod.sizesStock || { M: 0, L: 0, XL: 0, XXL: 0 });
+    setEditStockState(prod.sizesStock || { S: 0, M: 0, L: 0, XL: 0, XXL: 0 });
   };
 
   const handleStockValueChange = (size, val) => {
@@ -288,7 +288,7 @@ const InventoryPage = () => {
                       <td className="py-4 px-5 text-center">
                         {isEditing ? (
                           <div className="flex items-center justify-center space-x-1.5 font-sans">
-                            {["M", "L", "XL", "XXL"].map((sz) => (
+                            {(p.sizes && p.sizes.length > 0 ? p.sizes : ["M", "L", "XL", "XXL"]).map((sz) => (
                               <div key={sz} className="text-[10px] space-y-0.5">
                                 <span className="block text-slate-500 font-bold uppercase text-[9px]">
                                   {sz}
@@ -303,14 +303,14 @@ const InventoryPage = () => {
                                   onChange={(e) =>
                                     handleStockValueChange(sz, e.target.value)
                                   }
-                                  className="w-9 bg-white border border-slate-200 text-slate-800 rounded p-1 text-center font-mono text-[11px] focus:outline-[#c5a880] focus:ring-1 focus:ring-[#c5a880]"
+                                  className="w-10 bg-white border border-slate-200 text-slate-800 rounded p-1 text-center font-mono text-[11px] focus:outline-[#c5a880] focus:ring-1 focus:ring-[#c5a880]"
                                 />
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <div className="flex items-center justify-center space-x-3.5">
-                            {["M", "L", "XL", "XXL"].map((sz) => {
+                          <div className="flex items-center justify-center space-x-2.5">
+                            {(p.sizes && p.sizes.length > 0 ? p.sizes : ["M", "L", "XL", "XXL"]).map((sz) => {
                               const val = p.sizesStock?.[sz] || 0;
                               return (
                                 <span
@@ -323,7 +323,7 @@ const InventoryPage = () => {
                                   <span
                                     className={
                                       val === 0
-                                        ? "text-rose-605 font-bold"
+                                        ? "text-rose-600 font-bold"
                                         : "text-slate-800"
                                     }
                                   >
