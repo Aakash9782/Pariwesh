@@ -62,7 +62,7 @@ export const getSitemap = async (req, res, next) => {
     try {
       const products = await Product.find({
         status: { $in: ["active", "Active"] },
-      }).select("name slug images updatedAt");
+      }).select("name slug images seoTitle updatedAt");
 
       productUrls = (products || []).map((prod) => ({
         loc: `${domain}/product/${prod.slug}`,
@@ -72,7 +72,7 @@ export const getSitemap = async (req, res, next) => {
         changefreq: "weekly",
         priority: "0.8",
         image: prod.images && prod.images.length > 0 ? prod.images[0] : null,
-        title: prod.name || "",
+        title: prod.seoTitle || prod.name || "",
       }));
     } catch (dbErr) {
       console.warn("[Sitemap] Product query fallback:", dbErr.message);
@@ -167,7 +167,7 @@ export const getGoogleMerchantFeed = async (req, res, next) => {
         status: { $in: ["active", "Active"] },
       })
         .select(
-          "sku name slug description mrp price stock sizes sizesStock images brand color fabric material category seoTitle seoDescription"
+          "sku name slug description mrp price stock sizes sizesStock images brand color fabric material category subCategory seoTitle seoDescription metaKeywords"
         )
         .lean();
     } catch (dbErr) {
@@ -185,9 +185,23 @@ export const getGoogleMerchantFeed = async (req, res, next) => {
       try {
         // Validation: Google Merchant requires an ID, Title, Description, Link, Price, and Image Link
         const id = prod.sku ? String(prod.sku).trim() : String(prod._id);
-        const title = prod.name ? String(prod.name).trim() : (prod.seoTitle || "Pariwesh Ethnic Ensemble");
-        const rawDesc = prod.description || prod.seoDescription || "Premium ethnic wear ensemble designed for high quality luxury styles by Pariwesh.";
-        const cleanDesc = stripHtml(rawDesc).slice(0, 5000);
+        // Prioritize admin-crafted keyword-rich seoTitle, fallback to product name
+        const title =
+          (prod.seoTitle && prod.seoTitle.trim()) ||
+          (prod.name && prod.name.trim()) ||
+          "Pariwesh Ethnic Ensemble";
+
+        const baseDesc =
+          (prod.seoDescription && prod.seoDescription.trim()) ||
+          prod.description ||
+          "Premium ethnic wear ensemble designed for high quality luxury styles by Pariwesh.";
+
+        // Inject keywords into description so Google Merchant ranking algorithm matches user queries
+        const keywordsSnippet =
+          prod.metaKeywords && prod.metaKeywords.trim()
+            ? ` | Keywords: ${prod.metaKeywords.trim()}`
+            : "";
+        const cleanDesc = stripHtml(`${baseDesc}${keywordsSnippet}`).slice(0, 5000);
         const productUrl = `${domain}/product/${prod.slug || id}`;
 
         const validImages = Array.isArray(prod.images)
@@ -234,7 +248,10 @@ export const getGoogleMerchantFeed = async (req, res, next) => {
         xml += `      <g:identifier_exists>no</g:identifier_exists>\n`;
         // Google Apparel & Accessories > Clothing > Traditional & Ceremonial Clothing
         xml += `      <g:google_product_category>1604</g:google_product_category>\n`;
-        xml += `      <g:product_type>${escapeXml(category)}</g:product_type>\n`;
+        const productType = prod.subCategory
+          ? `${category} > ${prod.subCategory}`
+          : category;
+        xml += `      <g:product_type>${escapeXml(productType)}</g:product_type>\n`;
         xml += `      <g:gender>female</g:gender>\n`;
         xml += `      <g:age_group>adult</g:age_group>\n`;
 

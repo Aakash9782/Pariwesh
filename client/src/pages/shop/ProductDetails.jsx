@@ -332,6 +332,9 @@ const ProductDetails = () => {
           `Premium handcrafted ${product.name} from PARIWESH.`,
         sku: product.sku || "",
         category: product.category || "Ethnic Wear",
+        keywords:
+          (product.metaKeywords && product.metaKeywords.trim()) ||
+          `${product.name}, ${product.category || "suits"}, ethnic wear, pariwesh`,
         offers: {
           "@type": "Offer",
           url:
@@ -389,13 +392,21 @@ const ProductDetails = () => {
     : null;
 
   const seoTitle = product
-    ? `${product.name} - Buy Premium Ethnic Wear`
+    ? (product.seoTitle && product.seoTitle.trim()) ||
+      `${product.name} - Buy Premium Ethnic Wear`
     : "Product Details";
+
   const seoDesc = product
-    ? `Buy ${product.name} at ₹${product.price} online. ${product.description || ""}`.substring(
+    ? (product.seoDescription && product.seoDescription.trim()) ||
+      `Buy ${product.name} at ₹${product.price} online. ${product.description || ""}`.substring(
         0,
         155,
       )
+    : "";
+
+  const seoKeywords = product
+    ? (product.metaKeywords && product.metaKeywords.trim()) ||
+      `${product.name}, ${product.category || "suits"}, ethnic wear, designer wear, pariwesh`
     : "";
 
   return (
@@ -403,6 +414,7 @@ const ProductDetails = () => {
       <SEO
         title={seoTitle}
         description={seoDesc}
+        keywords={seoKeywords}
         ogImage={productImageUrl}
         ogType="product"
         structuredData={[productSchema, breadcrumbSchema].filter(Boolean)}
