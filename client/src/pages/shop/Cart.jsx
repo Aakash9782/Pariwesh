@@ -24,7 +24,7 @@ import {
 } from "../../redux/slices/cartSlice.js";
 import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
-import { updateProfile } from "../../redux/slices/authSlice.js";
+import { updateProfile, authSuccess } from "../../redux/slices/authSlice.js";
 import { syncCartNow } from "../../services/hydrateCommerce.js";
 import {
   trackInitiateCheckout,
@@ -118,8 +118,8 @@ const Cart = () => {
   const [deliveredCount, setDeliveredCount] = useState(0);
   const [failedOrder, setFailedOrder] = useState(null);
 
-  // Checkout flow states
-  const [checkoutStep, setCheckoutStep] = useState(isDirectCheckout && !!user);
+  // Checkout flow states - Allow instant 1-click checkout for both logged-in and guest customers
+  const [checkoutStep, setCheckoutStep] = useState(Boolean(isDirectCheckout));
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState("");
@@ -128,6 +128,7 @@ const Cart = () => {
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [address, setAddress] = useState({
     fullName: user?.name || "",
+    email: user?.email || "",
     phone: user?.phone || "",
     street: "",
     city: "",
@@ -141,6 +142,7 @@ const Cart = () => {
       setAddress((prev) => ({
         ...prev,
         fullName: prev.fullName || user.name || "",
+        email: prev.email || user.email || "",
         phone: prev.phone || user.phone || "",
       }));
     }
@@ -168,16 +170,9 @@ const Cart = () => {
 
   React.useEffect(() => {
     if (isDirectCheckout && cartItems.length > 0) {
-      if (!user) {
-        navigate(
-          "/login?redirect=" +
-            encodeURIComponent(location.pathname + location.search),
-        );
-      } else {
-        setCheckoutStep(true);
-      }
+      setCheckoutStep(true);
     }
-  }, [isDirectCheckout, cartItems.length, user, navigate, location]);
+  }, [isDirectCheckout, cartItems.length]);
 
   const getSubtotal = () => {
     return selectedItems.reduce((acc, item) => {
@@ -486,12 +481,6 @@ const Cart = () => {
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
 
-    if (!user) {
-      showAlert("Please login to place your order.", "Login Required");
-      navigate("/login?redirect=cart");
-      return;
-    }
-
     if (
       !address.fullName ||
       !address.phone ||
@@ -501,6 +490,15 @@ const Cart = () => {
       showAlert(
         "Please fill out all mandatory shipping details.",
         "Shipping Info Missing",
+      );
+      return;
+    }
+
+    const emailToUse = (address.email || user.email || "").trim();
+    if (emailToUse && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(emailToUse)) {
+      showAlert(
+        "Please enter a valid email address.",
+        "Invalid Email",
       );
       return;
     }
@@ -569,10 +567,14 @@ const Cart = () => {
         },
         paymentMethod: address.paymentMethod,
         customer: {
-          userId: user._id,
+          userId: user?._id || "",
           name: address.fullName,
           phone: address.phone,
-          email: user.email || "",
+          email: emailToUse,
+        },
+        shippingAddress: {
+          ...address,
+          email: emailToUse,
         },
         metaTracking: getMetaTrackingCookies(),
       };
@@ -582,6 +584,16 @@ const Cart = () => {
       if (res.data && res.data.success) {
         const orderData = res.data.data;
         const orderId = orderData.orderId;
+
+        // Auto-login customer seamlessly if server generated guest access credentials
+        if (orderData.guestToken && orderData.guestUser) {
+          dispatch(
+            authSuccess({
+              token: orderData.guestToken,
+              user: orderData.guestUser,
+            }),
+          );
+        }
 
         if (address.paymentMethod === "ONLINE" && orderData.razorpayCheckout) {
           const success = await openRazorpayCheckout(
@@ -1090,6 +1102,16 @@ const Cart = () => {
             </div>
 
             <Input
+              label="Email Address (For Order Tracking & Tax Invoice)"
+              name="email"
+              type="email"
+              value={address.email}
+              onChange={handleAddressInput}
+              placeholder="e.g. customer@example.com"
+              autoComplete="email"
+            />
+
+            <Input
               label="Street Address"
               name="street"
               required
@@ -1428,15 +1450,11 @@ const Cart = () => {
             <div className="space-y-4">
               <Button
                 onClick={() => {
-                  if (!user) {
-                    navigate("/login?redirect=cart");
-                  } else {
-                    setCheckoutStep(true);
-                  }
+                  setCheckoutStep(true);
                 }}
                 variant="primary"
                 size="lg"
-                className="w-full space-x-2 rounded-xl py-4 text-xs tracking-wider shadow-lg"
+                className="w-full space-x-2 rounded-xl py-4 text-xs tracking-wider shadow-lg cursor-pointer"
               >
                 <RiSecurePaymentLine size={16} />
                 <span>Proceed to Checkout</span>

@@ -1,8 +1,10 @@
 import mongoose from "mongoose";
 import Order from "../models/Order.js";
+import User from "../models/User.js";
 import Coupon from "../models/Coupon.js";
 import Product from "../models/Product.js";
 import Cart from "../models/Cart.js";
+import { signAccessToken } from "../utils/jwt.js";
 import { sendSuccess, sendError } from "../utils/responseFormatter.js";
 import { logActivity } from "../utils/logger.js";
 import {
@@ -188,7 +190,7 @@ export const createOrder = async (req, res, next) => {
         );
       }
 
-      const phone = req.user.phone || customer?.phone || shippingAddress?.phone;
+      const phone = req.user?.phone || customer?.phone || shippingAddress?.phone;
       if (phone) {
         const userUsage = couponInstance.usedBy?.find((u) => u.phone === phone);
         if (
@@ -227,10 +229,12 @@ export const createOrder = async (req, res, next) => {
     let eligibleOfferType = null;
     let eligibleOfferPercent = 0;
 
-    const deliveredCount = await Order.countDocuments({
-      "customer.userId": req.user._id.toString(),
-      orderStatus: "Delivered",
-    });
+    const deliveredCount = req.user?._id
+      ? await Order.countDocuments({
+          "customer.userId": req.user._id.toString(),
+          orderStatus: "Delivered",
+        })
+      : 0;
 
     if (deliveredCount === FIFTH_PURCHASE_NUMBER) {
       eligibleOfferType = "FIFTH_PURCHASE_15";
@@ -334,16 +338,71 @@ export const createOrder = async (req, res, next) => {
     const randomNum = Math.floor(100000 + Math.random() * 900000);
     const orderId = `PRW-${new Date().getFullYear()}-${randomNum}`;
 
-    // Bind customer to authenticated user — ignore forged client userId
+    // Support Guest Checkout: If user is not authenticated, seamlessly locate or auto-create customer profile
+    let orderUser = req.user || null;
+    let autoToken = null;
+
+    if (!orderUser) {
+      const guestPhone = (shippingAddress.phone || customer?.phone || "").trim();
+      const guestEmail = (shippingAddress.email || customer?.email || "").trim().toLowerCase();
+      const guestName = shippingAddress.fullName || customer?.name || "Customer";
+
+      if (guestPhone) {
+        try {
+          orderUser = await User.findOne({
+            $or: [
+              { phone: guestPhone },
+              ...(guestEmail ? [{ email: guestEmail }] : []),
+            ],
+          });
+
+          if (!orderUser) {
+            const fallbackEmail =
+              guestEmail || `customer_${guestPhone.replace(/\D/g, "")}@pariwesh.in`;
+            orderUser = await User.create({
+              name: guestName,
+              phone: guestPhone,
+              email: fallbackEmail,
+              role: "customer",
+              isVerified: true,
+              addresses: [shippingAddress],
+            });
+          }
+          if (orderUser) {
+            autoToken = signAccessToken(orderUser._id);
+          }
+        } catch (guestErr) {
+          console.warn("[Guest Checkout] Auto user resolve fallback:", guestErr.message);
+        }
+      }
+    }
+
+    const boundUserId = orderUser
+      ? orderUser._id.toString()
+      : req.user?._id
+        ? req.user._id.toString()
+        : "";
+
     const boundCustomer = {
-      userId: req.user._id.toString(),
+      userId: boundUserId,
       name:
         shippingAddress.fullName ||
         customer?.name ||
-        req.user.name ||
+        orderUser?.name ||
+        req.user?.name ||
         "Customer",
-      phone: shippingAddress.phone || customer?.phone || req.user.phone || "",
-      email: shippingAddress.email || customer?.email || req.user.email || "",
+      phone:
+        shippingAddress.phone ||
+        customer?.phone ||
+        orderUser?.phone ||
+        req.user?.phone ||
+        "",
+      email:
+        shippingAddress.email ||
+        customer?.email ||
+        orderUser?.email ||
+        req.user?.email ||
+        "",
     };
 
     // 3. Create the Order document first to guarantee customer's order is NOT lost on subsequent stock/coupon errors
@@ -359,6 +418,13 @@ export const createOrder = async (req, res, next) => {
       metaTracking: {
         fbp: req.body?.metaTracking?.fbp || req.headers?.["x-fbp"] || "",
         fbc: req.body?.metaTracking?.fbc || req.headers?.["x-fbc"] || "",
+        clientIp:
+          req.headers?.["cf-connecting-ip"] ||
+          req.headers?.["x-real-ip"] ||
+          req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim() ||
+          req.ip ||
+          "",
+        userAgent: req.headers?.["user-agent"] || "",
       },
     });
 
@@ -514,8 +580,10 @@ export const createOrder = async (req, res, next) => {
     // Non-blocking Meta CAPI Purchase tracking for COD orders
     if (method === "COD") {
       trackCapiPurchase(newOrder, req, {
-        fbp: req?.headers?.["x-fbp"] || req?.body?.metaTracking?.fbp,
-        fbc: req?.headers?.["x-fbc"] || req?.body?.metaTracking?.fbc,
+        fbp: newOrder.metaTracking?.fbp || req?.headers?.["x-fbp"],
+        fbc: newOrder.metaTracking?.fbc || req?.headers?.["x-fbc"],
+        clientIp: newOrder.metaTracking?.clientIp,
+        userAgent: newOrder.metaTracking?.userAgent,
       }).catch((err) =>
         console.error("[Meta CAPI] COD Purchase tracking error:", err),
       );
@@ -574,6 +642,16 @@ export const createOrder = async (req, res, next) => {
         ...newOrder.toObject(),
         razorpayCheckout,
         razorpayConfigured: method === "ONLINE" ? true : undefined,
+        guestToken: autoToken || undefined,
+        guestUser: orderUser
+          ? {
+              _id: orderUser._id,
+              name: orderUser.name,
+              email: orderUser.email,
+              phone: orderUser.phone,
+              role: orderUser.role,
+            }
+          : undefined,
       },
       201,
     );

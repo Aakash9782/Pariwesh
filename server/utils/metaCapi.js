@@ -48,6 +48,68 @@ export const hashPhone = (phone) => {
   return crypto.createHash("sha256").update(digits).digest("hex");
 };
 
+const DUMMY_EMAIL_PATTERNS = [
+  "test@",
+  "example.com",
+  "fake@",
+  "none@",
+  "placeholder",
+  "admin@admin",
+  "dummy@",
+  "null",
+  "undefined",
+  "sample@",
+  "pariwesh.in", // Prevent internal business/support email from being sent as client email
+];
+
+/**
+ * Validates whether an email is a genuine, properly structured customer email.
+ * Rejects empty, dummy, placeholder, and system test addresses.
+ * @param {string} email
+ * @returns {boolean}
+ */
+export const isValidEmail = (email) => {
+  if (!email || typeof email !== "string") return false;
+  const clean = email.trim().toLowerCase();
+  if (!clean || clean.length < 5 || clean.length > 254) return false;
+  // Standard RFC 5322 regex
+  if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(clean)) return false;
+  if (DUMMY_EMAIL_PATTERNS.some((pattern) => clean.includes(pattern))) return false;
+  return true;
+};
+
+/**
+ * Extracts public client IP from incoming request, accounting for Cloudflare, Render, and proxies.
+ * Rejects private/loopback IP addresses for Meta Conversions API compliance.
+ * @param {Object} req
+ * @returns {string|null}
+ */
+export const extractClientIp = (req) => {
+  if (!req) return null;
+  const rawIp =
+    req.headers?.["cf-connecting-ip"] ||
+    req.headers?.["x-real-ip"] ||
+    req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim() ||
+    req.socket?.remoteAddress ||
+    req.ip ||
+    null;
+
+  if (!rawIp) return null;
+  const cleanIp = String(rawIp).trim();
+
+  // Filter out internal/local loopback addresses that Meta Conversions API rejects
+  if (
+    cleanIp === "::1" ||
+    cleanIp === "127.0.0.1" ||
+    cleanIp.startsWith("192.168.") ||
+    cleanIp.startsWith("10.") ||
+    cleanIp.startsWith("172.16.")
+  ) {
+    return null;
+  }
+  return cleanIp;
+};
+
 /**
  * Retrieves Meta Pixel & CAPI settings from MongoDB with fallback to process.env.
  * @returns {Promise<{pixelId: string, capiToken: string, testEventCode: string, isEnabled: boolean}>}
@@ -141,33 +203,46 @@ export const sendMetaCapiEvent = async ({
       return null;
     }
 
-    // Extract client IP and user agent
-    let clientIp = null;
-    let userAgent = null;
+    // Extract client IP and user agent with robust proxy awareness
+    const extractedIp = extractClientIp(req);
+    const clientIp = extractedIp || userData.clientIp || undefined;
+    const userAgent =
+      (req?.headers ? req.headers["user-agent"] : null) ||
+      userData.userAgent ||
+      undefined;
 
-    if (req) {
-      clientIp =
-        req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
-        req.socket?.remoteAddress ||
-        req.ip ||
-        null;
-      userAgent = req.headers["user-agent"] || null;
-    }
+    // Check if email is genuinely valid before hashing
+    const validEmail = isValidEmail(userData.email)
+      ? userData.email.trim().toLowerCase()
+      : null;
 
     // Format User Data according to Meta specifications
     const formattedUserData = {
-      em: userData.email ? [hashData(userData.email)] : undefined,
+      em: validEmail
+        ? [crypto.createHash("sha256").update(validEmail).digest("hex")]
+        : undefined,
       ph: userData.phone ? [hashPhone(userData.phone)] : undefined,
       fn: userData.firstName ? [hashData(userData.firstName)] : undefined,
       ln: userData.lastName ? [hashData(userData.lastName)] : undefined,
       ct: userData.city ? [hashData(userData.city)] : undefined,
       st: userData.state ? [hashData(userData.state)] : undefined,
       zp: userData.pincode ? [hashData(userData.pincode)] : undefined,
-      country: userData.country ? [hashData(userData.country || "in")] : [hashData("in")],
-      client_ip_address: clientIp || userData.clientIp || undefined,
-      client_user_agent: userAgent || userData.userAgent || undefined,
-      fbp: userData.fbp || (req?.headers ? req.headers["x-fbp"] : undefined) || undefined,
-      fbc: userData.fbc || (req?.headers ? req.headers["x-fbc"] : undefined) || undefined,
+      country: userData.country
+        ? [hashData(userData.country || "in")]
+        : [hashData("in")],
+      external_id: userData.externalId
+        ? [hashData(userData.externalId)]
+        : undefined,
+      client_ip_address: clientIp,
+      client_user_agent: userAgent,
+      fbp:
+        userData.fbp ||
+        (req?.headers ? req.headers["x-fbp"] : undefined) ||
+        undefined,
+      fbc:
+        userData.fbc ||
+        (req?.headers ? req.headers["x-fbc"] : undefined) ||
+        undefined,
     };
 
     // Clean undefined fields from user_data
@@ -215,7 +290,9 @@ export const sendMetaCapiEvent = async ({
       return { success: false, error: responseData };
     }
 
-    console.log(`[Meta CAPI] ✅ Sent event "${eventName}" with event_id: "${eventId}" (Events received: ${responseData.events_received})`);
+    console.log(
+      `[Meta CAPI] ✅ Sent event "${eventName}" with event_id: "${eventId}" (Events received: ${responseData.events_received})`,
+    );
     return { success: true, data: responseData };
   } catch (err) {
     // Non-blocking: catch and log to guarantee host process is never broken
@@ -228,7 +305,7 @@ export const sendMetaCapiEvent = async ({
  * Specialized helper to format & send a Purchase event via CAPI.
  * @param {Object} order - Full order object from MongoDB
  * @param {Object} [req] - Express request object for IP & headers
- * @param {Object} [extraData] - Optional overrides (e.g. fbp, fbc)
+ * @param {Object} [extraData] - Optional overrides (e.g. fbp, fbc, clientIp, userAgent)
  */
 export const trackCapiPurchase = async (order, req = null, extraData = {}) => {
   if (!order || !order.orderId) return;
@@ -249,14 +326,30 @@ export const trackCapiPurchase = async (order, req = null, extraData = {}) => {
 
   const numItems = (order.items || []).reduce(
     (sum, item) => sum + (Number(item.quantity) || 1),
-    0
+    0,
   );
+
+  // Safely resolve email across customer profile, shipping address, or nested fields
+  const resolvedEmail =
+    customer.email ||
+    shipping.email ||
+    order.shippingAddress?.email ||
+    (order.user && order.user.email) ||
+    "";
+
+  // Resolve external ID for high match rate
+  const resolvedExternalId =
+    customer.userId ||
+    order.user?._id ||
+    order.user ||
+    (typeof customer.phone === "string" ? customer.phone : "");
 
   return sendMetaCapiEvent({
     eventName: "Purchase",
     eventId: `order_${order.orderId}`,
     userData: {
-      email: customer.email || shipping.email || "",
+      email: resolvedEmail,
+      externalId: resolvedExternalId ? String(resolvedExternalId) : undefined,
       phone: customer.phone || shipping.phone || "",
       firstName,
       lastName,
@@ -266,6 +359,8 @@ export const trackCapiPurchase = async (order, req = null, extraData = {}) => {
       country: "in",
       fbp: extraData.fbp || order.metaTracking?.fbp,
       fbc: extraData.fbc || order.metaTracking?.fbc,
+      clientIp: extraData.clientIp || order.metaTracking?.clientIp,
+      userAgent: extraData.userAgent || order.metaTracking?.userAgent,
     },
     customData: {
       value: order.pricing?.grandTotal || 0,

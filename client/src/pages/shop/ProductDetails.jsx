@@ -750,6 +750,38 @@ const ProductDetails = () => {
               </div>
             </div>
 
+            {/* Quick Buyer Confidence & Trust Matrix */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="flex items-center space-x-2 bg-amber-50/70 border border-amber-200/60 rounded-xl p-2.5 shadow-2xs">
+                <span className="text-base shrink-0">💵</span>
+                <div className="leading-tight min-w-0">
+                  <span className="block text-[11px] font-bold text-slate-800 truncate">Cash on Delivery</span>
+                  <span className="block text-[9px] text-slate-500 truncate">Pay cash at your door</span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 bg-emerald-50/70 border border-emerald-200/60 rounded-xl p-2.5 shadow-2xs">
+                <span className="text-base shrink-0">🔄</span>
+                <div className="leading-tight min-w-0">
+                  <span className="block text-[11px] font-bold text-slate-800 truncate">7-Day Free Exchange</span>
+                  <span className="block text-[9px] text-slate-500 truncate">Easy doorstep size swap</span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 bg-blue-50/70 border border-blue-200/60 rounded-xl p-2.5 shadow-2xs">
+                <span className="text-base shrink-0">🚚</span>
+                <div className="leading-tight min-w-0">
+                  <span className="block text-[11px] font-bold text-slate-800 truncate">Express Dispatch</span>
+                  <span className="block text-[9px] text-slate-500 truncate">Ships within 24–48 hrs</span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 bg-purple-50/70 border border-purple-200/60 rounded-xl p-2.5 shadow-2xs">
+                <span className="text-base shrink-0">✨</span>
+                <div className="leading-tight min-w-0">
+                  <span className="block text-[11px] font-bold text-slate-800 truncate">100% Handcrafted</span>
+                  <span className="block text-[9px] text-slate-500 truncate">Bespoke luxury fabrics</span>
+                </div>
+              </div>
+            </div>
+
             {/* Pincode Delivery Estimator Widget */}
             <div className="border-t border-slate-100/80 pt-5 space-y-2.5">
               <div className="flex items-center justify-between text-[10px] uppercase font-extrabold tracking-widest text-slate-500">

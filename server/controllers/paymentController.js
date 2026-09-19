@@ -151,6 +151,14 @@ export const verifyPayment = async (req, res) => {
     // Preserve latest tracking cookies if previously missing without overwriting valid ones
     const incomingFbp = req?.body?.metaTracking?.fbp || req?.headers?.["x-fbp"];
     const incomingFbc = req?.body?.metaTracking?.fbc || req?.headers?.["x-fbc"];
+    const incomingIp =
+      req.headers?.["cf-connecting-ip"] ||
+      req.headers?.["x-real-ip"] ||
+      req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim() ||
+      req.ip ||
+      "";
+    const incomingUa = req.headers?.["user-agent"] || "";
+
     if (!order.metaTracking) {
       order.metaTracking = {};
     }
@@ -159,6 +167,12 @@ export const verifyPayment = async (req, res) => {
     }
     if (incomingFbc && !order.metaTracking.fbc) {
       order.metaTracking.fbc = incomingFbc;
+    }
+    if (incomingIp && !order.metaTracking.clientIp) {
+      order.metaTracking.clientIp = incomingIp;
+    }
+    if (incomingUa && !order.metaTracking.userAgent) {
+      order.metaTracking.userAgent = incomingUa;
     }
 
     await order.save();
@@ -170,10 +184,14 @@ export const verifyPayment = async (req, res) => {
     // Non-blocking Meta CAPI Purchase tracking for Paid Online orders
     const effectiveFbp = incomingFbp || order.metaTracking?.fbp || undefined;
     const effectiveFbc = incomingFbc || order.metaTracking?.fbc || undefined;
+    const effectiveIp = incomingIp || order.metaTracking?.clientIp || undefined;
+    const effectiveUa = incomingUa || order.metaTracking?.userAgent || undefined;
 
     trackCapiPurchase(order, req, {
       fbp: effectiveFbp,
       fbc: effectiveFbc,
+      clientIp: effectiveIp,
+      userAgent: effectiveUa,
     }).catch((err) =>
       console.error("[Meta CAPI] Razorpay Paid Purchase tracking error:", err),
     );

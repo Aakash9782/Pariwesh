@@ -226,6 +226,8 @@ const OrderSchema = new mongoose.Schema(
     metaTracking: {
       fbp: { type: String, default: "" },
       fbc: { type: String, default: "" },
+      clientIp: { type: String, default: "" },
+      userAgent: { type: String, default: "" },
     },
   },
   { timestamps: true },

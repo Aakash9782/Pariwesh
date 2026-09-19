@@ -49,3 +49,25 @@ export const authorize = (...roles) => {
     next();
   };
 };
+
+/**
+ * Optional authentication middleware for Guest Checkout.
+ * If a valid Bearer token is provided, populates req.user.
+ * If no token is provided, continues seamlessly without blocking.
+ */
+export const optionalProtect = async (req, res, next) => {
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    try {
+      const token = req.headers.authorization.split(" ")[1];
+      const decoded = verifyAccessToken(token);
+      req.user = await User.findById(decoded.id);
+    } catch (_) {
+      // Gracefully continue as guest if token is invalid or expired
+      req.user = null;
+    }
+  }
+  next();
+};
