@@ -167,7 +167,7 @@ export const getGoogleMerchantFeed = async (req, res, next) => {
         status: { $in: ["active", "Active"] },
       })
         .select(
-          "sku name slug description mrp price stock sizes sizesStock images brand color fabric material category subCategory seoTitle seoDescription metaKeywords"
+          "sku name slug description mrp price stock sizes sizesStock images brand color fabric material category subCategory seoTitle seoDescription metaKeywords colorGroup shippingWeight"
         )
         .lean();
     } catch (dbErr) {
@@ -243,9 +243,13 @@ export const getGoogleMerchantFeed = async (req, res, next) => {
 
         xml += `      <g:availability>${inStock ? "in_stock" : "out_of_stock"}</g:availability>\n`;
         xml += `      <g:brand>${escapeXml(brand)}</g:brand>\n`;
+        xml += `      <g:mpn>${escapeXml(id)}</g:mpn>\n`;
         xml += `      <g:condition>new</g:condition>\n`;
         // Essential tag for D2C stores to exempt from mandatory GTIN/UPC/barcode
         xml += `      <g:identifier_exists>no</g:identifier_exists>\n`;
+        if (prod.colorGroup) {
+          xml += `      <g:item_group_id>${escapeXml(prod.colorGroup)}</g:item_group_id>\n`;
+        }
         // Google Apparel & Accessories > Clothing > Traditional & Ceremonial Clothing
         xml += `      <g:google_product_category>1604</g:google_product_category>\n`;
         const productType = prod.subCategory
@@ -267,6 +271,13 @@ export const getGoogleMerchantFeed = async (req, res, next) => {
         if (Array.isArray(prod.sizes) && prod.sizes.length > 0) {
           xml += `      <g:size>${escapeXml(prod.sizes.join(", "))}</g:size>\n`;
         }
+
+        // Explicit standard delivery tag so Google Shopping algorithm never marks shipping missing
+        xml += `      <g:shipping>\n`;
+        xml += `        <g:country>IN</g:country>\n`;
+        xml += `        <g:service>Standard Delivery</g:service>\n`;
+        xml += `        <g:price>0.00 INR</g:price>\n`;
+        xml += `      </g:shipping>\n`;
 
         xml += `    </item>\n`;
       } catch (itemErr) {

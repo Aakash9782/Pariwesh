@@ -327,6 +327,21 @@ const ProductDetails = () => {
           `Premium handcrafted ${product.name} from PARIWESH.`,
         sku: product.sku || "",
         category: product.category || "Ethnic Wear",
+        brand: {
+          "@type": "Brand",
+          name: product.brand || "PARIWESH",
+        },
+        ...(Number(product.reviewsCount) > 0
+          ? {
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: Number(product.rating || 5).toFixed(1),
+                reviewCount: Number(product.reviewsCount),
+                bestRating: "5",
+                worstRating: "1",
+              },
+            }
+          : {}),
         keywords:
           (product.metaKeywords && product.metaKeywords.trim()) ||
           `${product.name}, ${product.category || "suits"}, ethnic wear, pariwesh`,
