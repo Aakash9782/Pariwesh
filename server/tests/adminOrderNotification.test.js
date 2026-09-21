@@ -190,4 +190,38 @@ describe("Admin Successful Order Email Notifications", () => {
       "cod_customer@example.com",
     );
   });
+
+  it("should still notify admins when customer has NO email for COD order", async () => {
+    const codOrderNoEmail = {
+      ...mockCodOrder,
+      orderId: "PRW-2026-COD-NO-EMAIL",
+      customer: { name: "No Email Customer", email: "", phone: "9876543210" },
+      shippingAddress: { ...mockCodOrder.shippingAddress, email: "" },
+    };
+
+    await emailOrderPlaced(codOrderNoEmail);
+
+    // Should send 2 emails to admins (customer email skipped)
+    assert.equal(fetchCalls.length, 2);
+    const emails = fetchCalls.map((c) => JSON.parse(c.options.body).to[0].email);
+    assert.ok(emails.includes("admin1@pariwesh.com"));
+    assert.ok(emails.includes("admin2@pariwesh.com"));
+  });
+
+  it("should still notify admins when customer has NO email for ONLINE order payment success", async () => {
+    const onlineOrderNoEmail = {
+      ...mockOnlineOrder,
+      orderId: "PRW-2026-ONL-NO-EMAIL",
+      customer: { name: "No Email Online Customer", email: "", phone: "9876543210" },
+      shippingAddress: { ...mockOnlineOrder.shippingAddress, email: "" },
+    };
+
+    await emailPaymentSuccess(onlineOrderNoEmail);
+
+    // Should send 2 emails to admins (customer email skipped)
+    assert.equal(fetchCalls.length, 2);
+    const emails = fetchCalls.map((c) => JSON.parse(c.options.body).to[0].email);
+    assert.ok(emails.includes("admin1@pariwesh.com"));
+    assert.ok(emails.includes("admin2@pariwesh.com"));
+  });
 });

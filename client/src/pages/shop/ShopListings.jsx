@@ -502,12 +502,14 @@ const ShopListings = () => {
                         <path d="M 0,125 L 0,7.5 C 0,6 8,5.5 12,5.1 C 12,3.8 22,3.2 28,2.5 C 28,1.7 38,1.2 44,0.6 C 47,0.2 49,0 50,0 C 51,0 53,0.2 56,0.6 C 62,1.2 72,1.7 72,2.5 C 78,3.2 88,3.8 88,5.1 C 92,5.5 100,6 100,7.5 L 100,125" />
                       </svg>
 
-                      {/* Floating Rating Badge (Inspired by Reference Design) */}
-                      <div className="absolute bottom-2.5 right-2.5 z-10 bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10.5px] font-bold text-slate-800 shadow-sm border border-white/90 flex items-center space-x-1 pointer-events-none transition-opacity duration-200 group-hover:opacity-0 sm:group-hover:opacity-0">
-                        <span className="text-amber-500 text-[11px]">★</span>
-                        <span>{product.rating || "4.8"}</span>
-                        <span className="text-slate-400 font-normal">({product.reviewsCount ? `${product.reviewsCount}+` : "120+"})</span>
-                      </div>
+                      {/* Floating Rating Badge (Dynamic from verified reviews) */}
+                      {Number(product.reviewsCount) > 0 && (
+                        <div className="absolute bottom-2.5 right-2.5 z-10 bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10.5px] font-bold text-slate-800 shadow-sm border border-white/90 flex items-center space-x-1 pointer-events-none transition-opacity duration-200 group-hover:opacity-0 sm:group-hover:opacity-0">
+                          <span className="text-amber-500 text-[11px]">★</span>
+                          <span>{Number(product.rating || 4.8).toFixed(1)}</span>
+                          <span className="text-slate-400 font-normal">({product.reviewsCount})</span>
+                        </div>
+                      )}
 
                       {/* Subtle Gradient Shade at Hem */}
                       <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 via-black/10 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

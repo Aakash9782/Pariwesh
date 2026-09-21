@@ -229,11 +229,11 @@ const ProductSchema = new mongoose.Schema(
     },
     rating: {
       type: Number,
-      default: 4.5,
+      default: 0,
     },
     reviewsCount: {
       type: Number,
-      default: 12,
+      default: 0,
     },
     description: {
       type: String,

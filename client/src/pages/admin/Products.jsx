@@ -105,6 +105,8 @@ const ProductsPage = () => {
     video: "",
     videos: [],
     tag: "Regular",
+    rating: 0,
+    reviewsCount: 0,
     description: "",
     status: "active",
     slug: "",
@@ -662,6 +664,8 @@ const ProductsPage = () => {
           ? [prod.video]
           : [],
       tag: prod.tag || "Regular",
+      rating: prod.rating !== undefined ? prod.rating : 0,
+      reviewsCount: prod.reviewsCount !== undefined ? prod.reviewsCount : 0,
       description: prod.description || "",
       status: prod.status || "active",
       slug: prod.slug || "",

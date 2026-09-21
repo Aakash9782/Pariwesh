@@ -45,6 +45,7 @@ const SettingsPage = () => {
     brandLogoUrl: "",
     supportPhone: "+91 97826 81155",
     supportEmail: "contact@pariwesh.co",
+    adminNotificationEmail: "",
     gstinNumber: "08AAPPP1234A1Z9",
     registeredAddress:
       "Plot No. 12, Sanganer Industrial Area, Jaipur, Rajasthan - 302029",
@@ -141,6 +142,7 @@ const SettingsPage = () => {
           brandLogoUrl: data.brandLogoUrl || "",
           supportPhone: data.supportPhone || "+91 97826 81155",
           supportEmail: data.supportEmail || "contact@pariwesh.co",
+          adminNotificationEmail: data.adminNotificationEmail || "",
           gstinNumber: data.gstinNumber || "08AAPPP1234A1Z9",
           registeredAddress:
             data.registeredAddress ||

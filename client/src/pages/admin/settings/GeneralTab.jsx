@@ -55,6 +55,22 @@ const GeneralTab = ({
             })
           }
         />
+        <div className="md:col-span-2">
+          <Input
+            label="Admin Order Alert Email(s)"
+            value={generalForm.adminNotificationEmail || ""}
+            onChange={(e) =>
+              setGeneralForm({
+                ...generalForm,
+                adminNotificationEmail: e.target.value,
+              })
+            }
+            placeholder="e.g. sainiaakash177@gmail.com, pariweshofficial@gmail.com"
+          />
+          <p className="text-[11px] text-slate-400 mt-1">
+            All active Admin accounts in the database automatically receive new order alerts. You can also specify additional comma-separated recipient emails here.
+          </p>
+        </div>
       </div>
 
       <Input

@@ -936,6 +936,81 @@ export const ProductVisibilityTab = () => {
         </div>
       </div>
 
+      {/* Ratings & Social Proof Settings */}
+      <div className="space-y-4 pt-6 border-t border-slate-100">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <h5 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
+              <span>Ratings &amp; Social Proof Badge</span>
+              <span className="text-amber-500 text-sm">★</span>
+            </h5>
+            <p className="text-[11px] text-slate-500 mt-0.5 font-sans">
+              Manage product rating and reviews count. The badge auto-calculates from customer reviews, but you can customize or kickstart it here.
+            </p>
+          </div>
+          <a
+            href="/admin/reviews"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-[11px] font-bold text-[#8a1c14] hover:underline self-start sm:self-auto"
+          >
+            Moderate Customer Reviews &rarr;
+          </a>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+            <label className="text-xs font-semibold text-slate-700 block">
+              Rating Stars (0.0 to 5.0)
+            </label>
+            <div className="flex items-center space-x-2">
+              <span className="text-amber-500 font-bold text-base">★</span>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="5"
+                placeholder="e.g. 4.8"
+                value={form.rating !== undefined && form.rating !== null ? form.rating : ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    rating: e.target.value === "" ? 0 : Math.max(0, Math.min(5, Number(e.target.value))),
+                  })
+                }
+                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-accent-gold"
+              />
+            </div>
+            <p className="text-[10px] text-slate-500">
+              Set to 0 if unreviewed. When real customer reviews are submitted, it auto-updates.
+            </p>
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+            <label className="text-xs font-semibold text-slate-700 block">
+              Total Reviews Count
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              placeholder="e.g. 15"
+              value={form.reviewsCount !== undefined && form.reviewsCount !== null ? form.reviewsCount : ""}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  reviewsCount: e.target.value === "" ? 0 : Math.max(0, Math.round(Number(e.target.value))),
+                })
+              }
+              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-accent-gold"
+            />
+            <p className="text-[10px] text-slate-500">
+              Badge is hidden on website cards if count is 0, avoiding any fake placeholder vibe.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Dynamic Size & Stock Management inside Visibility tab */}
       <div className="space-y-4 pt-6 border-t border-slate-100">
         <div>

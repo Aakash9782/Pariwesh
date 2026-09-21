@@ -26,6 +26,7 @@ import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
 import SEO from "../../components/common/SEO.jsx";
 import SizeChartModal from "../../components/common/SizeChartModal.jsx";
+import ProductReviews from "../../components/shop/ProductReviews.jsx";
 import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 import {
   syncCartNow,
@@ -534,17 +535,26 @@ const ProductDetails = () => {
             <h1 className="text-2xl md:text-3xl font-serif text-slate-900 leading-snug tracking-tight font-normal">
               {product.name}
             </h1>
-            <div className="flex items-center space-x-1.5 text-[11.5px] text-slate-600 font-sans">
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById("reviews-section");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="flex items-center space-x-1.5 text-[11.5px] text-slate-600 font-sans hover:text-[#8a1c14] transition-colors cursor-pointer group text-left"
+            >
               <div className="flex items-center space-x-1">
                 <RiStarFill className="text-amber-500 mb-0.5" size={13} />
                 <span className="text-slate-800 font-bold">
-                  {product.rating || "4.8"}
+                  {Number(product.rating || 4.8).toFixed(1)}
                 </span>
-                <span className="text-slate-400">
-                  ({product.reviewsCount || 12} customer reviews)
+                <span className="text-slate-400 group-hover:underline">
+                  {Number(product.reviewsCount) > 0
+                    ? `(${product.reviewsCount} verified ${Number(product.reviewsCount) === 1 ? "review" : "reviews"})`
+                    : "(Write the first review)"}
                 </span>
               </div>
-            </div>
+            </button>
           </div>
 
           {/* PRICING GRID */}
@@ -1275,6 +1285,13 @@ const ProductDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* VERIFIED CUSTOMER RATINGS & REVIEWS SECTION */}
+      <ProductReviews
+        productId={product._id}
+        initialRating={product.rating}
+        initialCount={product.reviewsCount}
+      />
 
       <SizeChartModal
         isOpen={showSizeChart}

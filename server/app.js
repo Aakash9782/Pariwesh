@@ -27,6 +27,7 @@ import emailRouter from "./routes/emailRoutes.js";
 import seoRouter from "./routes/seoRoutes.js";
 import { getSitemap, getGoogleMerchantFeed } from "./controllers/seoController.js";
 import shippingRouter from "./routes/shippingRoutes.js";
+import reviewRouter from "./routes/reviewRoutes.js";
 
 const app = express();
 
@@ -184,6 +185,7 @@ app.use("/api/v1/emails", emailRouter);
 app.use("/api/v1/seo", seoRouter);
 app.use("/api/v1/shipping", shippingRouter);
 app.use("/api/v1/logistics", shippingRouter);
+app.use("/api/v1/reviews", reviewRouter);
 
 // 7. 404 HANDLER
 app.use("*", (req, res, next) => {

@@ -58,6 +58,7 @@ const AdminAnalytics = lazy(() => import("./pages/admin/Analytics.jsx"));
 const AdminSettings = lazy(() => import("./pages/admin/Settings.jsx"));
 const AdminReturns = lazy(() => import("./pages/admin/Returns.jsx"));
 const AdminMail = lazy(() => import("./pages/admin/Mail.jsx"));
+const AdminReviews = lazy(() => import("./pages/admin/Reviews.jsx"));
 
 // Create a client for TanStack Query
 const queryClient = new QueryClient({
@@ -132,6 +133,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                   <Route path="analytics" element={<AdminAnalytics />} />
                   <Route path="settings" element={<AdminSettings />} />
                   <Route path="returns" element={<AdminReturns />} />
+                  <Route path="reviews" element={<AdminReviews />} />
                   <Route path="mail" element={<AdminMail />} />
                 </Route>
 

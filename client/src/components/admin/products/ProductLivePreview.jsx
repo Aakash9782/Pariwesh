@@ -72,6 +72,15 @@ const ProductLivePreview = () => {
                   {form.tag}
                 </div>
               )}
+
+              {/* Dynamic Rating Badge Preview */}
+              {Number(form.reviewsCount) > 0 && (
+                <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-md border border-slate-200 px-2 py-0.5 rounded-full text-[8px] font-bold text-slate-800 shadow-sm flex items-center space-x-1">
+                  <span className="text-amber-500 text-[9px]">★</span>
+                  <span>{Number(form.rating || 4.8).toFixed(1)}</span>
+                  <span className="text-slate-400 font-normal">({form.reviewsCount})</span>
+                </div>
+              )}
             </div>
 
             {/* Card details panel */}

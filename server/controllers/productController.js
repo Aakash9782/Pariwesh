@@ -216,6 +216,8 @@ export const createProduct = async (req, res, next) => {
       occasion,
       bottomType,
       setContents,
+      rating,
+      reviewsCount,
     } = req.body;
 
     if (!name || !sku || !mrp || !price) {
@@ -285,6 +287,8 @@ export const createProduct = async (req, res, next) => {
       video: productVideo,
       videos: productVideos,
       tag: tag || "Regular",
+      rating: rating !== undefined ? Math.max(0, Math.min(5, Number(rating))) : 0,
+      reviewsCount: reviewsCount !== undefined ? Math.max(0, Math.round(Number(reviewsCount))) : 0,
       description:
         description || "Premium selection fashion apparel custom crafted.",
       // Advanced Enterprise Fields
@@ -446,6 +450,8 @@ export const updateProduct = async (req, res, next) => {
       occasion,
       bottomType,
       setContents,
+      rating,
+      reviewsCount,
     } = req.body;
 
     const product = await Product.findById(id);
@@ -522,6 +528,8 @@ export const updateProduct = async (req, res, next) => {
     product.stock = stock !== undefined ? Number(stock) : product.stock;
     product.images = productImages;
     product.tag = tag !== undefined ? tag : product.tag;
+    if (rating !== undefined) product.rating = Math.max(0, Math.min(5, Number(rating)));
+    if (reviewsCount !== undefined) product.reviewsCount = Math.max(0, Math.round(Number(reviewsCount)));
     product.description =
       description !== undefined ? description : product.description;
 

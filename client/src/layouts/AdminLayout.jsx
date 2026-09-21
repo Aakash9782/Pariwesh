@@ -26,6 +26,7 @@ import {
   RiExchangeBoxLine,
   RiPriceTag3Line,
   RiMailLine,
+  RiStarLine,
 } from "react-icons/ri";
 import API from "../services/api.js";
 import { useAlert } from "../contexts/AlertContext.jsx";
@@ -36,6 +37,7 @@ const NAV_ITEMS = [
   { name: "Products", path: "/admin/products", icon: RiArchiveLine },
   { name: "Catalog", path: "/admin/catalog", icon: RiPriceTag3Line },
   { name: "Orders", path: "/admin/orders", icon: RiShoppingBag3Line },
+  { name: "Reviews", path: "/admin/reviews", icon: RiStarLine },
   { name: "Returns", path: "/admin/returns", icon: RiExchangeBoxLine },
   { name: "Customers", path: "/admin/customers", icon: RiGroupLine },
   { name: "Inventory", path: "/admin/inventory", icon: RiInboxArchiveLine },
