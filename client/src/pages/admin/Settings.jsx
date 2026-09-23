@@ -326,6 +326,20 @@ const SettingsPage = () => {
           saveSettingKey(key, val),
         ),
       );
+      localStorage.setItem("codEnabled", shippingForm.codEnabled || "true");
+      localStorage.setItem(
+        "deliveryCharge",
+        shippingForm.deliveryCharge !== undefined
+          ? String(shippingForm.deliveryCharge)
+          : "45",
+      );
+      localStorage.setItem(
+        "freeThreshold",
+        shippingForm.freeThreshold !== undefined
+          ? String(shippingForm.freeThreshold)
+          : "1500",
+      );
+      window.dispatchEvent(new Event("settings-updated"));
       alert("Logistics shipment metrics deployed successfully!");
       fetchSettings();
     } catch (err) {

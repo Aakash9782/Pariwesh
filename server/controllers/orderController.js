@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import Coupon from "../models/Coupon.js";
 import Product from "../models/Product.js";
 import Cart from "../models/Cart.js";
+import Setting from "../models/Setting.js";
 import { signAccessToken } from "../utils/jwt.js";
 import { sendSuccess, sendError } from "../utils/responseFormatter.js";
 import { logActivity } from "../utils/logger.js";
@@ -65,7 +66,55 @@ export const createOrder = async (req, res, next) => {
       return sendError(res, "Missing order items or shipping details", 400);
     }
 
+    // Dynamic Shipping & COD settings from DB (with resilient fallbacks)
+    let isCodAllowed = true;
+    let deliveryFee = 45;
+    let freeLimit = 1500;
+
+    try {
+      if (mongoose.connection && mongoose.connection.readyState === 1) {
+        const shipmentSettings = await Setting.find({
+          key: { $in: ["codEnabled", "deliveryCharge", "freeThreshold"] },
+        });
+
+        const settingsMap = {};
+        (shipmentSettings || []).forEach((s) => {
+          settingsMap[s.key] = s.value;
+        });
+
+        if (settingsMap.codEnabled !== undefined) {
+          isCodAllowed = settingsMap.codEnabled !== "false";
+        }
+        if (
+          settingsMap.deliveryCharge !== undefined &&
+          settingsMap.deliveryCharge !== ""
+        ) {
+          deliveryFee = Number(settingsMap.deliveryCharge);
+        }
+        if (
+          settingsMap.freeThreshold !== undefined &&
+          settingsMap.freeThreshold !== ""
+        ) {
+          freeLimit = Number(settingsMap.freeThreshold);
+        }
+      }
+    } catch (settingErr) {
+      console.warn(
+        "Could not load dynamic shipment settings, using defaults:",
+        settingErr?.message || settingErr,
+      );
+    }
+
     const method = paymentMethod === "ONLINE" ? "ONLINE" : "COD";
+
+    if (method === "COD" && !isCodAllowed) {
+      return sendError(
+        res,
+        "Cash on Delivery (COD) is currently disabled. Please checkout using online payment.",
+        400,
+      );
+    }
+
     // Never trust client paymentStatus — ONLINE stays Pending until gateway verifies (Razorpay)
     const safePaymentStatus = "Pending";
 
@@ -308,7 +357,9 @@ export const createOrder = async (req, res, next) => {
     calculatedGst = Math.round(calculatedGst);
 
     const calculatedDelivery =
-      calculatedSubtotal >= 1500 || calculatedSubtotal === 0 ? 0 : 45;
+      calculatedSubtotal >= freeLimit || calculatedSubtotal === 0
+        ? 0
+        : deliveryFee;
     const calculatedGrandTotal =
       calculatedSubtotal + calculatedDelivery - finalDiscount;
 

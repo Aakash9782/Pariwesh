@@ -126,6 +126,18 @@ const Cart = () => {
   const [placedOrderObj, setPlacedOrderObj] = useState(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [shippingSettings, setShippingSettings] = useState(() => ({
+    codEnabled: localStorage.getItem("codEnabled") !== "false",
+    deliveryCharge:
+      Number(localStorage.getItem("deliveryCharge")) >= 0
+        ? Number(localStorage.getItem("deliveryCharge"))
+        : 45,
+    freeThreshold:
+      Number(localStorage.getItem("freeThreshold")) >= 0
+        ? Number(localStorage.getItem("freeThreshold"))
+        : 1500,
+  }));
+
   const [address, setAddress] = useState({
     fullName: user?.name || "",
     email: user?.email || "",
@@ -134,8 +146,55 @@ const Cart = () => {
     city: "",
     state: "",
     pincode: "",
-    paymentMethod: "COD",
+    paymentMethod:
+      localStorage.getItem("codEnabled") === "false" ? "ONLINE" : "COD",
   });
+
+  React.useEffect(() => {
+    let isMounted = true;
+    const fetchShippingSettings = async () => {
+      try {
+        const res = await API.get("/settings");
+        if (res.data?.success && res.data?.data && isMounted) {
+          const s = res.data.data;
+          const isCod = s.codEnabled !== false && s.codEnabled !== "false";
+          const charge =
+            s.deliveryCharge !== undefined && s.deliveryCharge !== ""
+              ? Number(s.deliveryCharge)
+              : 45;
+          const threshold =
+            s.freeThreshold !== undefined && s.freeThreshold !== ""
+              ? Number(s.freeThreshold)
+              : 1500;
+
+          localStorage.setItem("codEnabled", isCod ? "true" : "false");
+          localStorage.setItem("deliveryCharge", String(charge));
+          localStorage.setItem("freeThreshold", String(threshold));
+
+          setShippingSettings({
+            codEnabled: isCod,
+            deliveryCharge: charge,
+            freeThreshold: threshold,
+          });
+
+          if (!isCod) {
+            setAddress((prev) => ({
+              ...prev,
+              paymentMethod: "ONLINE",
+            }));
+          }
+        }
+      } catch (err) {
+        console.warn("Failed fetching shipment settings, using defaults:", err);
+      }
+    };
+    fetchShippingSettings();
+    window.addEventListener("settings-updated", fetchShippingSettings);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("settings-updated", fetchShippingSettings);
+    };
+  }, []);
 
   React.useEffect(() => {
     if (user) {
@@ -654,7 +713,12 @@ const Cart = () => {
   };
 
   const subtotal = getSubtotal();
-  const delivery = subtotal >= 1500 || subtotal === 0 ? 0 : 45;
+  const delivery =
+    subtotal >= (shippingSettings.freeThreshold || 1500) || subtotal === 0
+      ? 0
+      : (shippingSettings.deliveryCharge !== undefined
+          ? shippingSettings.deliveryCharge
+          : 45);
   let tempDiscount = 0;
   if (couponApplied) {
     if (appliedCouponDetails && appliedCouponDetails.discountType === "Percentage") {
@@ -1155,33 +1219,49 @@ const Cart = () => {
                 Select Payment Channel
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label
-                  className={`p-4 border rounded-sm flex items-center justify-between cursor-pointer transition-colors ${
-                    address.paymentMethod === "COD"
-                      ? "border-accent-gold bg-accent-gold/5"
-                      : "border-borderLight bg-primary"
-                  }`}
-                >
-                  <div className="space-y-0.5">
-                    <span className="block text-xs font-bold text-textPrimary">
-                      Cash On Delivery
-                    </span>
-                    <span className="block text-[9px] text-textSecondary">
-                      Pay cash on arrival
+                {shippingSettings.codEnabled ? (
+                  <label
+                    className={`p-4 border rounded-sm flex items-center justify-between cursor-pointer transition-colors ${
+                      address.paymentMethod === "COD"
+                        ? "border-accent-gold bg-accent-gold/5"
+                        : "border-borderLight bg-primary"
+                    }`}
+                  >
+                    <div className="space-y-0.5">
+                      <span className="block text-xs font-bold text-textPrimary">
+                        Cash On Delivery
+                      </span>
+                      <span className="block text-[9px] text-textSecondary">
+                        Pay cash on arrival
+                      </span>
+                    </div>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="COD"
+                      checked={address.paymentMethod === "COD"}
+                      onChange={(e) => {
+                        setAddress({ ...address, paymentMethod: e.target.value });
+                        trackAddPaymentInfo(e.target.value, grandTotal);
+                      }}
+                      className="accent-accent-gold"
+                    />
+                  </label>
+                ) : (
+                  <div className="p-4 border border-dashed border-slate-300 bg-slate-50/80 rounded-sm flex items-center justify-between opacity-75 cursor-not-allowed">
+                    <div className="space-y-0.5">
+                      <span className="block text-xs font-bold text-slate-500 line-through">
+                        Cash On Delivery
+                      </span>
+                      <span className="block text-[9px] text-amber-800 font-medium">
+                        Temporarily disabled (Prepaid only)
+                      </span>
+                    </div>
+                    <span className="text-[9px] uppercase font-bold tracking-wider text-slate-500 bg-slate-200/90 px-2 py-0.5 rounded font-sans">
+                      Unavailable
                     </span>
                   </div>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="COD"
-                    checked={address.paymentMethod === "COD"}
-                    onChange={(e) => {
-                      setAddress({ ...address, paymentMethod: e.target.value });
-                      trackAddPaymentInfo(e.target.value, grandTotal);
-                    }}
-                    className="accent-accent-gold"
-                  />
-                </label>
+                )}
 
                 <label
                   className={`p-4 border rounded-sm flex items-center justify-between cursor-pointer transition-colors ${
@@ -1311,16 +1391,18 @@ const Cart = () => {
                   >
                     {loading ? "Processing..." : "Retry Online Payment"}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFailedOrder(null);
-                      setAddress((prev) => ({ ...prev, paymentMethod: "COD" }));
-                    }}
-                    className="bg-borderLight/40 hover:bg-borderLight/60 text-textPrimary px-4 py-2 text-xs font-bold uppercase rounded-xs tracking-wider transition-colors"
-                  >
-                    Pay via COD instead
-                  </button>
+                  {shippingSettings.codEnabled && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFailedOrder(null);
+                        setAddress((prev) => ({ ...prev, paymentMethod: "COD" }));
+                      }}
+                      className="bg-borderLight/40 hover:bg-borderLight/60 text-textPrimary px-4 py-2 text-xs font-bold uppercase rounded-xs tracking-wider transition-colors"
+                    >
+                      Pay via COD instead
+                    </button>
+                  )}
                 </div>
               </div>
             )}
