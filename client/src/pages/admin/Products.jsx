@@ -572,6 +572,20 @@ const ProductsPage = () => {
     }
 
     let payload = { ...form };
+    if (typeof payload.setContents === "string") {
+      payload.setContents = payload.setContents
+        .split(/[,;\n]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+    } else if (Array.isArray(payload.setContents)) {
+      payload.setContents = payload.setContents
+        .map((s) => String(s).trim())
+        .filter(Boolean);
+    }
+    if (!payload.sizeChart) {
+      payload.sizeChart = { type: "table", imageUrl: "", measurements: [] };
+    }
+
     if (actionType === "draft") {
       payload.status = "draft";
     } else if (actionType === "active") {

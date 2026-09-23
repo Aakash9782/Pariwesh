@@ -60,6 +60,7 @@ const ProductDetails = () => {
   const [addedPopup, setAddedPopup] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [activeOffers, setActiveOffers] = useState([]);
+  const [recommendedList, setRecommendedList] = useState([]);
   const [copiedCode, setCopiedCode] = useState("");
   const [showSizeChart, setShowSizeChart] = useState(false);
   const [pincodeInput, setPincodeInput] = useState("");
@@ -171,8 +172,27 @@ const ProductDetails = () => {
         console.error("Failed fetching active offers:", err);
       }
     };
+    const fetchRelated = async () => {
+      try {
+        const res = await API.get("/products");
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          const others = res.data.data.filter(
+            (p) => p.slug !== slug && (!p.status || p.status === "active"),
+          );
+          const sorted = others.sort((a, b) => {
+            if (a.recommended && !b.recommended) return -1;
+            if (!a.recommended && b.recommended) return 1;
+            return 0;
+          });
+          setRecommendedList(sorted.slice(0, 4));
+        }
+      } catch (err) {
+        console.warn("Failed fetching recommended products:", err);
+      }
+    };
     fetchProductDetails();
     fetchOffers();
+    fetchRelated();
   }, [slug]);
 
   // Central Cloudinary image optimization utility
@@ -316,21 +336,46 @@ const ProductDetails = () => {
     ? Object.values(product.sizesStock).some((qty) => Number(qty) > 0)
     : true;
 
+  const fullRichDescription = [
+    product?.description,
+    product?.fabric && product.fabric !== product.description ? product.fabric : "",
+    product?.setContents && product.setContents.length > 0 ? `Package includes: ${product.setContents.join(", ")}.` : "",
+    product?.fit ? `Fit: ${product.fit}.` : "",
+    product?.material ? `Material: ${product.material}.` : "",
+    product?.pattern ? `Pattern: ${product.pattern}.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ") || `Premium handcrafted ${product?.name} from PARIWESH.`;
+
+  const additionalProperties = [
+    product?.fit && { "@type": "PropertyValue", name: "Fit", value: product.fit },
+    product?.pattern && { "@type": "PropertyValue", name: "Pattern", value: product.pattern },
+    product?.neckline && { "@type": "PropertyValue", name: "Neckline", value: product.neckline },
+    product?.sleeveLength && { "@type": "PropertyValue", name: "Sleeve Length", value: product.sleeveLength },
+    product?.occasion && { "@type": "PropertyValue", name: "Occasion", value: product.occasion },
+    product?.bottomType && { "@type": "PropertyValue", name: "Bottom Type", value: product.bottomType },
+    product?.setContents?.length > 0 && { "@type": "PropertyValue", name: "Set Contents", value: product.setContents.join(", ") },
+    product?.weight && { "@type": "PropertyValue", name: "Fabric Weight", value: product.weight },
+  ].filter(Boolean);
+
   const productSchema = product
     ? {
         "@context": "https://schema.org",
         "@type": "Product",
         name: product.name,
         image: product.images || [productImageUrl],
-        description:
-          product.description ||
-          `Premium handcrafted ${product.name} from PARIWESH.`,
+        description: fullRichDescription,
         sku: product.sku || "",
         category: product.category || "Ethnic Wear",
         brand: {
           "@type": "Brand",
           name: product.brand || "PARIWESH",
         },
+        color: product.color || undefined,
+        material: product.material || product.fabric || undefined,
+        pattern: product.pattern || undefined,
+        countryOfOrigin: product.countryOfOrigin || "India",
+        ...(additionalProperties.length > 0 ? { additionalProperty: additionalProperties } : {}),
         ...(Number(product.reviewsCount) > 0
           ? {
               aggregateRating: {
@@ -948,18 +993,28 @@ const ProductDetails = () => {
                 Product Story & Details
               </h3>
             </div>
-            <div className="text-xs sm:text-[13px] text-slate-600 leading-relaxed font-sans relative">
-              <p className={descExpanded ? "" : "line-clamp-3"}>
-                {product.description ||
-                  "A stylish ready-to-wear premium ethnic ensemble featuring a timeless silhouette, crafted to perfection from Pariwesh signature apparel catalog. Tailored with breathable ease and artistic flair for elevated daily and festive wear."}
-              </p>
-              {product.description && product.description.length > 150 && (
+            <div className="text-xs sm:text-[13px] text-slate-600 leading-relaxed font-sans space-y-2">
+              {product.description && (
+                <p className="font-semibold text-slate-900 leading-relaxed">
+                  {product.description}
+                </p>
+              )}
+              {product.fabric && product.fabric !== product.description ? (
+                <p className={`whitespace-pre-line text-slate-600 ${descExpanded ? "" : "line-clamp-4"}`}>
+                  {product.fabric}
+                </p>
+              ) : !product.description ? (
+                <p>
+                  A stylish ready-to-wear premium ethnic ensemble featuring a timeless silhouette, crafted to perfection from Pariwesh signature apparel catalog. Tailored with breathable ease and artistic flair for elevated daily and festive wear.
+                </p>
+              ) : null}
+              {((product.description && product.description.length > 150) || (product.fabric && product.fabric.length > 180)) && (
                 <button
                   type="button"
                   onClick={() => setDescExpanded(!descExpanded)}
-                  className="text-[10px] font-extrabold text-[#8a1c14] uppercase tracking-wider mt-2 hover:text-red-900 transition block underline cursor-pointer"
+                  className="text-[10px] font-extrabold text-[#8a1c14] uppercase tracking-wider mt-1 hover:text-red-900 transition block underline cursor-pointer"
                 >
-                  {descExpanded ? "Read Less" : "Read More"}
+                  {descExpanded ? "Read Less" : "Read Full Story & Details"}
                 </button>
               )}
             </div>
@@ -1102,6 +1157,87 @@ const ProductDetails = () => {
             </h3>
           </div>
 
+          {/* Garment Silhouette & Cut Specifications Grid */}
+          {(product.fit ||
+            product.pattern ||
+            product.neckline ||
+            product.sleeveLength ||
+            product.occasion ||
+            product.bottomType) && (
+            <div className="rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-sm p-4.5 shadow-xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <span className="text-[11px] font-bold text-slate-900 uppercase tracking-wider font-sans">
+                  Garment &amp; Tailoring Profile
+                </span>
+                <span className="text-[9px] text-[#c5a880] font-bold uppercase tracking-widest">
+                  Authentic Specs
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-left text-xs font-sans">
+                {product.fit && (
+                  <div>
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">
+                      Silhouette / Fit:
+                    </span>
+                    <span className="font-bold text-slate-800 text-[11.5px]">
+                      {product.fit}
+                    </span>
+                  </div>
+                )}
+                {product.pattern && (
+                  <div>
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">
+                      Pattern / Print:
+                    </span>
+                    <span className="font-bold text-slate-800 text-[11.5px]">
+                      {product.pattern}
+                    </span>
+                  </div>
+                )}
+                {product.neckline && (
+                  <div>
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">
+                      Neckline Collar:
+                    </span>
+                    <span className="font-bold text-slate-800 text-[11.5px]">
+                      {product.neckline}
+                    </span>
+                  </div>
+                )}
+                {product.sleeveLength && (
+                  <div>
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">
+                      Sleeve Structure:
+                    </span>
+                    <span className="font-bold text-slate-800 text-[11.5px]">
+                      {product.sleeveLength}
+                    </span>
+                  </div>
+                )}
+                {product.occasion && (
+                  <div>
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">
+                      Occasion Theme:
+                    </span>
+                    <span className="font-bold text-slate-800 text-[11.5px]">
+                      {product.occasion}
+                    </span>
+                  </div>
+                )}
+                {product.bottomType && (
+                  <div>
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">
+                      Bottom Piece:
+                    </span>
+                    <span className="font-bold text-slate-800 text-[11.5px]">
+                      {product.bottomType}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-3">
             {/* Accordion: Fabric Type */}
             <div
@@ -1135,7 +1271,7 @@ const ProductDetails = () => {
               {specsOpen.fabric && (
                 <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in text-left">
                   <strong className="text-slate-800 font-bold block mb-1">
-                    {product.fabric || "Premium Rayon"}
+                    {product.fabric || "Premium Cotton"}
                   </strong>
                   Breathable, lightweight, and ultra-soft fabric offering a natural fluid drape and cool comfort throughout the day.
                 </div>
@@ -1174,9 +1310,9 @@ const ProductDetails = () => {
               {specsOpen.material && (
                 <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in text-left">
                   <strong className="text-slate-800 font-bold block mb-1">
-                    100% {product.fabric || "Rayon"} with Artisanal Prints
+                    {product.material || product.fabric || "Pure Cotton / Art Silk Weaves"}
                   </strong>
-                  Features traditional contrast floral / geometric prints with durable border embellishments and neat lock-stitch hemming.
+                  Features traditional artisanal weaving techniques with durable border embellishments and neat lock-stitch hemming.
                 </div>
               )}
             </div>
@@ -1290,16 +1426,145 @@ const ProductDetails = () => {
               </button>
               {specsOpen.packageDetails && (
                 <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in text-left">
-                  <span className="text-slate-400 font-semibold text-[10.5px] uppercase block mb-1">Net Ensemble Contents:</span>
-                  <span className="text-slate-800 font-bold">
-                    1 Complete Ensemble ({product.category === "suits" ? "Kurti, Bottom & Dupatta Set" : "Kurti & Bottom Co-ord Set"})
-                  </span>
+                  <span className="text-slate-400 font-semibold text-[10.5px] uppercase block mb-1.5">Net Ensemble Contents:</span>
+                  {product.setContents && product.setContents.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 mb-1.5">
+                      {product.setContents.map((item, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50/90 text-[#8a1c14] border border-[#c5a880]/40 shadow-2xs"
+                        >
+                          ✓ {item}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-slate-800 font-bold block mb-1">
+                      1 Complete Ensemble ({product.category === "suits" ? "Kurti, Bottom & Dupatta Set" : "Kurti & Bottom Co-ord Set"})
+                    </span>
+                  )}
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Each garment is quality-checked, steam pressed, and safely packaged in protective dust bags.
+                  </p>
                 </div>
               )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* CURATED ENSEMBLES & SUGGESTED PAIRINGS (Prioritizes Recommended Products) */}
+      {recommendedList && recommendedList.length > 0 && (
+        <section className="mt-16 sm:mt-20 border-t border-[#c5a880]/20 pt-12">
+          <div className="text-center space-y-2 mb-8 max-w-xl mx-auto">
+            <span className="text-[10px] text-[#8a1c14] tracking-[0.25em] uppercase font-bold flex items-center justify-center space-x-2">
+              <span className="h-[1px] w-6 bg-[#8a1c14]/30" />
+              <span>Complete The Look</span>
+              <span className="h-[1px] w-6 bg-[#8a1c14]/30" />
+            </span>
+            <h2 className="text-xl sm:text-2xl font-serif text-slate-900 tracking-wide">
+              Curated Ensembles & Pairings
+            </h2>
+            <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+              Complement your wardrobe with these handpicked royal pairings, crafted for timeless grace.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            {recommendedList.map((rec) => {
+              const recImg = rec.images?.[0] || rec.image || "/hero.png";
+              const recSlug = rec.slug || rec._id;
+              const isFav = wishlist.some((w) => (w._id || w.id) === (rec._id || rec.id));
+
+              return (
+                <div
+                  key={rec._id}
+                  className="group relative bg-white/80 hover:bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/80 hover:border-[#c5a880]/40 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_rgba(197,168,128,0.18)] hover:-translate-y-1 flex flex-col h-full transition-all duration-300"
+                >
+                  {/* Badges */}
+                  <div className="absolute top-3.5 left-3.5 z-20 pointer-events-none">
+                    {rec.tag && !["regular", "normal", "standard"].includes(rec.tag.trim().toLowerCase()) ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-xs bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.16em] shadow-md border border-amber-300/30">
+                        {rec.tag}
+                      </span>
+                    ) : rec.recommended ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-xs bg-gradient-to-r from-amber-600 to-amber-700 text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.16em] shadow-md border border-amber-200/30">
+                        Stylist Pick
+                      </span>
+                    ) : rec.bestSeller ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-xs bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.16em] shadow-md">
+                        Best Seller
+                      </span>
+                    ) : null}
+                  </div>
+
+                  {/* Wishlist Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      dispatch(toggleWishlistProduct(rec));
+                      syncWishlistNow();
+                      showAlert({
+                        title: isFav ? "Removed from Wishlist" : "Added to Wishlist",
+                        type: "default",
+                      });
+                    }}
+                    className={`absolute top-3.5 right-3.5 z-20 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 shadow-sm border border-white/60 cursor-pointer ${
+                      isFav
+                        ? "bg-white text-[#8a1c14] scale-105 ring-2 ring-[#8a1c14]/30"
+                        : "bg-white/85 hover:bg-white text-slate-700 hover:text-[#8a1c14] hover:scale-110 active:scale-95"
+                    }`}
+                    aria-label="Wishlist"
+                  >
+                    {isFav ? <RiHeartFill size={15} /> : <RiHeartLine size={15} />}
+                  </button>
+
+                  {/* Image link */}
+                  <Link
+                    to={`/product/${recSlug}`}
+                    className="relative aspect-[3/4] rounded-xl overflow-hidden bg-stone-100 mb-3 block"
+                  >
+                    <img
+                      src={getOptimizedImageUrl(recImg, 500)}
+                      alt={rec.name}
+                      className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  </Link>
+
+                  {/* Info */}
+                  <div className="flex flex-col flex-grow">
+                    {rec.category && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800/80 mb-0.5">
+                        {rec.category}
+                      </span>
+                    )}
+                    <Link
+                      to={`/product/${recSlug}`}
+                      className="text-xs sm:text-[13px] font-medium text-slate-800 hover:text-[#8a1c14] line-clamp-1 transition-colors"
+                      title={rec.name}
+                    >
+                      {rec.name}
+                    </Link>
+                    <div className="mt-auto pt-2 flex items-baseline gap-2">
+                      <span className="text-xs sm:text-sm font-bold text-slate-900">
+                        {formatCurrency(rec.price)}
+                      </span>
+                      {rec.mrp && rec.mrp > rec.price && (
+                        <span className="text-[10px] sm:text-xs text-slate-400 line-through">
+                          {formatCurrency(rec.mrp)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* VERIFIED CUSTOMER RATINGS & REVIEWS SECTION */}
       <ProductReviews

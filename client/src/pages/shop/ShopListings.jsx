@@ -525,17 +525,34 @@ const ShopListings = () => {
                     key={product._id}
                     className="group relative bg-white/80 hover:bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/80 hover:border-[#c5a880]/40 shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_12px_32px_rgba(197,168,128,0.18),0_4px_12px_rgba(0,0,0,0.03)] hover:-translate-y-1 flex flex-col h-full transition-all duration-400"
                   >
-                    {/* Product Badge - Filter out generic REGULAR tags */}
-                    {product.tag &&
-                      !["regular", "normal", "standard"].includes(
-                        product.tag.trim().toLowerCase()
-                      ) && (
+                    {/* Product Badge - Supports custom Tag, Best Seller, New Arrival, and Trending */}
+                    {(() => {
+                      let badgeText = "";
+                      if (
+                        product.tag &&
+                        !["regular", "normal", "standard"].includes(
+                          product.tag.trim().toLowerCase(),
+                        )
+                      ) {
+                        badgeText = product.tag;
+                      } else if (product.bestSeller) {
+                        badgeText = "Best Seller";
+                      } else if (product.newArrival) {
+                        badgeText = "New Arrival";
+                      } else if (product.trending) {
+                        badgeText = "Trending";
+                      }
+
+                      if (!badgeText) return null;
+
+                      return (
                         <div className="absolute top-3.5 left-3.5 z-20 pointer-events-none">
                           <span className="inline-flex items-center px-2 py-0.5 rounded-xs bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.16em] shadow-md border border-amber-300/30">
-                            {product.tag}
+                            {badgeText}
                           </span>
                         </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Wishlist Button */}
                     <button

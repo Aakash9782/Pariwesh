@@ -216,6 +216,7 @@ export const createProduct = async (req, res, next) => {
       occasion,
       bottomType,
       setContents,
+      sizeChart,
       rating,
       reviewsCount,
     } = req.body;
@@ -269,6 +270,14 @@ export const createProduct = async (req, res, next) => {
     }
     const productVideo = productVideos[0] || "";
 
+    // Normalize setContents safely
+    let cleanSetContents = [];
+    if (Array.isArray(setContents)) {
+      cleanSetContents = setContents.map((s) => String(s).trim()).filter(Boolean);
+    } else if (typeof setContents === "string" && setContents.trim()) {
+      cleanSetContents = setContents.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
+    }
+
     const newProduct = await Product.create({
       name,
       sku,
@@ -280,6 +289,7 @@ export const createProduct = async (req, res, next) => {
       colorHex: colorHex || "#D4AF37",
       sizes: sizes || ["M", "L", "XL", "XXL"],
       sizesStock: sizesStock || { M: 10, L: 10, XL: 10, XXL: 10 },
+      sizeChart: sizeChart || { type: "table", imageUrl: "", measurements: [] },
       mrp,
       price,
       discount: discount || 0,
@@ -319,7 +329,7 @@ export const createProduct = async (req, res, next) => {
       sleeveLength: sleeveLength || "",
       occasion: occasion || "",
       bottomType: bottomType || "",
-      setContents: setContents || [],
+      setContents: cleanSetContents,
     });
 
     await logActivity(
@@ -450,6 +460,7 @@ export const updateProduct = async (req, res, next) => {
       occasion,
       bottomType,
       setContents,
+      sizeChart,
       rating,
       reviewsCount,
     } = req.body;
@@ -567,7 +578,20 @@ export const updateProduct = async (req, res, next) => {
     if (sleeveLength !== undefined) product.sleeveLength = sleeveLength;
     if (occasion !== undefined) product.occasion = occasion;
     if (bottomType !== undefined) product.bottomType = bottomType;
-    if (setContents !== undefined) product.setContents = setContents;
+    if (setContents !== undefined) {
+      let cleanSetContents = [];
+      if (Array.isArray(setContents)) {
+        cleanSetContents = setContents.map((s) => String(s).trim()).filter(Boolean);
+      } else if (typeof setContents === "string" && setContents.trim()) {
+        cleanSetContents = setContents.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
+      }
+      product.setContents = cleanSetContents;
+      product.markModified("setContents");
+    }
+    if (sizeChart !== undefined) {
+      product.sizeChart = sizeChart;
+      product.markModified("sizeChart");
+    }
     if (status !== undefined) product.status = status;
 
     if (name) {
@@ -578,6 +602,34 @@ export const updateProduct = async (req, res, next) => {
     }
 
     const updatedProduct = await product.save();
+
+    // Auto-sync updated product with matching collections
+    try {
+      if (product.bestSeller) {
+        await Collection.updateMany(
+          { slug: "best-sellers" },
+          { $addToSet: { products: product._id } },
+        );
+      } else if (bestSeller === false || bestSeller === "false") {
+        await Collection.updateMany(
+          { slug: "best-sellers" },
+          { $pull: { products: product._id } },
+        );
+      }
+      if (product.newArrival) {
+        await Collection.updateMany(
+          { slug: "new-arrivals" },
+          { $addToSet: { products: product._id } },
+        );
+      } else if (newArrival === false || newArrival === "false") {
+        await Collection.updateMany(
+          { slug: "new-arrivals" },
+          { $pull: { products: product._id } },
+        );
+      }
+    } catch (colErr) {
+      console.warn("Could not sync product to collection on update:", colErr.message);
+    }
 
     await logActivity(
       req,

@@ -105,12 +105,17 @@ export const ProductBasicTab = () => {
         </div>
 
         <div className="flex flex-col md:col-span-2">
-          <label className="text-xs font-semibold text-slate-700 block mb-1.5">
-            Short Sub-heading Description
-          </label>
+          <div className="flex justify-between items-center mb-1.5">
+            <label className="text-xs font-semibold text-slate-700">
+              Short Sub-heading / Hook Tagline
+            </label>
+            <span className="text-[10px] text-slate-400 font-sans">
+              (For catalog cards & Google search snippet)
+            </span>
+          </div>
           <input
             type="text"
-            placeholder="Catchy sentence summing up key features..."
+            placeholder="e.g. Pure Banarasi Chanderi silk with floral hand-embroidery."
             value={form.description || ""}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent-gold/20 focus:border-accent-gold transition"
@@ -118,15 +123,20 @@ export const ProductBasicTab = () => {
         </div>
 
         <div className="flex flex-col md:col-span-2">
-          <label className="text-xs font-semibold text-slate-700 block mb-1.5">
-            Long Form Details (Fabric Details & Sizing Advice)
-          </label>
+          <div className="flex justify-between items-center mb-1.5">
+            <label className="text-xs font-semibold text-slate-700">
+              Complete Product Story & Detailed Description
+            </label>
+            <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-bold font-sans">
+              Google SEO Rich Data & Live Product Page
+            </span>
+          </div>
           <textarea
-            rows={3}
-            placeholder="Long catalog text displaying fabric linings, custom work stitching details, trousers details, wedding festive instructions..."
+            rows={4}
+            placeholder="Detailed product story, fabric linings, weaving craftsmanship, dupatta styling, occasion advice, and care tips..."
             value={form.fabric}
             onChange={(e) => setForm({ ...form, fabric: e.target.value })}
-            className="w-full bg-slate-55 bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880] transition"
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880] transition"
           />
         </div>
 
@@ -357,34 +367,59 @@ export const ProductDetailsTab = () => {
     }
   }, [form.colorGroup, form._id]);
 
-  // Tag helper functions
+  // Tag helper functions with auto-commit on blur, comma-split, and paste
+  const commitTag = (inputText) => {
+    const raw = (inputText !== undefined ? inputText : newTagInput).trim();
+    if (!raw) return;
+    const items = raw
+      .split(/[,;\n]+/)
+      .map((s) => s.trim().replace(/^,+|,+$/g, ""))
+      .filter(Boolean);
+    if (items.length === 0) return;
+
+    setForm((prev) => {
+      const existing = prev.setContents || [];
+      const updated = [...existing];
+      items.forEach((item) => {
+        if (!updated.includes(item)) {
+          updated.push(item);
+        }
+      });
+      return { ...prev, setContents: updated };
+    });
+    setNewTagInput("");
+  };
+
   const handleAddTag = (e) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
-      const val = newTagInput.trim().replace(/^,+|,+$/g, "");
-      if (val && !(form.setContents || []).includes(val)) {
-        setForm({
-          ...form,
-          setContents: [...(form.setContents || []), val],
-        });
-      }
-      setNewTagInput("");
+      commitTag();
     }
   };
 
   const handleRemoveTag = (tagToRemove) => {
-    setForm({
-      ...form,
-      setContents: (form.setContents || []).filter(
+    setForm((prev) => ({
+      ...prev,
+      setContents: (prev.setContents || []).filter(
         (tag) => tag !== tagToRemove,
       ),
+    }));
+  };
+
+  const handleQuickAddTag = (presetTag) => {
+    setForm((prev) => {
+      const existing = prev.setContents || [];
+      if (existing.includes(presetTag)) return prev;
+      return {
+        ...prev,
+        setContents: [...existing, presetTag],
+      };
     });
   };
 
   // Sibling switcher
   const handleSwitchSibling = (sibling) => {
-    // Prevent switching if there are unsaved changes on current form?
-    // We can directly load the sibling to save friction.
+    // Directly load the sibling with all metadata preserved
     setEditProduct(sibling);
     setForm({
       name: sibling.name || "",
@@ -410,6 +445,11 @@ export const ProductDetailsTab = () => {
         XL: 10,
         XXL: 10,
       },
+      sizeChart: sibling.sizeChart || {
+        type: "table",
+        imageUrl: "",
+        measurements: [],
+      },
       mrp: sibling.mrp || "",
       price: sibling.price || "",
       discount: sibling.discount || 0,
@@ -431,8 +471,16 @@ export const ProductDetailsTab = () => {
       canonicalUrl: sibling.canonicalUrl || "",
       ogImage: sibling.ogImage || "",
       images: sibling.images || [],
-      video: sibling.video || "",
+      video: sibling.video || (sibling.videos && sibling.videos[0]) || "",
+      videos:
+        sibling.videos && sibling.videos.length > 0
+          ? sibling.videos
+          : sibling.video
+          ? [sibling.video]
+          : [],
       tag: sibling.tag || "Regular",
+      rating: sibling.rating !== undefined ? sibling.rating : 0,
+      reviewsCount: sibling.reviewsCount !== undefined ? sibling.reviewsCount : 0,
       description: sibling.description || "",
       status: sibling.status || "active",
       slug: sibling.slug || "",
@@ -489,11 +537,20 @@ export const ProductDetailsTab = () => {
             </label>
             <input
               type="text"
+              list="fit-options"
               placeholder="e.g. Regular Fit, A-Line Flared, Straight Cut"
               value={form.fit || ""}
               onChange={(e) => setForm({ ...form, fit: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#c5a880]/20 focus:border-[#c5a880] transition"
             />
+            <datalist id="fit-options">
+              <option value="Regular Fit" />
+              <option value="A-Line Flared" />
+              <option value="Straight Cut" />
+              <option value="Anarkali Flared" />
+              <option value="Kalidar Flared" />
+              <option value="Relaxed Fit" />
+            </datalist>
           </div>
 
           {/* Pattern Style */}
@@ -503,11 +560,20 @@ export const ProductDetailsTab = () => {
             </label>
             <input
               type="text"
+              list="pattern-options"
               placeholder="e.g. Floral Chintz Handblock, Zari Border Embroidery"
               value={form.pattern || ""}
               onChange={(e) => setForm({ ...form, pattern: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#c5a880]/20 focus:border-[#c5a880] transition"
             />
+            <datalist id="pattern-options">
+              <option value="Floral Handblock Prints" />
+              <option value="Zari Border Embroidery" />
+              <option value="Bandhani Print" />
+              <option value="Geometric Block Print" />
+              <option value="Solid Dyed with Lace Work" />
+              <option value="Gota Patti Handwork" />
+            </datalist>
           </div>
 
           {/* Neckline profile */}
@@ -517,11 +583,20 @@ export const ProductDetailsTab = () => {
             </label>
             <input
               type="text"
+              list="neckline-options"
               placeholder="e.g. Mandarin Neck, V-Neckline, Round Neck"
               value={form.neckline || ""}
               onChange={(e) => setForm({ ...form, neckline: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#c5a880]/20 focus:border-[#c5a880] transition"
             />
+            <datalist id="neckline-options">
+              <option value="Round Neck" />
+              <option value="V-Neckline" />
+              <option value="Mandarin Collar" />
+              <option value="Sweetheart Neck" />
+              <option value="Boat Neck" />
+              <option value="Keyhole Neck" />
+            </datalist>
           </div>
 
           {/* Sleeve Length */}
@@ -531,6 +606,7 @@ export const ProductDetailsTab = () => {
             </label>
             <input
               type="text"
+              list="sleeve-options"
               placeholder="e.g. Three-Quarter Sleeves, Sleeveless, Full Sleeve"
               value={form.sleeveLength || ""}
               onChange={(e) =>
@@ -538,6 +614,13 @@ export const ProductDetailsTab = () => {
               }
               className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#c5a880]/20 focus:border-[#c5a880] transition"
             />
+            <datalist id="sleeve-options">
+              <option value="Three-Quarter (3/4th) Sleeves" />
+              <option value="Full Sleeves" />
+              <option value="Sleeveless" />
+              <option value="Elbow Length Sleeves" />
+              <option value="Cap Sleeves" />
+            </datalist>
           </div>
 
           {/* Occasion profiling */}
@@ -547,11 +630,19 @@ export const ProductDetailsTab = () => {
             </label>
             <input
               type="text"
+              list="occasion-options"
               placeholder="e.g. Festive Weddings, Casual Apparel, Workwear"
               value={form.occasion || ""}
               onChange={(e) => setForm({ ...form, occasion: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#c5a880]/20 focus:border-[#c5a880] transition"
             />
+            <datalist id="occasion-options">
+              <option value="Festive Weddings & Parties" />
+              <option value="Daily Casual Comfort" />
+              <option value="Office & Workwear" />
+              <option value="Haldi & Mehendi Ceremonies" />
+              <option value="Evening Celebrations" />
+            </datalist>
           </div>
 
           {/* Bottom Type */}
@@ -561,32 +652,71 @@ export const ProductDetailsTab = () => {
             </label>
             <input
               type="text"
+              list="bottom-options"
               placeholder="e.g. Straight Trousers, Palazzo Flares, Churidar"
               value={form.bottomType || ""}
               onChange={(e) => setForm({ ...form, bottomType: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#c5a880]/20 focus:border-[#c5a880] transition"
             />
+            <datalist id="bottom-options">
+              <option value="Straight Trousers" />
+              <option value="Palazzo Flares" />
+              <option value="Flared Sharara" />
+              <option value="Churidar" />
+              <option value="Dhoti Pants" />
+              <option value="None / Top Only" />
+            </datalist>
           </div>
 
           {/* Set Contents Array Tag editor */}
           <div className="flex flex-col md:col-span-2">
-            <label className="text-xs font-semibold text-slate-700 block mb-1.5 font-sans">
-              Set Contents Included Apparel (Press Enter or comma to save tag)
-            </label>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="text-xs font-semibold text-slate-700 font-sans">
+                Set Contents / Included Garments
+              </label>
+              <span className="text-[10px] text-slate-400 font-sans">
+                (Type, paste with commas, or click quick chips below)
+              </span>
+            </div>
+
+            {/* Quick preset chips */}
+            <div className="flex flex-wrap items-center gap-1.5 mb-2">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mr-1">Quick Add:</span>
+              {["Kurti", "Pant", "Dupatta", "Palazzo", "Sharara", "Inner Slip", "Jacket", "Belt"].map((chip) => {
+                const isAdded = (form.setContents || []).includes(chip);
+                return (
+                  <button
+                    key={chip}
+                    type="button"
+                    disabled={isAdded}
+                    onClick={() => handleQuickAddTag(chip)}
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
+                      isAdded
+                        ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                        : "bg-white hover:bg-amber-50 text-slate-700 hover:text-[#8a1c14] border-slate-200 hover:border-[#c5a880] active:scale-95 shadow-2xs"
+                    }`}
+                  >
+                    + {chip}
+                  </button>
+                );
+              })}
+            </div>
+
             <div className="flex flex-col space-y-2 border border-slate-200 rounded-lg bg-slate-50 p-2.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#c5a880]/20 focus-within:border-[#c5a880] transition">
               <div className="flex flex-wrap gap-1.5">
                 {(form.setContents || []).map((tag, idx) => (
                   <span
                     key={idx}
-                    className="inline-flex items-center space-x-1 bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-semibold font-sans"
+                    className="inline-flex items-center space-x-1 bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-1 rounded-md text-[11px] font-bold font-sans shadow-2xs"
                   >
                     <span>{tag}</span>
                     <button
                       type="button"
                       onClick={() => handleRemoveTag(tag)}
-                      className="text-amber-600 hover:text-amber-900 rounded-full focus:outline-none"
+                      className="text-amber-700 hover:text-red-700 rounded-full focus:outline-none ml-1 cursor-pointer"
+                      title={`Remove ${tag}`}
                     >
-                      <RiCloseLine size={10} />
+                      <RiCloseLine size={12} />
                     </button>
                   </span>
                 ))}
@@ -595,15 +725,26 @@ export const ProductDetailsTab = () => {
                 type="text"
                 placeholder={
                   (form.setContents || []).length === 0
-                    ? "Add item, e.g. Kurti (press Enter)..."
+                    ? "Type garments (e.g. Kurti, Pant, Dupatta) & press Enter or comma..."
                     : "Add another garment..."
                 }
                 value={newTagInput}
-                onChange={(e) => setNewTagInput(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val.includes(",")) {
+                    commitTag(val);
+                  } else {
+                    setNewTagInput(val);
+                  }
+                }}
                 onKeyDown={handleAddTag}
+                onBlur={() => commitTag()}
                 className="w-full bg-transparent border-none outline-none text-xs text-slate-800 p-0.5"
               />
             </div>
+            <p className="text-[10px] text-slate-400 mt-1">
+              Items entered here will display automatically in the customer's "Package Contents" accordion and Google Shopping index.
+            </p>
           </div>
 
           {/* Standard dimensions */}

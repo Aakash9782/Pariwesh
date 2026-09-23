@@ -248,6 +248,14 @@ const Home = () => {
                 images,
                 video: p.video || "",
                 tag: p.tag || p.tags || "",
+                featured: p.featured === true || p.featured === "true",
+                trending: p.trending === true || p.trending === "true",
+                bestSeller: p.bestSeller === true || p.bestSeller === "true",
+                newArrival: p.newArrival === true || p.newArrival === "true",
+                recommended: p.recommended === true || p.recommended === "true",
+                fabric: p.fabric || "",
+                rating: p.rating !== undefined ? p.rating : 0,
+                reviewsCount: p.reviewsCount !== undefined ? p.reviewsCount : 0,
                 sizes:
                   Array.isArray(p.sizes) && p.sizes.length > 0
                     ? p.sizes
@@ -267,7 +275,9 @@ const Home = () => {
           ].some(Boolean);
 
           if (!hasCustomSlides && dbProducts.length > 0) {
-            const dynamicSlides = dbProducts
+            const featuredItems = dbProducts.filter((p) => p.featured);
+            const sliderPool = featuredItems.length >= 2 ? featuredItems : dbProducts;
+            const dynamicSlides = sliderPool
               .map((p) => p.images?.[0])
               .filter(Boolean)
               .slice(0, 5);
@@ -926,22 +936,42 @@ const Home = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4 sm:gap-y-8">
-            {products.map((product) => (
-              <div
-                key={product._id}
-                className="group relative bg-white/80 hover:bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/80 hover:border-[#c5a880]/40 shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_12px_32px_rgba(197,168,128,0.18),0_4px_12px_rgba(0,0,0,0.03)] hover:-translate-y-1 flex flex-col h-full transition-all duration-400"
-              >
-                {/* Product Badge - Filter out generic REGULAR tags */}
-                {product.tag &&
+            {[...products]
+              .sort((a, b) => {
+                if (a.trending && !b.trending) return -1;
+                if (!a.trending && b.trending) return 1;
+                return 0;
+              })
+              .map((product) => {
+                let badgeText = "";
+                if (
+                  product.tag &&
                   !["regular", "normal", "standard"].includes(
-                    product.tag.trim().toLowerCase()
-                  ) && (
-                    <div className="absolute top-3.5 left-3.5 z-20 pointer-events-none">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-xs bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.16em] shadow-md border border-amber-300/30">
-                        {product.tag}
-                      </span>
-                    </div>
-                )}
+                    product.tag.trim().toLowerCase(),
+                  )
+                ) {
+                  badgeText = product.tag;
+                } else if (product.bestSeller) {
+                  badgeText = "Best Seller";
+                } else if (product.newArrival) {
+                  badgeText = "New Arrival";
+                } else if (product.trending) {
+                  badgeText = "Trending";
+                }
+
+                return (
+                  <div
+                    key={product._id}
+                    className="group relative bg-white/80 hover:bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/80 hover:border-[#c5a880]/40 shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_12px_32px_rgba(197,168,128,0.18),0_4px_12px_rgba(0,0,0,0.03)] hover:-translate-y-1 flex flex-col h-full transition-all duration-400"
+                  >
+                    {/* Product Badge - Supports custom Tag, Best Seller, New Arrival, and Trending */}
+                    {badgeText && (
+                      <div className="absolute top-3.5 left-3.5 z-20 pointer-events-none">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-xs bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.16em] shadow-md border border-amber-300/30">
+                          {badgeText}
+                        </span>
+                      </div>
+                    )}
 
                 {/* Wishlist Button */}
                 <button
@@ -1169,7 +1199,8 @@ const Home = () => {
                   </button>
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         )}
       </section>
