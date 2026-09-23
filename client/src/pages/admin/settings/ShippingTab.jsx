@@ -12,7 +12,10 @@ const ShippingTab = ({ shippingForm, setShippingForm, handleSaveShipping }) => {
       <div className="bg-[#FAF9F6] p-4 rounded-xl border border-slate-200/80">
         <ToggleSwitch
           id="codEnabledSwitch"
-          checked={shippingForm.codEnabled === "true"}
+          checked={
+            shippingForm.codEnabled === "true" ||
+            shippingForm.codEnabled === true
+          }
           onChange={(val) =>
             setShippingForm({
               ...shippingForm,

@@ -183,9 +183,16 @@ const SettingsPage = () => {
           saleFilterTag: data.saleFilterTag || "",
         });
         setShippingForm({
-          codEnabled: data.codEnabled || "true",
-          deliveryCharge: data.deliveryCharge || "70",
-          freeThreshold: data.freeThreshold || "2499",
+          codEnabled:
+            data.codEnabled === undefined ? "true" : String(data.codEnabled),
+          deliveryCharge:
+            data.deliveryCharge !== undefined
+              ? String(data.deliveryCharge)
+              : "70",
+          freeThreshold:
+            data.freeThreshold !== undefined
+              ? String(data.freeThreshold)
+              : "2499",
         });
         setSlideBarActive(
           data.slideBarActive === undefined
