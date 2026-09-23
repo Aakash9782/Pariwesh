@@ -24,7 +24,17 @@ import {
   RiDoubleQuotesL,
   RiAwardLine,
   RiLeafLine,
+  RiShoppingBagLine,
 } from "react-icons/ri";
+
+const formatProductTitle = (name) => {
+  if (!name) return "";
+  return name
+    .replace(/\s*-\s*-\s*/g, " - ")
+    .replace(/\s*-\s*([a-zA-Z]+)-\s*$/g, " - $1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+};
 
 const safeSetItem = (key, value) => {
   try {
@@ -128,6 +138,7 @@ const Home = () => {
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [selectedCardSizes, setSelectedCardSizes] = useState({});
 
   // Custom dynamic states for homepage elements
   const [dynCategories, setDynCategories] = useState(() => {
@@ -920,13 +931,16 @@ const Home = () => {
                 key={product._id}
                 className="group relative bg-white/80 hover:bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/80 hover:border-[#c5a880]/40 shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_12px_32px_rgba(197,168,128,0.18),0_4px_12px_rgba(0,0,0,0.03)] hover:-translate-y-1 flex flex-col h-full transition-all duration-400"
               >
-                {/* Product Badge */}
-                {product.tag && (
-                  <div className="absolute top-3.5 left-3.5 z-20 pointer-events-none">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-xs bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.16em] shadow-md border border-amber-300/30">
-                      {product.tag}
-                    </span>
-                  </div>
+                {/* Product Badge - Filter out generic REGULAR tags */}
+                {product.tag &&
+                  !["regular", "normal", "standard"].includes(
+                    product.tag.trim().toLowerCase()
+                  ) && (
+                    <div className="absolute top-3.5 left-3.5 z-20 pointer-events-none">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-xs bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.16em] shadow-md border border-amber-300/30">
+                        {product.tag}
+                      </span>
+                    </div>
                 )}
 
                 {/* Wishlist Button */}
@@ -1056,17 +1070,17 @@ const Home = () => {
                       )}
                     </div>
 
-                    {/* Product Title (1-Tap Navigates Instantly) */}
+                    {/* Product Title (Clean & Sanitized) */}
                     <h3 className="text-xs sm:text-[13px] font-sans font-medium text-slate-900 leading-snug group-hover:text-[#8a1c14] transition-colors duration-200 line-clamp-2 h-9">
                       <Link to={`/product/${product.slug}`}>
-                        {product.name}
+                        {formatProductTitle(product.name)}
                       </Link>
                     </h3>
 
-                    {/* Available Sizes Micro-Indicator */}
-                    <div className="flex items-center space-x-1.5 pt-0.5 font-sans text-[10px]">
-                      <span className="text-slate-400 font-semibold uppercase text-[9px] tracking-wider">Sizes:</span>
-                      <div className="flex items-center space-x-1">
+                    {/* Available Sizes Interactive Selector (Clean Minimal Luxury Chips) */}
+                    <div className="flex items-center justify-between pt-0.5 font-sans text-[10px]">
+                      <span className="text-slate-400 font-semibold uppercase text-[8.5px] tracking-wider">Sizes:</span>
+                      <div className="flex items-center space-x-1 overflow-x-auto scrollbar-none py-0.5">
                         {(product.sizes && product.sizes.length > 0
                           ? product.sizes
                           : ["M", "L", "XL", "XXL"]
@@ -1075,17 +1089,37 @@ const Home = () => {
                             product.sizesStock &&
                             product.sizesStock[sz] !== undefined &&
                             product.sizesStock[sz] <= 0;
+                          const activeSize =
+                            selectedCardSizes[product._id] ||
+                            (product.sizes && product.sizes.length > 0
+                              ? product.sizes[0]
+                              : "M");
+                          const isSelected = activeSize === sz;
+
                           return (
-                            <span
+                            <button
                               key={sz}
-                              className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${
+                              type="button"
+                              disabled={isOut}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setSelectedCardSizes((prev) => ({
+                                  ...prev,
+                                  [product._id]: sz,
+                                }));
+                              }}
+                              className={`min-w-[22px] h-[20px] px-1 rounded text-[8.5px] font-bold transition-all cursor-pointer flex items-center justify-center ${
                                 isOut
-                                  ? "text-slate-300 border-slate-200 line-through bg-slate-50"
-                                  : "text-slate-700 border-slate-200 bg-white shadow-2xs"
+                                  ? "text-slate-300 line-through bg-slate-50 cursor-not-allowed"
+                                  : isSelected
+                                  ? "bg-[#8a1c14] text-white font-extrabold shadow-2xs scale-105"
+                                  : "text-slate-600 bg-slate-100 hover:bg-slate-200"
                               }`}
+                              title={isOut ? `${sz} (Out of Stock)` : `Select Size ${sz}`}
                             >
                               {sz}
-                            </span>
+                            </button>
                           );
                         })}
                       </div>
@@ -1113,17 +1147,25 @@ const Home = () => {
                     )}
                   </div>
 
-                  {/* Prominent Full-Width ADD TO CART Button (Subtle 3D Glassy) */}
+                  {/* Refined Luxury Action Button */}
                   <button
                     type="button"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      handleQuickAddToCart(product, "M");
+                      const chosenSize =
+                        selectedCardSizes[product._id] ||
+                        (product.sizes && product.sizes.length > 0
+                          ? product.sizes[0]
+                          : "M");
+                      handleQuickAddToCart(product, chosenSize);
                     }}
-                    className="w-full bg-gradient-to-b from-[#9b2017] to-[#7a1810] hover:from-[#a8251b] hover:to-[#861c13] text-white font-extrabold text-[11px] uppercase tracking-[0.15em] py-2.5 rounded-xl border border-rose-300/25 shadow-[0_4px_14px_rgba(138,28,20,0.22),inset_0_1px_0_rgba(255,255,255,0.25),inset_0_-1px_0_rgba(0,0,0,0.2)] hover:shadow-[0_6px_20px_rgba(138,28,20,0.38),inset_0_1px_0_rgba(255,255,255,0.35)] active:scale-[0.98] active:translate-y-[1px] transition-all duration-200 cursor-pointer flex items-center justify-center space-x-1.5 mt-1"
+                    className="w-full bg-[#8a1c14] hover:bg-[#70150e] text-white font-bold text-[10px] sm:text-[10.5px] uppercase tracking-[0.14em] py-2 rounded-lg shadow-xs hover:shadow-sm active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center space-x-1.5 mt-1"
                   >
-                    <span>ADD TO CART</span>
+                    <RiShoppingBagLine size={13} />
+                    <span>
+                      ADD TO BAG {selectedCardSizes[product._id] ? `(${selectedCardSizes[product._id]})` : ""}
+                    </span>
                   </button>
                 </div>
               </div>

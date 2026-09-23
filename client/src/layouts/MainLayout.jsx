@@ -15,6 +15,8 @@ import {
   RiWhatsappLine,
   RiInstagramLine,
   RiFacebookCircleLine,
+  RiTruckLine,
+  RiShieldCheckLine,
 } from "react-icons/ri";
 import { logoutSuccess } from "../redux/slices/authSlice.js";
 import { clearCart } from "../redux/slices/cartSlice.js";
@@ -46,6 +48,11 @@ const MainLayout = () => {
   });
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  React.useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname, location.search]);
+
   const cartItems = useSelector((state) => state.cart.items);
   const totalCartQuantity = cartItems.reduce(
     (sum, item) => sum + item.quantity,
@@ -224,8 +231,7 @@ const MainLayout = () => {
     dispatch(clearWishlist());
   };
 
-    const navLinks = [
-    { title: "HOME", path: "/" },
+    const desktopNavLinks = [
     { title: "BEST SELLING", path: "/shop?tag=Best Seller", badge: "Hot" },
     { title: "NEW ARRIVAL", path: "/shop?tag=New Arrival", badge: "New" },
     { title: "READYMADE DRESSES", path: "/shop?category=ethnic" },
@@ -242,7 +248,6 @@ const MainLayout = () => {
       : []),
     { title: "PREMIUM DRESSES", path: "/shop?category=suits" },
     { title: "ALL COLLECTION", path: "/collections" },
-    { title: "TRACK YOUR ORDER", path: "/profile" },
   ];
 
   return (
@@ -276,37 +281,35 @@ const MainLayout = () => {
         </div>
       )}
 
-      <header className="sticky top-0 z-50 bg-white/85 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/80 border-b border-[#c5a880]/25 shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/90 border-b border-[#c5a880]/30 shadow-[0_4px_25px_rgba(0,0,0,0.03)] transition-all duration-300">
         {/* Tier 1: Search, Logo, Actions */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 lg:h-22 flex items-center justify-between relative">
-          {/* Mobile Menu Toggle & Search trigger */}
-          <div className="flex items-center space-x-1.5 md:hidden">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-[68px] md:h-[82px] flex items-center justify-between relative">
+          
+          {/* Mobile Left: Menu Toggle (Bespoke Luxury Hamburger Icon) */}
+          <div className="flex items-center md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl bg-white/80 hover:bg-white border border-[#c5a880]/30 shadow-xs text-slate-800 hover:text-[#8a1c14] transition-all duration-200 focus:outline-none cursor-pointer active:scale-95"
+              className="w-10 h-10 rounded-full flex flex-col items-center justify-center space-y-[4.5px] bg-[#FDFBF7] hover:bg-[#F5F0E6] border border-[#c5a880]/40 shadow-xs text-slate-800 transition-all duration-200 cursor-pointer active:scale-95 shrink-0"
               aria-label="Toggle Menu"
             >
               {mobileMenuOpen ? (
-                <RiCloseLine size={22} />
+                <RiCloseLine size={22} className="text-[#8a1c14]" />
               ) : (
-                <RiMenuLine size={22} />
+                <>
+                  <span className="w-5 h-[1.8px] bg-slate-800 rounded-full transition-transform" />
+                  <span className="w-3.5 h-[1.8px] bg-[#8a1c14] rounded-full transition-transform" />
+                  <span className="w-4.5 h-[1.8px] bg-slate-800 rounded-full transition-transform" />
+                </>
               )}
-            </button>
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="p-2 rounded-xl bg-white/80 hover:bg-white border border-[#c5a880]/30 shadow-xs text-slate-800 hover:text-[#8a1c14] transition-all duration-200 cursor-pointer active:scale-95"
-              aria-label="Search"
-            >
-              <RiSearchLine size={20} />
             </button>
           </div>
 
           {/* Desktop Search Input Field (Left) - Glassy Pill with Gold Accent */}
-          <div className="hidden md:flex items-center bg-white/80 hover:bg-white focus-within:bg-white backdrop-blur-md border border-[#c5a880]/35 hover:border-[#c5a880]/70 focus-within:border-[#c5a880] shadow-[0_2px_10px_rgba(0,0,0,0.03),inset_0_1px_2px_rgba(0,0,0,0.02)] focus-within:shadow-[0_4px_20px_rgba(197,168,128,0.22)] px-3.5 py-2 rounded-full w-72 lg:w-80 transition-all duration-300 group">
+          <div className="hidden md:flex items-center bg-[#FDFBF7] hover:bg-white focus-within:bg-white border border-[#c5a880]/40 hover:border-[#c5a880]/70 focus-within:border-[#c5a880] shadow-[0_2px_10px_rgba(0,0,0,0.02)] focus-within:shadow-[0_4px_20px_rgba(197,168,128,0.22)] px-3.5 py-2 rounded-full w-64 lg:w-80 transition-all duration-300 group">
             <RiSearchLine className="text-[#8a1c14] group-focus-within:text-[#c5a880] mr-2 shrink-0 transition-colors" size={16} />
             <input
               type="text"
-              placeholder="Search silk suits, kurtas, sets..."
+              placeholder="Search suits, kurtas, sets..."
               value={searchVal}
               onChange={(e) => setSearchVal(e.target.value)}
               onKeyDown={handleSearchSubmit}
@@ -326,59 +329,59 @@ const MainLayout = () => {
             </kbd>
           </div>
 
-          {/* Regal Centered Logo - Larger, Crisp & Well-proportioned */}
-          <div className="absolute left-1/2 transform -translate-x-1/2 md:static md:transform-none flex justify-center py-1">
-            <Link to="/" className="flex items-center group py-1">
+          {/* Regal Centered Logo */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 md:static md:transform-none flex items-center justify-center">
+            <Link to="/" className="flex items-center justify-center group py-0.5">
               <img
                 src={logoUrl || "/logo.png"}
-                alt="PARIWESH Logo"
-                className="h-12 sm:h-13 md:h-14 lg:h-15 w-auto object-contain max-w-[130px] xs:max-w-[150px] md:max-w-[220px] transition-transform duration-300 group-hover:scale-[1.04] drop-shadow-xs"
+                alt="PARIWESH"
+                className="h-[52px] sm:h-[58px] md:h-[66px] w-auto object-contain max-w-[125px] sm:max-w-[170px] md:max-w-[220px] transition-transform duration-300 group-hover:scale-[1.03] filter contrast-[1.08] brightness-[0.96] drop-shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
               />
             </Link>
           </div>
 
-          {/* Navigation Action Buttons (Right) - Elevated Glassy Buttons */}
-          <div className="flex items-center space-x-2 md:space-x-3 text-slate-800">
+          {/* Navigation Action Buttons (Right) - Uniform Luxury Round Buttons */}
+          <div className="flex items-center space-x-2 sm:space-x-2.5 md:space-x-3 text-slate-800">
             {/* Wishlist Link (Desktop & Mobile) */}
             <Link
               to="/wishlist"
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-white/80 hover:bg-white backdrop-blur-md border border-[#c5a880]/35 hover:border-[#c5a880] shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_4px_14px_rgba(197,168,128,0.25)] text-slate-700 hover:text-[#8a1c14] transition-all duration-300 relative group cursor-pointer"
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-[#FDFBF7] hover:bg-[#F5F0E6] border border-[#c5a880]/40 shadow-xs hover:border-[#c5a880] text-slate-800 hover:text-[#8a1c14] transition-all duration-200 relative group cursor-pointer shrink-0"
               title="Wishlist"
             >
               <RiHeartLine size={19} className="group-hover:scale-110 transition-transform" />
               {wishlistProducts.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#8a1c14] text-white font-bold text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                <span className="absolute -top-1 -right-1 bg-[#8a1c14] text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-xs pointer-events-none">
                   {wishlistProducts.length}
                 </span>
               )}
             </Link>
 
-            {/* Cart Link */}
+            {/* Cart Link (Desktop & Mobile) */}
             <Link
               to="/cart"
               onClick={(e) => {
                 e.preventDefault();
                 navigate("/cart");
               }}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-white/80 hover:bg-white backdrop-blur-md border border-[#c5a880]/35 hover:border-[#c5a880] shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_4px_14px_rgba(197,168,128,0.25)] text-slate-700 hover:text-[#8a1c14] transition-all duration-300 relative group cursor-pointer"
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-[#FDFBF7] hover:bg-[#F5F0E6] border border-[#c5a880]/40 shadow-xs hover:border-[#c5a880] text-slate-800 hover:text-[#8a1c14] transition-all duration-200 relative group cursor-pointer shrink-0"
               title="Shopping Bag"
             >
               <RiShoppingBagLine size={19} className="group-hover:scale-110 transition-transform" />
               {totalCartQuantity > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#8a1c14] text-white font-bold text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                <span className="absolute -top-1 -right-1 bg-[#8a1c14] text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-xs pointer-events-none">
                   {totalCartQuantity}
                 </span>
               )}
             </Link>
 
-            {/* Auth Menu */}
+            {/* Desktop Auth Menu (Hidden on mobile to eliminate header overcrowding) */}
             {isAuthenticated ? (
-              <div className="relative group">
+              <div className="relative group hidden md:block">
                 <Link
                   to="/profile"
-                  className="h-10 px-3 rounded-full flex items-center space-x-2 bg-white/80 hover:bg-white backdrop-blur-md border border-[#c5a880]/35 hover:border-[#c5a880] shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_4px_14px_rgba(197,168,128,0.25)] text-slate-800 hover:text-[#8a1c14] transition-all duration-300"
+                  className="h-10 px-3.5 rounded-full flex items-center space-x-2 bg-[#FDFBF7] hover:bg-white border border-[#c5a880]/40 hover:border-[#c5a880] shadow-xs text-slate-800 hover:text-[#8a1c14] transition-all duration-200"
                 >
-                  <div className="w-5 h-5 rounded-full bg-[#8a1c14] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-[#8a1c14] text-white text-[11px] font-bold flex items-center justify-center shrink-0 shadow-2xs">
                     {user?.name?.[0]?.toUpperCase() || <RiUserLine size={12} />}
                   </div>
                   <span className="text-xs font-semibold max-w-[85px] truncate hidden lg:inline-block">
@@ -424,10 +427,10 @@ const MainLayout = () => {
             ) : (
               <Link
                 to="/login"
-                className="h-10 px-3.5 rounded-full flex items-center space-x-1.5 bg-white/80 hover:bg-white backdrop-blur-md border border-[#c5a880]/35 hover:border-[#c5a880] shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_4px_14px_rgba(197,168,128,0.25)] text-slate-700 hover:text-[#8a1c14] transition-all duration-300"
+                className="hidden md:flex h-10 px-4 rounded-full items-center space-x-1.5 bg-[#FDFBF7] hover:bg-white border border-[#c5a880]/40 hover:border-[#c5a880] shadow-xs text-slate-800 hover:text-[#8a1c14] transition-all duration-200"
                 title="Sign In"
               >
-                <RiUserLine size={18} />
+                <RiUserLine size={17} />
                 <span className="text-xs font-bold uppercase tracking-wider hidden lg:inline-block">
                   Login
                 </span>
@@ -438,14 +441,14 @@ const MainLayout = () => {
 
         {/* Tier 2: Horizontal Navigation Bar (Desktop - Royal Editorial Strip) */}
         <div className="hidden md:block border-t border-[#c5a880]/20 py-2.5 bg-[#FBF9F5]/90 backdrop-blur-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] overflow-x-auto scrollbar-none">
-          <nav className="max-w-7xl mx-auto px-4 flex items-center justify-start lg:justify-center gap-x-2.5 lg:gap-x-5 xl:gap-x-7 gap-y-1.5 whitespace-nowrap">
-            {navLinks.map((link, idx) => {
+          <nav className="max-w-7xl mx-auto px-4 flex items-center justify-start lg:justify-center gap-x-3 lg:gap-x-6 xl:gap-x-8 gap-y-1.5 whitespace-nowrap">
+            {desktopNavLinks.map((link, idx) => {
               const active = isLinkActive(link.path);
               return (
                 <Link
                   key={idx}
                   to={link.path}
-                  className={`inline-flex items-center whitespace-nowrap text-[9.5px] lg:text-[10.5px] xl:text-[11px] font-bold tracking-[0.14em] xl:tracking-[0.18em] uppercase px-2 py-1 rounded-md transition-all duration-300 relative after:content-[''] after:absolute after:-bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-[2px] after:bg-[#c5a880] after:transition-all after:duration-300 ${
+                  className={`inline-flex items-center whitespace-nowrap text-[10px] lg:text-[11px] xl:text-[11.5px] font-bold tracking-[0.14em] xl:tracking-[0.18em] uppercase px-2 py-1 rounded-md transition-all duration-300 relative after:content-[''] after:absolute after:-bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-[2px] after:bg-[#c5a880] after:transition-all after:duration-300 ${
                     active
                       ? "text-[#8a1c14] after:w-4/5"
                       : "text-slate-700 hover:text-[#8a1c14] after:w-0 hover:after:w-4/5"
@@ -482,7 +485,7 @@ const MainLayout = () => {
               animate={{ opacity: 0.5 }}
               exit={{ opacity: 0 }}
               onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black z-50 md:hidden"
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 md:hidden"
             />
 
             {/* Sliding Drawer Container */}
@@ -491,72 +494,131 @@ const MainLayout = () => {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "tween", duration: 0.3 }}
-              className="fixed inset-y-0 left-0 w-4/5 max-w-sm bg-primary shadow-2xl z-50 flex flex-col md:hidden text-textPrimary"
+              className="fixed inset-y-0 left-0 w-4/5 max-w-sm bg-white shadow-2xl z-50 flex flex-col md:hidden text-slate-800"
             >
               {/* Drawer Header */}
-              <div className="flex items-center justify-between p-4 border-b border-borderLight">
-                <span className="font-display font-medium tracking-[0.15em] text-sm uppercase">
-                  PARIWESH
-                </span>
+              <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-[#FDFBF7]">
+                <div className="flex items-center space-x-2">
+                  <span className="text-accent-gold text-xs">✦</span>
+                  <span className="font-display font-bold tracking-[0.2em] text-sm uppercase text-[#8a1c14]">
+                    PARIWESH
+                  </span>
+                </div>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-textPrimary hover:text-accent-gold p-1"
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer transition"
+                  aria-label="Close menu"
                 >
-                  <RiCloseLine size={24} />
+                  <RiCloseLine size={22} />
                 </button>
               </div>
 
               {/* Drawer Body (Scrollable Nav List) */}
-              <div className="flex-grow overflow-y-auto py-6 px-4 space-y-6">
+              <div className="flex-grow overflow-y-auto py-5 px-4 space-y-6">
                 {/* Search bar inside drawer */}
-                <div className="flex items-center bg-bgLight border border-borderLight px-4 py-2.5 rounded-full w-full">
-                  <RiSearchLine className="text-textSecondary mr-2" size={16} />
+                <div className="flex items-center bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 rounded-full w-full focus-within:border-[#c5a880] focus-within:bg-white shadow-2xs transition">
+                  <RiSearchLine className="text-[#8a1c14] mr-2 shrink-0" size={16} />
                   <input
                     type="text"
-                    placeholder="Search premium apparel..."
+                    placeholder="Search silk suits, kurtas, sets..."
                     value={searchVal}
                     onChange={(e) => setSearchVal(e.target.value)}
                     onKeyDown={handleSearchSubmit}
-                    className="bg-transparent text-xs text-textPrimary focus:outline-none w-full font-sans"
+                    className="bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none w-full font-sans"
                   />
+                  {searchVal && (
+                    <button onClick={() => setSearchVal("")} className="text-slate-400 p-0.5">
+                      <RiCloseLine size={14} />
+                    </button>
+                  )}
                 </div>
 
-                <nav className="space-y-4">
-                  <div className="text-[9px] uppercase font-bold text-textSecondary tracking-wider pb-1 border-b border-borderLight/30">
-                    Collections & Categories
+                {/* Categories & Curations with Glowing Badges */}
+                <nav className="space-y-1">
+                  <div className="text-[10px] uppercase font-extrabold text-[#c5a880] tracking-[0.2em] pb-2 mb-1 border-b border-slate-100 flex items-center justify-between">
+                    <span>Couture Collections</span>
+                    <span className="text-[9px] lowercase font-normal text-slate-400">explore</span>
                   </div>
-                  {navLinks.map((link, idx) => (
+                  {desktopNavLinks.map((link, idx) => (
                     <Link
                       key={idx}
                       to={link.path}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block text-[11px] font-bold py-1.5 text-textPrimary hover:text-accent-gold tracking-widest uppercase transition-colors"
+                      className="flex items-center justify-between py-2.5 px-2 rounded-lg text-xs font-bold text-slate-800 hover:text-[#8a1c14] hover:bg-amber-50/50 tracking-wider uppercase transition-colors"
                     >
-                      {link.title}
+                      <span>{link.title}</span>
+                      {link.badge && (
+                        <span
+                          className={`px-2 py-0.5 text-[8px] font-extrabold uppercase rounded-full shadow-2xs ${
+                            link.badge === "Sale"
+                              ? "bg-[#8a1c14] text-white animate-pulse"
+                              : link.badge === "New"
+                              ? "bg-[#c5a880] text-white"
+                              : "bg-amber-100 text-amber-900 border border-amber-300/60"
+                          }`}
+                        >
+                          {link.badge}
+                        </span>
+                      )}
                     </Link>
                   ))}
                 </nav>
+
+                {/* Quick Client Services Section */}
+                <div className="space-y-1 pt-2">
+                  <div className="text-[10px] uppercase font-extrabold text-[#c5a880] tracking-[0.2em] pb-2 mb-1 border-b border-slate-100">
+                    Client Services
+                  </div>
+                  <Link
+                    to="/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center space-x-2.5 py-2 px-2 text-xs font-semibold text-slate-700 hover:text-[#8a1c14] rounded-lg hover:bg-slate-50 transition"
+                  >
+                    <RiTruckLine size={16} className="text-[#8a1c14]" />
+                    <span>Track Your Order</span>
+                  </Link>
+                  <Link
+                    to="/shipping"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center space-x-2.5 py-2 px-2 text-xs font-semibold text-slate-700 hover:text-[#8a1c14] rounded-lg hover:bg-slate-50 transition"
+                  >
+                    <RiShieldCheckLine size={16} className="text-[#c5a880]" />
+                    <span>Shipping & Returns</span>
+                  </Link>
+                  <a
+                    href="https://wa.me/918209903441?text=Hello%20Pariwesh!%20I'm%20looking%20for%20assistance."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center space-x-2.5 py-2 px-2 text-xs font-semibold text-emerald-700 hover:text-emerald-800 rounded-lg hover:bg-emerald-50/50 transition"
+                  >
+                    <RiWhatsappLine size={16} />
+                    <span>WhatsApp Style Advisor</span>
+                  </a>
+                </div>
               </div>
 
-              {/* Drawer Footer (Drawer actions & user profile details) */}
-              <div className="p-4 border-t border-borderLight space-y-4 bg-bgLight mt-auto">
+              {/* Drawer Footer (User Profile & Wishlist) */}
+              <div className="p-4 border-t border-slate-100 space-y-3 bg-[#FDFBF7] mt-auto">
                 {/* User Info / Profile Link */}
                 {isAuthenticated ? (
                   <div className="flex items-center justify-between">
                     <Link
                       to="/profile"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center space-x-2 text-xs font-semibold text-textPrimary hover:text-accent-gold transition-colors"
+                      className="flex items-center space-x-2 text-xs font-bold text-slate-800 hover:text-[#8a1c14] transition-colors"
                     >
-                      <RiUserLine size={18} />
-                      <span>Account ({user?.name?.split(" ")[0]})</span>
+                      <div className="w-6 h-6 rounded-full bg-[#8a1c14] text-white text-[11px] font-bold flex items-center justify-center">
+                        {user?.name?.[0]?.toUpperCase() || <RiUserLine size={12} />}
+                      </div>
+                      <span className="truncate max-w-[140px]">Account ({user?.name?.split(" ")[0]})</span>
                     </Link>
                     <button
                       onClick={() => {
                         handleLogout();
                         setMobileMenuOpen(false);
                       }}
-                      className="text-xs text-danger font-medium hover:underline"
+                      className="text-xs text-red-600 font-semibold hover:underline cursor-pointer"
                     >
                       Logout
                     </button>
@@ -565,9 +627,9 @@ const MainLayout = () => {
                   <Link
                     to="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center space-x-3 text-xs font-semibold text-textPrimary hover:text-accent-gold transition-colors"
+                    className="flex items-center justify-center space-x-2 w-full py-2.5 rounded-xl bg-gradient-to-r from-[#8a1c14] to-[#6d150e] text-white text-xs font-bold uppercase tracking-wider shadow-sm"
                   >
-                    <RiUserLine size={18} />
+                    <RiUserLine size={16} />
                     <span>Login & Register</span>
                   </Link>
                 )}
@@ -576,14 +638,14 @@ const MainLayout = () => {
                 <Link
                   to="/wishlist"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between text-xs font-semibold text-textPrimary hover:text-accent-gold transition-colors"
+                  className="flex items-center justify-between py-2 px-2.5 rounded-xl bg-white border border-slate-200/80 text-xs font-semibold text-slate-800 hover:text-[#8a1c14] transition-colors shadow-2xs"
                 >
-                  <span className="flex items-center space-x-3">
-                    <RiHeartLine size={18} />
+                  <span className="flex items-center space-x-2.5">
+                    <RiHeartLine size={16} className="text-[#8a1c14]" />
                     <span>My Wishlist</span>
                   </span>
                   {wishlistProducts.length > 0 && (
-                    <span className="bg-accent-gold text-secondary font-bold text-[9px] px-2 py-0.5 rounded-full border border-white">
+                    <span className="bg-[#8a1c14] text-white font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xs">
                       {wishlistProducts.length}
                     </span>
                   )}
@@ -614,15 +676,15 @@ const MainLayout = () => {
       {/* 5. PREMIUM LUXURY FOOTER */}
       <Footer />
 
-      {/* FLOATING WHATSAPP BUTTON (Suitswala.in style) */}
+      {/* FLOATING WHATSAPP BUTTON */}
       <a
         href="https://wa.me/918209903441?text=Hello%20Pariwesh%20Ensembles%20support!%20I'm%20interested%20in%20your%20products."
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-20 xs:bottom-24 md:bottom-8 right-4 md:right-8 z-50 bg-[#25D366] hover:bg-[#20BA56] text-white p-3.5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer"
+        className="fixed bottom-6 md:bottom-8 right-3.5 md:right-6 z-40 bg-[#25D366] hover:bg-[#20BA56] text-white p-3 md:p-3.5 rounded-full shadow-[0_4px_20px_rgba(37,211,102,0.35)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer"
         title="Chat with us on WhatsApp"
       >
-        <RiWhatsappLine size={24} />
+        <RiWhatsappLine size={22} className="md:w-6 md:h-6" />
         <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500"></span>

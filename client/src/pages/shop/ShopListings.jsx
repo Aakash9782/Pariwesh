@@ -26,6 +26,15 @@ const formatCurrency = (val) => {
   return `₹${num.toLocaleString("en-IN")}`;
 };
 
+const formatProductTitle = (name) => {
+  if (!name) return "";
+  return name
+    .replace(/\s*-\s*-\s*/g, " - ")
+    .replace(/\s*-\s*([a-zA-Z]+)-\s*$/g, " - $1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+};
+
 const ShopListings = () => {
   const dispatch = useDispatch();
   const { showAlert } = useAlert();
@@ -45,6 +54,7 @@ const ShopListings = () => {
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("search") || "",
   );
+  const [selectedCardSizes, setSelectedCardSizes] = useState({});
 
   const [products, setProducts] = useState([]);
   const [isApiLoading, setIsApiLoading] = useState(true);
@@ -422,6 +432,84 @@ const ShopListings = () => {
 
         {/* PRODUCTS GRID / RENDER AREA */}
         <div className="flex-grow">
+          {/* Active Filter Chips / Pills */}
+          {(selectedCategory !== "all" ||
+            selectedColor !== "all" ||
+            selectedSize !== "all" ||
+            priceRange < maxStorePrice ||
+            searchQuery) && (
+            <div className="flex flex-wrap items-center gap-2 mb-6 p-3 bg-amber-50/50 border border-amber-200/50 rounded-xl">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 mr-1">
+                Active Filters:
+              </span>
+              {selectedCategory !== "all" && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white border border-[#c5a880]/50 text-[#8a1c14] shadow-2xs">
+                  <span>Type: {selectedCategory}</span>
+                  <button
+                    onClick={() => setSelectedCategory("all")}
+                    className="hover:text-black cursor-pointer font-bold"
+                  >
+                    ✕
+                  </button>
+                </span>
+              )}
+              {selectedColor !== "all" && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white border border-[#c5a880]/50 text-[#8a1c14] shadow-2xs">
+                  <span>Color: {selectedColor}</span>
+                  <button
+                    onClick={() => setSelectedColor("all")}
+                    className="hover:text-black cursor-pointer font-bold"
+                  >
+                    ✕
+                  </button>
+                </span>
+              )}
+              {selectedSize !== "all" && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white border border-[#c5a880]/50 text-[#8a1c14] shadow-2xs">
+                  <span>Size: {selectedSize}</span>
+                  <button
+                    onClick={() => setSelectedSize("all")}
+                    className="hover:text-black cursor-pointer font-bold"
+                  >
+                    ✕
+                  </button>
+                </span>
+              )}
+              {priceRange < maxStorePrice && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white border border-[#c5a880]/50 text-[#8a1c14] shadow-2xs">
+                  <span>Price: Under {formatCurrency(priceRange)}</span>
+                  <button
+                    onClick={() => setPriceRange(maxStorePrice)}
+                    className="hover:text-black cursor-pointer font-bold"
+                  >
+                    ✕
+                  </button>
+                </span>
+              )}
+              {searchQuery && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white border border-[#c5a880]/50 text-[#8a1c14] shadow-2xs">
+                  <span>Search: "{searchQuery}"</span>
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      searchParams.delete("search");
+                      setSearchParams(searchParams);
+                    }}
+                    className="hover:text-black cursor-pointer font-bold"
+                  >
+                    ✕
+                  </button>
+                </span>
+              )}
+              <button
+                onClick={resetFilters}
+                className="text-[11px] font-bold text-[#8a1c14] hover:underline uppercase tracking-wider ml-auto cursor-pointer"
+              >
+                Clear All
+              </button>
+            </div>
+          )}
+
           {isApiLoading || isLoading ? (
             // Load skeletons in loader state
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
@@ -437,13 +525,16 @@ const ShopListings = () => {
                     key={product._id}
                     className="group relative bg-white/80 hover:bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/80 hover:border-[#c5a880]/40 shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_12px_32px_rgba(197,168,128,0.18),0_4px_12px_rgba(0,0,0,0.03)] hover:-translate-y-1 flex flex-col h-full transition-all duration-400"
                   >
-                    {/* Product Badge */}
-                    {product.tag && (
-                      <div className="absolute top-3.5 left-3.5 z-20 pointer-events-none">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-xs bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.16em] shadow-md border border-amber-300/30">
-                          {product.tag}
-                        </span>
-                      </div>
+                    {/* Product Badge - Filter out generic REGULAR tags */}
+                    {product.tag &&
+                      !["regular", "normal", "standard"].includes(
+                        product.tag.trim().toLowerCase()
+                      ) && (
+                        <div className="absolute top-3.5 left-3.5 z-20 pointer-events-none">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-xs bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.16em] shadow-md border border-amber-300/30">
+                            {product.tag}
+                          </span>
+                        </div>
                     )}
 
                     {/* Wishlist Button */}
@@ -575,17 +666,17 @@ const ShopListings = () => {
                           )}
                         </div>
 
-                        {/* Product Title (1-Tap Navigates Instantly) */}
+                        {/* Product Title (Clean & Sanitized) */}
                         <h3 className="text-xs sm:text-[13px] font-sans font-medium text-slate-900 leading-snug group-hover:text-[#8a1c14] transition-colors duration-200 line-clamp-2 h-9">
                           <Link to={`/product/${product.slug}`}>
-                            {product.name}
+                            {formatProductTitle(product.name)}
                           </Link>
                         </h3>
 
-                        {/* Available Sizes Micro-Indicator */}
-                        <div className="flex items-center space-x-1.5 pt-0.5 font-sans text-[10px]">
-                          <span className="text-slate-400 font-semibold uppercase text-[9px] tracking-wider">Sizes:</span>
-                          <div className="flex items-center space-x-1">
+                        {/* Available Sizes Interactive Selector (Clean Minimal Luxury Chips) */}
+                        <div className="flex items-center justify-between pt-0.5 font-sans text-[10px]">
+                          <span className="text-slate-400 font-semibold uppercase text-[8.5px] tracking-wider">Sizes:</span>
+                          <div className="flex items-center space-x-1 overflow-x-auto scrollbar-none py-0.5">
                             {(product.sizes && product.sizes.length > 0
                               ? product.sizes
                               : ["M", "L", "XL", "XXL"]
@@ -594,17 +685,37 @@ const ShopListings = () => {
                                 product.sizesStock &&
                                 product.sizesStock[sz] !== undefined &&
                                 product.sizesStock[sz] <= 0;
+                              const activeSize =
+                                selectedCardSizes[product._id] ||
+                                (product.sizes && product.sizes.length > 0
+                                  ? product.sizes[0]
+                                  : "M");
+                              const isSelected = activeSize === sz;
+
                               return (
-                                <span
+                                <button
                                   key={sz}
-                                  className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${
+                                  type="button"
+                                  disabled={isOut}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setSelectedCardSizes((prev) => ({
+                                      ...prev,
+                                      [product._id]: sz,
+                                    }));
+                                  }}
+                                  className={`min-w-[22px] h-[20px] px-1 rounded text-[8.5px] font-bold transition-all cursor-pointer flex items-center justify-center ${
                                     isOut
-                                      ? "text-slate-300 border-slate-200 line-through bg-slate-50"
-                                      : "text-slate-700 border-slate-200 bg-white shadow-2xs"
+                                      ? "text-slate-300 border-slate-200 line-through bg-slate-50 cursor-not-allowed"
+                                      : isSelected
+                                      ? "bg-[#8a1c14] text-white font-extrabold shadow-2xs scale-105"
+                                      : "text-slate-600 bg-slate-100 hover:bg-slate-200"
                                   }`}
+                                  title={isOut ? `${sz} (Out of Stock)` : `Select Size ${sz}`}
                                 >
                                   {sz}
-                                </span>
+                                </button>
                               );
                             })}
                           </div>
@@ -630,17 +741,25 @@ const ShopListings = () => {
                         )}
                       </div>
 
-                      {/* Prominent Full-Width ADD TO CART Button (Subtle 3D Glassy) */}
+                      {/* Refined Luxury Action Button */}
                       <button
                         type="button"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          handleQuickAddToCart(product, "M");
+                          const chosenSize =
+                            selectedCardSizes[product._id] ||
+                            (product.sizes && product.sizes.length > 0
+                              ? product.sizes[0]
+                              : "M");
+                          handleQuickAddToCart(product, chosenSize);
                         }}
-                        className="w-full bg-gradient-to-b from-[#9b2017] to-[#7a1810] hover:from-[#a8251b] hover:to-[#861c13] text-white font-extrabold text-[11px] uppercase tracking-[0.15em] py-2.5 rounded-xl border border-rose-300/25 shadow-[0_4px_14px_rgba(138,28,20,0.22),inset_0_1px_0_rgba(255,255,255,0.25),inset_0_-1px_0_rgba(0,0,0,0.2)] hover:shadow-[0_6px_20px_rgba(138,28,20,0.38),inset_0_1px_0_rgba(255,255,255,0.35)] active:scale-[0.98] active:translate-y-[1px] transition-all duration-200 cursor-pointer flex items-center justify-center space-x-1.5 mt-1"
+                        className="w-full bg-[#8a1c14] hover:bg-[#70150e] text-white font-bold text-[10px] sm:text-[10.5px] uppercase tracking-[0.14em] py-2 rounded-lg shadow-xs hover:shadow-sm active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center space-x-1.5 mt-1"
                       >
-                        <span>ADD TO CART</span>
+                        <RiShoppingBagLine size={13} />
+                        <span>
+                          ADD TO BAG {selectedCardSizes[product._id] ? `(${selectedCardSizes[product._id]})` : ""}
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -755,11 +874,9 @@ const ShopListings = () => {
                   return (
                     <button
                       key={cat}
-                      onClick={() => {
-                        setSelectedCategory(cat);
-                        setMobileFilterOpen(false);
-                      }}
-                      className={`text-left text-xs capitalize py-1.5 px-3 rounded-lg flex items-center justify-between transition-all ${
+                      type="button"
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`text-left text-xs capitalize py-1.5 px-3 rounded-lg flex items-center justify-between transition-all cursor-pointer ${
                         isActive
                           ? "bg-accent-gold/15 text-[#8a1c14] font-bold"
                           : "text-slate-700 hover:bg-slate-100 font-medium"
@@ -784,11 +901,9 @@ const ShopListings = () => {
                   return (
                     <button
                       key={color}
-                      onClick={() => {
-                        setSelectedColor(color);
-                        setMobileFilterOpen(false);
-                      }}
-                      className={`px-3 py-1 rounded-full text-[10px] transition-all ${
+                      type="button"
+                      onClick={() => setSelectedColor(color)}
+                      className={`px-3 py-1 rounded-full text-[10px] transition-all cursor-pointer ${
                         isActive
                           ? "bg-accent-gold text-white font-bold shadow-xs scale-105"
                           : "border border-slate-200 bg-white/70 text-slate-700 hover:border-accent-gold"
@@ -812,11 +927,9 @@ const ShopListings = () => {
                   return (
                     <button
                       key={size}
-                      onClick={() => {
-                        setSelectedSize(size);
-                        setMobileFilterOpen(false);
-                      }}
-                      className={`w-10 h-10 rounded-lg text-center text-xs flex items-center justify-center font-bold transition-all ${
+                      type="button"
+                      onClick={() => setSelectedSize(size)}
+                      className={`w-10 h-10 rounded-lg text-center text-xs flex items-center justify-center font-bold transition-all cursor-pointer ${
                         isActive
                           ? "bg-gradient-to-r from-accent-gold to-yellow-600 text-white shadow-xs scale-105"
                           : "border border-slate-200 bg-white/70 text-slate-700 hover:border-accent-gold"
@@ -852,17 +965,23 @@ const ShopListings = () => {
               </div>
             </div>
 
-            <Button
-              onClick={() => {
-                resetFilters();
-                setMobileFilterOpen(false);
-              }}
-              variant="outline"
-              size="sm"
-              className="w-full mt-4"
-            >
-              Clear All Filters
-            </Button>
+            {/* Sticky Drawer Footer Actions */}
+            <div className="sticky bottom-0 bg-white/95 backdrop-blur-md pt-3 pb-2 border-t border-slate-200/80 mt-auto flex gap-2">
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="flex-1 py-2.5 px-3 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs uppercase tracking-wider hover:bg-slate-50 cursor-pointer"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileFilterOpen(false)}
+                className="flex-[2] py-2.5 px-3 rounded-xl bg-[#8a1c14] hover:bg-[#70150e] text-white font-extrabold text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all cursor-pointer"
+              >
+                Apply ({filteredProducts.length})
+              </button>
+            </div>
           </div>
         </div>
       )}

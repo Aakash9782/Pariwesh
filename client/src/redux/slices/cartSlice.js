@@ -37,6 +37,9 @@ const cartSlice = createSlice({
         state.items.push({ product, quantity, variant });
       }
       localStorage.setItem("cart", JSON.stringify(state.items));
+      if (!localStorage.getItem("auth_token")) {
+        localStorage.setItem("guest_commerce_pending", "true");
+      }
     },
     updateQuantityInCart: (state, action) => {
       const { productId, variant, quantity } = action.payload;
@@ -104,6 +107,7 @@ const cartSlice = createSlice({
     builder.addCase(logoutSuccess, (state) => {
       state.items = [];
       localStorage.removeItem("cart");
+      localStorage.removeItem("guest_commerce_pending");
     });
   },
 });

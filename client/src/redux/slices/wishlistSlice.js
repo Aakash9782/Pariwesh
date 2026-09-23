@@ -31,6 +31,9 @@ const wishlistSlice = createSlice({
         );
       } else {
         state.products.push(product);
+        if (!localStorage.getItem("auth_token")) {
+          localStorage.setItem("guest_commerce_pending", "true");
+        }
       }
       localStorage.setItem("wishlist", JSON.stringify(state.products));
     },

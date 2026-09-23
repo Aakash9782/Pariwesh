@@ -3,11 +3,11 @@ import API from "./api.js";
 export const persistCart = async (items) => {
   try {
     const payload = (items || []).map((item) => ({
-      productId: String(item.product?._id || item.product || ""),
+      productId: String(item.productId || item.product?._id || item.product || ""),
       quantity: Math.max(1, Number(item.quantity) || 1),
       size: item.variant?.size || item.size || "M",
       color: item.variant?.color || item.color || "Default",
-    }));
+    })).filter((i) => i.productId);
     await API.put("/cart", { items: payload });
   } catch (err) {
     console.warn("Cart sync notice:", err?.response?.data?.message || err.message);
@@ -17,7 +17,7 @@ export const persistCart = async (items) => {
 export const persistWishlist = async (products) => {
   try {
     const payload = (products || [])
-      .map((p) => String(p?._id || p || ""))
+      .map((p) => String(p?._id || p?.productId || p || ""))
       .filter(Boolean);
     await API.put("/wishlist", { productIds: payload });
   } catch (err) {
