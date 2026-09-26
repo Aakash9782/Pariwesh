@@ -9,6 +9,8 @@
     />
     <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
     <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+    <link rel="preconnect" href="https://api.pariwesh.in" crossorigin />
+    <link rel="dns-prefetch" href="https://api.pariwesh.in" />
     <link
       rel="preload"
       as="image"
@@ -75,15 +77,37 @@
       property="twitter:title"
       content="PARIWESH | Premium Traditional Ethnic Wear & Kurtas"
     />
-    <!-- Meta Pixel Code -->
+    <!-- Meta Pixel Code (Deferred for High Performance & Zero Main-Thread Blocking) -->
     <script>
       !function(f,b,e,v,n,t,s)
       {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
       n.callMethod.apply(n,arguments):n.queue.push(arguments)};
       if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      n.queue=[];
+      var scriptInjected = false;
+      function injectPixelScript() {
+        if (scriptInjected) return;
+        scriptInjected = true;
+        t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s);
+      }
+      var events = ['scroll', 'touchstart', 'mousemove', 'click', 'keydown'];
+      function onUserAction() {
+        injectPixelScript();
+        events.forEach(function(evt) {
+          window.removeEventListener(evt, onUserAction);
+        });
+      }
+      events.forEach(function(evt) {
+        window.addEventListener(evt, onUserAction, { passive: true, once: true });
+      });
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(function() { setTimeout(injectPixelScript, 3500); });
+      } else {
+        setTimeout(injectPixelScript, 3500);
+      }
+      }(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
       fbq('init', '992964093751142');
       fbq('track', 'PageView');
