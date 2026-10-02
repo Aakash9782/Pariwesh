@@ -844,7 +844,7 @@ const Cart = () => {
         </div>
         <div className="space-y-2">
           <span className="text-[10px] text-[#8a1c14] tracking-[0.25em] uppercase font-bold">
-            ✦ Your Royal Wardrobe Awaits ✦
+            Your Royal Wardrobe Awaits
           </span>
           <h2 className="text-3xl font-serif font-medium text-slate-900 tracking-wide">
             Your Bag is Empty

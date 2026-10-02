@@ -40,6 +40,7 @@ const CancellationPolicy = lazy(() =>
   import("./pages/static/StaticPages.jsx").then((m) => ({ default: m.CancellationPolicy })),
 );
 import { AlertProvider } from "./contexts/AlertContext.jsx";
+import { SettingsProvider } from "./contexts/SettingsContext.jsx";
 import ScrollToTop from "./components/common/ScrollToTop.jsx";
 import MetaPixelTracker from "./components/common/MetaPixelTracker.jsx";
 import Loader from "./components/common/Loader.jsx";
@@ -78,7 +79,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <AlertProvider>
-          <HelmetProvider>
+          <SettingsProvider>
+            <HelmetProvider>
             <BrowserRouter>
               <ScrollToTop />
               <MetaPixelTracker />
@@ -144,7 +146,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
               </Routes>
             </BrowserRouter>
           </HelmetProvider>
-        </AlertProvider>
+        </SettingsProvider>
+      </AlertProvider>
       </QueryClientProvider>
     </Provider>
   </React.StrictMode>,

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../../services/api.js";
-import { ProductSkeleton } from "../../components/common/Skeleton.jsx";
+import { CollectionCardSkeleton } from "../../components/common/Skeleton.jsx";
 import SEO from "../../components/common/SEO.jsx";
 import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 
@@ -74,8 +74,7 @@ const Collections = () => {
 
           <div className="relative z-10 w-full px-5 pb-8 pt-24 space-y-3">
             {/* Atelier Floating Micro-Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-[#c5a880]/30 text-[#c5a880] text-[10px] tracking-[0.25em] uppercase font-semibold shadow-lg">
-              <span>✦</span>
+            <div className="inline-flex items-center px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-[#c5a880]/30 text-[#c5a880] text-[10px] tracking-[0.25em] uppercase font-semibold shadow-lg">
               <span>Pariwesh Luxury Atelier</span>
             </div>
 
@@ -96,7 +95,6 @@ const Collections = () => {
                 <span className="text-white/60 uppercase tracking-wider text-[9px]">Edits</span>
               </div>
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-md border border-white/10 text-[10px] text-white/85 whitespace-nowrap">
-                <span className="text-[#c5a880]">✦</span>
                 <span className="text-white/70 uppercase tracking-wider text-[9px]">Pure Handloom</span>
               </div>
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-md border border-white/10 text-[10px] text-white/85 whitespace-nowrap">
@@ -112,8 +110,7 @@ const Collections = () => {
           <div className="grid grid-cols-12 gap-12 items-center">
             {/* Left Content Column (7 cols) */}
             <div className="col-span-7 space-y-6">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#c5a880]/10 border border-[#c5a880]/30 text-[#c5a880] text-[11px] tracking-[0.25em] uppercase font-medium">
-                <span>✦</span>
+              <div className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-[#c5a880]/10 border border-[#c5a880]/30 text-[#c5a880] text-[11px] tracking-[0.25em] uppercase font-medium">
                 <span>Pariwesh Luxury Atelier</span>
               </div>
               <h1 className="text-5xl xl:text-6xl font-display text-white tracking-tight leading-[1.15]">
@@ -230,7 +227,7 @@ const Collections = () => {
         {loading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <ProductSkeleton key={i} />
+              <CollectionCardSkeleton key={i} />
             ))}
           </div>
         )}
@@ -271,7 +268,7 @@ const Collections = () => {
                 {/* Top Floating Badge */}
                 <div className="absolute top-4 left-4 pointer-events-none">
                   <span className="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[9px] uppercase tracking-[0.2em] text-[#c5a880] font-semibold">
-                    ✦ Signature Edit
+                    Signature Edit
                   </span>
                 </div>
 

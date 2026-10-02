@@ -160,7 +160,6 @@ const ProductReviews = ({ productId, initialRating = 4.8, initialCount = 12 }) =
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center space-x-2 mb-1.5">
-            <span className="text-amber-600 text-xs">✦</span>
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-800">
               Customer Experiences & Reviews
             </span>

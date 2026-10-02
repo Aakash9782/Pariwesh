@@ -16,6 +16,7 @@ import {
   RiSparklingLine,
   RiTimeLine,
   RiFolderImageLine,
+  RiEditLine,
 } from "react-icons/ri";
 
 const MarketingPage = () => {
@@ -27,14 +28,18 @@ const MarketingPage = () => {
   const [coupons, setCoupons] = useState([]);
   const [couponsLoading, setCouponsLoading] = useState(true);
   const [showCouponModal, setShowCouponModal] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState(null);
   const [highlightCoupons, setHighlightCoupons] = useState(false);
   const [newCoupon, setNewCoupon] = useState({
     code: "",
     discountType: "Percentage",
     value: "",
+    minAmount: "",
+    maxDiscount: "",
     usageLimit: "100",
     userLimit: "1",
     expiryDate: "",
+    status: "Active",
   });
 
   // Special Offers edit states
@@ -91,44 +96,117 @@ const MarketingPage = () => {
     return () => clearTimeout(t);
   }, [searchParams]);
 
-  // Creation of coupon code
-  const handleCreateCoupon = async (e) => {
+  const openCreateCouponModal = () => {
+    setEditingCoupon(null);
+    setNewCoupon({
+      code: "",
+      discountType: "Percentage",
+      value: "",
+      minAmount: "",
+      maxDiscount: "",
+      usageLimit: "100",
+      userLimit: "1",
+      expiryDate: "",
+      status: "Active",
+    });
+    setShowCouponModal(true);
+  };
+
+  const openEditCouponModal = (cop) => {
+    setEditingCoupon(cop);
+    setNewCoupon({
+      code: cop.code || "",
+      discountType: cop.discountType || "Percentage",
+      value: cop.value !== undefined ? String(cop.value) : "",
+      minAmount: cop.minAmount ? String(cop.minAmount) : "",
+      maxDiscount: cop.maxDiscount ? String(cop.maxDiscount) : "",
+      usageLimit: cop.usageLimit ? String(cop.usageLimit) : "100",
+      userLimit: cop.userLimit ? String(cop.userLimit) : "1",
+      expiryDate: cop.expiryDate
+        ? new Date(cop.expiryDate).toISOString().split("T")[0]
+        : "",
+      status: cop.status || "Active",
+    });
+    setShowCouponModal(true);
+  };
+
+  const closeCouponModal = () => {
+    setShowCouponModal(false);
+    setEditingCoupon(null);
+  };
+
+  // Creation & Editing of standard coupon promo
+  const handleSaveCoupon = async (e) => {
     e.preventDefault();
     if (!newCoupon.code || !newCoupon.value) {
-      alert("Please compile core coupon metrics");
+      alert("Please enter coupon code and discount value");
       return;
     }
+    const numValue = Number(newCoupon.value);
+    if (isNaN(numValue) || numValue <= 0) {
+      alert("Discount value must be greater than 0");
+      return;
+    }
+    if (newCoupon.discountType === "Percentage" && numValue > 100) {
+      alert("Percentage discount cannot exceed 100%");
+      return;
+    }
+
     try {
       const payload = {
         code: newCoupon.code.toUpperCase().trim(),
         discountType:
-          newCoupon.discountType === "Fixed" ||
-          newCoupon.discountType === "Flat"
-            ? "Flat"
-            : "Percentage",
-        value: Number(newCoupon.value),
+          newCoupon.discountType === "Flat" ? "Flat" : "Percentage",
+        value: numValue,
+        minAmount: newCoupon.minAmount ? Number(newCoupon.minAmount) : 0,
+        maxDiscount:
+          newCoupon.maxDiscount && newCoupon.discountType === "Percentage"
+            ? Number(newCoupon.maxDiscount)
+            : undefined,
         usageLimit: newCoupon.usageLimit ? Number(newCoupon.usageLimit) : 9999,
         userLimit: newCoupon.userLimit ? Number(newCoupon.userLimit) : 1,
         expiryDate: newCoupon.expiryDate || undefined,
+        status: newCoupon.status || "Active",
       };
 
-      const res = await API.post("/coupons", payload);
+      if (editingCoupon) {
+        const res = await API.put(`/coupons/${editingCoupon.code}`, payload);
+        if (res.data?.success) {
+          alert(`Coupon ${editingCoupon.code} updated successfully!`);
+          closeCouponModal();
+          fetchCoupons();
+        }
+      } else {
+        const res = await API.post("/coupons", payload);
+        if (res.data?.success) {
+          alert("Coupon created successfully!");
+          closeCouponModal();
+          fetchCoupons();
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      alert(
+        err.response?.data?.message ||
+          (editingCoupon ? "Failed to update coupon" : "Promo creation failed")
+      );
+    }
+  };
+
+  // Toggle Live/Inactive status of standard coupon
+  const handleToggleCouponStatus = async (cop) => {
+    try {
+      const nextStatus = cop.status === "Active" ? "Inactive" : "Active";
+      const res = await API.put(`/coupons/${cop.code}`, {
+        status: nextStatus,
+      });
       if (res.data?.success) {
-        alert("Coupon created successfully!");
-        setShowCouponModal(false);
-        setNewCoupon({
-          code: "",
-          discountType: "Percentage",
-          value: "",
-          usageLimit: "100",
-          userLimit: "1",
-          expiryDate: "",
-        });
+        alert(`Coupon ${cop.code} is now ${nextStatus}`);
         fetchCoupons();
       }
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Promo enlistment failed");
+      alert(err.response?.data?.message || "Failed to update coupon status");
     }
   };
 
@@ -152,24 +230,43 @@ const MarketingPage = () => {
   const handleUpdateOffer = async (e) => {
     e.preventDefault();
     try {
+      const numValue = Number(selectedOffer.value);
+      if (
+        selectedOffer.offerType !== "SURPRISE_GIFT" &&
+        (isNaN(numValue) || numValue <= 0)
+      ) {
+        alert("Discount value must be greater than 0");
+        return;
+      }
+      if (selectedOffer.discountType === "Percentage" && numValue > 100) {
+        alert("Percentage discount cannot exceed 100%");
+        return;
+      }
+
       const payload = {
-        ...selectedOffer,
-        value: Number(selectedOffer.value),
-        minQuantity: Number(selectedOffer.minQuantity),
-        minAmount: Number(selectedOffer.minAmount),
+        name: selectedOffer.name,
+        description: selectedOffer.description,
+        value: numValue,
+        minQuantity: Number(selectedOffer.minQuantity) || 0,
+        minAmount: Number(selectedOffer.minAmount) || 0,
         maxDiscount:
           selectedOffer.maxDiscount !== "" &&
-          selectedOffer.maxDiscount !== undefined
+          selectedOffer.maxDiscount !== undefined &&
+          selectedOffer.maxDiscount !== null
             ? Number(selectedOffer.maxDiscount)
             : undefined,
-        giftValue: Number(selectedOffer.giftValue),
-        usageLimit: Number(selectedOffer.usageLimit),
-        userLimit: Number(selectedOffer.userLimit),
-        priority: Number(selectedOffer.priority),
+        giftValue: Number(selectedOffer.giftValue) || 0,
+        usageLimit: Number(selectedOffer.usageLimit) || 9999,
+        userLimit: Number(selectedOffer.userLimit) || 1,
+        priority: Number(selectedOffer.priority) || 1,
         canCombine: Boolean(selectedOffer.canCombine),
+        status: selectedOffer.status,
+        startDate: selectedOffer.startDate || undefined,
+        expiryDate: selectedOffer.expiryDate || undefined,
       };
 
-      const res = await API.put(`/coupons/${selectedOffer.code}`, payload);
+      const targetCode = selectedOffer.originalCode || selectedOffer.code;
+      const res = await API.put(`/coupons/${targetCode}`, payload);
       if (res.data?.success) {
         alert("Offer updated successfully!");
         setShowEditOfferModal(false);
@@ -214,7 +311,7 @@ const MarketingPage = () => {
                 coupons
               </h3>
               <Button
-                onClick={() => setShowCouponModal(true)}
+                onClick={openCreateCouponModal}
                 variant="outline"
                 size="sm"
                 className="text-xs text-[#c5a880] border-[#c5a880]/30 hover:bg-[#c5a880]/10 flex items-center space-x-1.5"
@@ -259,15 +356,18 @@ const MarketingPage = () => {
                         <span className="text-sm font-bold tracking-widest font-mono text-slate-800 uppercase">
                           {cop.code}
                         </span>
-                        <span
-                          className={`px-2 py-0.5 rounded text-[8px] font-extrabold uppercase ${
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCouponStatus(cop)}
+                          title="Click to toggle Active / Inactive"
+                          className={`px-2 py-0.5 rounded text-[8px] font-extrabold uppercase cursor-pointer transition hover:opacity-85 ${
                             cop.status === "Active"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : "bg-slate-100 text-slate-500 border border-slate-200"
                           }`}
                         >
-                          {cop.status === "Active" ? "Live" : "Inactive"}
-                        </span>
+                          {cop.status === "Active" ? "● Live (Click to Pause)" : "○ Inactive (Click to Activate)"}
+                        </button>
                       </div>
                       <p className="text-[11px] text-slate-600">
                         Discount:{" "}
@@ -276,11 +376,23 @@ const MarketingPage = () => {
                             ? `₹${cop.value} off`
                             : `${cop.value}% off`}
                         </span>
+                        {cop.maxDiscount > 0 && cop.discountType === "Percentage" && (
+                          <span className="text-amber-800 font-medium ml-2 text-[10px]">
+                            (Capped at ₹{cop.maxDiscount})
+                          </span>
+                        )}
                       </p>
-                      <p className="text-[10px] text-slate-500">
-                        Used {cop.ordersUsed || 0}/{cop.usageLimit || "∞"} times
-                        · {cop.userLimit || 1}× per customer
-                      </p>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500">
+                        <span>
+                          Used {cop.ordersUsed || 0}/{cop.usageLimit || "∞"} times
+                        </span>
+                        <span>· {cop.userLimit || 1}× per customer</span>
+                        {cop.minAmount > 0 && (
+                          <span className="text-[#8a1c14] font-semibold bg-rose-50 px-1.5 py-0.2 rounded border border-rose-100">
+                            Min Order: ₹{cop.minAmount}
+                          </span>
+                        )}
+                      </div>
                       {cop.expiryDate && (
                         <p className="text-[9px] text-slate-500 flex items-center font-mono py-0.5">
                           <RiTimeLine className="mr-1" /> Expr:{" "}
@@ -288,12 +400,24 @@ const MarketingPage = () => {
                         </p>
                       )}
                     </div>
-                    <button
-                      onClick={() => handleDeleteCoupon(cop._id, cop.code)}
-                      className="text-slate-400 hover:text-rose-600 p-2 rounded hover:bg-rose-50 transition"
-                    >
-                      <RiDeleteBinLine size={16} />
-                    </button>
+                    <div className="flex items-center space-x-1">
+                      <button
+                        type="button"
+                        onClick={() => openEditCouponModal(cop)}
+                        className="text-slate-400 hover:text-[#c5a880] p-2 rounded hover:bg-[#c5a880]/10 transition cursor-pointer"
+                        title="Edit Coupon Details"
+                      >
+                        <RiEditLine size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCoupon(cop._id, cop.code)}
+                        className="text-slate-400 hover:text-rose-600 p-2 rounded hover:bg-rose-50 transition cursor-pointer"
+                        title="Delete Coupon"
+                      >
+                        <RiDeleteBinLine size={16} />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -310,151 +434,191 @@ const MarketingPage = () => {
                 🎁 SPECIAL OFFERS
               </h3>
               <p className="text-slate-500 text-xs mt-1">
-                Manage customer promotions. Show 4 offer cards.
+                Customer Cart Offers & Multi-Item Deals • {specialOffers.filter((o) => o.status === "Active").length} Live On Store
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {specialOffers.map((off) => (
-              <div
-                key={off._id}
-                className="bg-white border border-slate-200 p-4 rounded-xl flex flex-col justify-between shadow-sm hover:border-[#c5a880]/40 transition space-y-3"
-              >
-                <div className="space-y-1.5 font-sans">
-                  <div className="flex justify-between items-start space-x-2">
-                    <span className="text-xs font-bold text-slate-800 line-clamp-1">
-                      {off.name || off.offerType}
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded text-[8px] font-extrabold uppercase ${off.status === "Active" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-slate-100 text-slate-500 border border-slate-200"}`}
-                    >
-                      {off.status === "Active" ? "Active" : "Disabled"}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 leading-normal line-clamp-2 h-7">
-                    {off.description}
-                  </p>
-                  <div className="text-[10.5px] space-y-1 text-slate-600 border-t border-slate-100 pt-2">
-                    <div>
-                      Code:{" "}
-                      <span className="font-mono font-bold uppercase text-slate-800">
-                        {off.code}
+            {specialOffers.map((off) => {
+              const isActive = off.status === "Active";
+              return (
+                <div
+                  key={off._id}
+                  className={`p-4 rounded-xl flex flex-col justify-between shadow-sm transition space-y-3 ${
+                    isActive
+                      ? "bg-white border border-slate-200 hover:border-[#c5a880]/50"
+                      : "bg-slate-50/80 border border-dashed border-slate-300 opacity-65 hover:opacity-100"
+                  }`}
+                >
+                  <div className="space-y-1.5 font-sans">
+                    <div className="flex justify-between items-start space-x-2">
+                      <span className="text-xs font-bold text-slate-800 line-clamp-1">
+                        {off.name || off.offerType}
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleCouponStatus(off)}
+                        title="Click to toggle Active / Disabled"
+                        className={`px-2 py-0.5 rounded text-[8px] font-extrabold uppercase cursor-pointer transition hover:opacity-85 ${
+                          isActive
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-slate-200 text-slate-600 border border-slate-300"
+                        }`}
+                      >
+                        {isActive ? "● Active" : "○ Disabled"}
+                      </button>
                     </div>
-                    {off.offerType === "BUY_X_GET_Y" && (
+                    <p className="text-[10px] text-slate-500 leading-normal line-clamp-2 h-7">
+                      {off.description}
+                    </p>
+                    <div className="text-[10.5px] space-y-1 text-slate-600 border-t border-slate-100 pt-2">
                       <div>
-                        Value:{" "}
-                        <span className="font-semibold text-slate-800">
-                          {off.value}% OFF
+                        Code:{" "}
+                        <span className="font-mono font-bold uppercase text-slate-800">
+                          {off.code}
                         </span>
                       </div>
-                    )}
-                    {off.offerType === "BUY_X_GET_Y" && (
-                      <div>
-                        Min Qty:{" "}
-                        <span className="font-semibold text-slate-800">
-                          {off.minQuantity} items
-                        </span>
-                      </div>
-                    )}
-                    {off.offerType === "PREPAID" && (
-                      <div>
-                        Value:{" "}
-                        <span className="font-semibold text-slate-800">
-                          {off.value}% OFF
-                        </span>
-                      </div>
-                    )}
-                    {off.offerType === "SURPRISE_GIFT" && (
-                      <>
+                      {off.offerType === "BUY_X_GET_Y" && (
                         <div>
-                          Threshold:{" "}
+                          Value:{" "}
                           <span className="font-semibold text-slate-800">
-                            ₹{off.minAmount}
+                            {off.value}% OFF
                           </span>
                         </div>
+                      )}
+                      {off.offerType === "BUY_X_GET_Y" && (
                         <div>
-                          Gift Value:{" "}
+                          Min Qty:{" "}
                           <span className="font-semibold text-slate-800">
-                            ₹{off.giftValue}
+                            {off.minQuantity} items
                           </span>
                         </div>
-                      </>
-                    )}
-                    <div>
-                      Priority:{" "}
-                      <span className="font-mono text-slate-700">
-                        {off.priority}
-                      </span>
-                    </div>
-                    <div>
-                      Stackable:{" "}
-                      <span className="font-mono text-slate-700">
-                        {off.canCombine ? "Yes" : "No"}
-                      </span>
+                      )}
+                      {off.offerType === "PREPAID" && (
+                        <div>
+                          Value:{" "}
+                          <span className="font-semibold text-slate-800">
+                            {off.value}% OFF
+                          </span>
+                        </div>
+                      )}
+                      {off.offerType === "SURPRISE_GIFT" && (
+                        <>
+                          <div>
+                            Threshold:{" "}
+                            <span className="font-semibold text-slate-800">
+                              ₹{off.minAmount}
+                            </span>
+                          </div>
+                          <div>
+                            Gift Value:{" "}
+                            <span className="font-semibold text-slate-800">
+                              ₹{off.giftValue}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                      <div>
+                        Priority:{" "}
+                        <span className="font-mono text-slate-700">
+                          {off.priority}
+                        </span>
+                      </div>
+                      <div>
+                        Stackable:{" "}
+                        <span className="font-mono text-slate-700">
+                          {off.canCombine ? "Yes" : "No"}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex space-x-2 pt-2">
-                  <Button
-                    onClick={() => {
-                      setSelectedOffer({
-                        ...off,
-                        maxDiscount: off.maxDiscount || "",
-                        startDate: off.startDate
-                          ? new Date(off.startDate).toISOString().split("T")[0]
-                          : "",
-                        expiryDate: off.expiryDate
-                          ? new Date(off.expiryDate).toISOString().split("T")[0]
-                          : "",
-                      });
-                      setShowEditOfferModal(true);
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-[10px] py-1 border-[#c5a880]/30 text-[#c5a880] hover:bg-[#c5a880]/10 flex items-center justify-center space-x-1"
-                  >
-                    <span>Edit Configuration</span>
-                  </Button>
+                  <div className="flex items-center space-x-2 pt-2 border-t border-slate-100">
+                    <Button
+                      onClick={() => {
+                        setSelectedOffer({
+                          ...off,
+                          originalCode: off.code,
+                          maxDiscount: off.maxDiscount || "",
+                          startDate: off.startDate
+                            ? new Date(off.startDate).toISOString().split("T")[0]
+                            : "",
+                          expiryDate: off.expiryDate
+                            ? new Date(off.expiryDate).toISOString().split("T")[0]
+                            : "",
+                        });
+                        setShowEditOfferModal(true);
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-[10px] py-1 border-[#c5a880]/30 text-[#c5a880] hover:bg-[#c5a880]/10 flex items-center justify-center space-x-1"
+                    >
+                      <RiEditLine size={13} />
+                      <span>Edit</span>
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCoupon(off._id, off.code)}
+                      title={`Delete Offer (${off.code})`}
+                      className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition cursor-pointer"
+                    >
+                      <RiDeleteBinLine size={15} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       </div>
 
-      {/* Create Coupon Modal Form */}
+      {/* Create / Edit Coupon Modal Form */}
       {showCouponModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <form
-            onSubmit={handleCreateCoupon}
+            onSubmit={handleSaveCoupon}
             className="w-full max-w-lg bg-white border border-slate-200 rounded-xl shadow-2xl p-6 space-y-5 animate-fade-in"
           >
             <div>
               <h3 className="font-display font-medium text-lg text-slate-900">
-                Issue Discount Coupon Promo
+                {editingCoupon
+                  ? `Modify Promo Coupon: ${editingCoupon.code}`
+                  : "Issue Discount Coupon Promo"}
               </h3>
               <p className="text-slate-500 text-xs mt-1">
-                Specify validation limits and discount percentages values below
+                {editingCoupon
+                  ? "Update discount percentage, usage limits, or expiry date"
+                  : "Specify validation limits and discount percentages values below"}
               </p>
             </div>
 
             <div className="space-y-4">
-              <Input
-                label="Unique Code Tag *"
-                required
-                placeholder="e.g. PARIWESHGOLD15"
-                value={newCoupon.code}
-                onChange={(e) =>
-                  setNewCoupon({
-                    ...newCoupon,
-                    code: e.target.value.toUpperCase(),
-                  })
-                }
-                className="uppercase font-mono tracking-widest"
-              />
+              <div>
+                <Input
+                  label="Unique Code Tag *"
+                  required
+                  disabled={Boolean(editingCoupon)}
+                  placeholder="e.g. PARIWESHGOLD15"
+                  value={newCoupon.code}
+                  onChange={(e) =>
+                    setNewCoupon({
+                      ...newCoupon,
+                      code: e.target.value.toUpperCase(),
+                    })
+                  }
+                  className={`uppercase font-mono tracking-widest ${
+                    editingCoupon
+                      ? "bg-slate-100 cursor-not-allowed text-slate-600 opacity-90"
+                      : ""
+                  }`}
+                />
+                {editingCoupon && (
+                  <p className="text-[10px] text-slate-400 mt-1 italic">
+                    Code tag cannot be changed after creation to protect existing orders and customer carts.
+                  </p>
+                )}
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
@@ -483,6 +647,8 @@ const MarketingPage = () => {
                   }
                   type="number"
                   required
+                  min="1"
+                  max={newCoupon.discountType === "Percentage" ? "100" : undefined}
                   placeholder={
                     newCoupon.discountType === "Flat" ? "e.g. 200" : "e.g. 15"
                   }
@@ -491,6 +657,48 @@ const MarketingPage = () => {
                     setNewCoupon({ ...newCoupon, value: e.target.value })
                   }
                 />
+              </div>
+
+              {/* Safeguards: Min Order Amount & Max Discount Cap */}
+              <div className="grid grid-cols-2 gap-4 bg-amber-50/60 p-3 rounded-lg border border-amber-200/70">
+                <div className="space-y-1.5">
+                  <Input
+                    label="Min Order Amount (₹)"
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 1999 (0 = No min)"
+                    value={newCoupon.minAmount}
+                    onChange={(e) =>
+                      setNewCoupon({ ...newCoupon, minAmount: e.target.value })
+                    }
+                  />
+                  <p className="text-[9px] text-amber-800 font-medium">
+                    Isse kam cart total pe coupon apply nahi hoga
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <Input
+                    label="Max Discount Cap (₹)"
+                    type="number"
+                    min="0"
+                    disabled={newCoupon.discountType === "Flat"}
+                    placeholder={
+                      newCoupon.discountType === "Flat"
+                        ? "N/A for Flat"
+                        : "e.g. 500 (Blank = No cap)"
+                    }
+                    value={newCoupon.maxDiscount}
+                    onChange={(e) =>
+                      setNewCoupon({
+                        ...newCoupon,
+                        maxDiscount: e.target.value,
+                      })
+                    }
+                  />
+                  <p className="text-[9px] text-amber-800 font-medium">
+                    Percentage discount isse zyada nahi hoga
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -528,7 +736,7 @@ const MarketingPage = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                     Expiry Date Limit
@@ -541,6 +749,31 @@ const MarketingPage = () => {
                     }
                     className="w-full bg-white border border-slate-200 rounded p-2.5 text-xs text-slate-800 focus:outline-[#c5a880] focus:ring-1 focus:ring-[#c5a880]"
                   />
+                  <p className="text-[9px] text-slate-400">
+                    Optional: Blank rakhein agar expire nahi karna
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Coupon Status
+                  </label>
+                  <select
+                    value={newCoupon.status || "Active"}
+                    onChange={(e) =>
+                      setNewCoupon({
+                        ...newCoupon,
+                        status: e.target.value,
+                      })
+                    }
+                    className="w-full bg-white border border-slate-200 rounded p-2.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#c5a880]"
+                  >
+                    <option value="Active">● Active (Live for customers)</option>
+                    <option value="Inactive">○ Inactive (Paused/Draft)</option>
+                  </select>
+                  <p className="text-[9px] text-slate-400">
+                    Controls whether customers can apply this code
+                  </p>
                 </div>
               </div>
             </div>
@@ -549,12 +782,12 @@ const MarketingPage = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setShowCouponModal(false)}
+                onClick={closeCouponModal}
               >
                 Discard
               </Button>
               <Button type="submit" variant="primary">
-                Confirm Promo
+                {editingCoupon ? "Save Changes" : "Confirm Promo"}
               </Button>
             </div>
           </form>
@@ -588,18 +821,18 @@ const MarketingPage = () => {
                     setSelectedOffer({ ...selectedOffer, name: e.target.value })
                   }
                 />
-                <Input
-                  label="Coupon Code Tag"
-                  required
-                  disabled={selectedOffer.offerType === "PREPAID"}
-                  value={selectedOffer.code || ""}
-                  onChange={(e) =>
-                    setSelectedOffer({
-                      ...selectedOffer,
-                      code: e.target.value.toUpperCase(),
-                    })
-                  }
-                />
+                <div>
+                  <Input
+                    label="Coupon Code Tag"
+                    required
+                    disabled
+                    value={selectedOffer.code || ""}
+                    className="bg-slate-100 font-mono tracking-widest cursor-not-allowed opacity-80"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1 italic">
+                    Special offer system code tag is locked to maintain customer cart discounts.
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-1">

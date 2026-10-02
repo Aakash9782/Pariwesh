@@ -6,9 +6,16 @@ import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 const CampaignBanners = ({ banners, settingsLoading }) => {
   const [activeIdx, setActiveIdx] = useState(0);
 
-  // Active campaign banners selection
-  const activeBanners =
-    Array.isArray(banners) && banners.length > 0 ? banners : [];
+  // Active campaign banners selection - strictly filter for valid image URLs
+  const activeBanners = Array.isArray(banners)
+    ? banners.filter(
+        (b) =>
+          b &&
+          typeof b.image === "string" &&
+          b.image.trim() !== "" &&
+          !b.image.includes("hero.png"),
+      )
+    : [];
 
   // Auto-slide effect every 4 seconds
   useEffect(() => {
@@ -62,7 +69,7 @@ const CampaignBanners = ({ banners, settingsLoading }) => {
               className="w-full shrink-0 relative overflow-hidden block"
             >
               <img
-                src={optimizeCloudinaryUrl(banner.image || "/hero.png", 850)}
+                src={optimizeCloudinaryUrl(banner.image, 850)}
                 alt={banner.title || `Campaign Banner ${idx + 1}`}
                 loading="lazy"
                 decoding="async"

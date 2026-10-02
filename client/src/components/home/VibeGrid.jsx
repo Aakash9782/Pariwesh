@@ -6,26 +6,34 @@ import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 const VIBE_MOODS = [
   {
     title: "Day To Dusk",
-    bgImg: "/hero.png",
-    insetImg: "/hero.png",
+    bgImg:
+      "https://res.cloudinary.com/ag1y6hht/image/upload/v1786465378/pariwesh/branding/gdlcmu4qlxzninuyoobt.webp",
+    insetImg:
+      "https://res.cloudinary.com/ag1y6hht/image/upload/v1786465379/pariwesh/branding/duac47d4imaxlp9mjf5s.webp",
     path: "/shop?tag=Best Seller",
   },
   {
     title: "The Linen Edit",
-    bgImg: "/hero.png",
-    insetImg: "/hero.png",
+    bgImg:
+      "https://res.cloudinary.com/ag1y6hht/image/upload/v1786465379/pariwesh/branding/mvuidwqy5li50wwwmkzp.png",
+    insetImg:
+      "https://res.cloudinary.com/ag1y6hht/image/upload/v1786465380/pariwesh/branding/piswmsonk3asma8pou1p.png",
     path: "/shop?category=kurtis",
   },
   {
     title: "Not So Boring",
-    bgImg: "/hero.png",
-    insetImg: "/hero.png",
+    bgImg:
+      "https://res.cloudinary.com/ag1y6hht/image/upload/v1786465381/pariwesh/branding/iodprckavpdfzn7evpea.webp",
+    insetImg:
+      "https://res.cloudinary.com/ag1y6hht/image/upload/v1786465381/pariwesh/branding/ngn1y5iuygynk2g28jk0.webp",
     path: "/shop?category=suits",
   },
   {
     title: "Festive Essentials",
-    bgImg: "/hero.png",
-    insetImg: "/hero.png",
+    bgImg:
+      "https://res.cloudinary.com/ag1y6hht/image/upload/v1786465382/pariwesh/branding/zuntnstvgbv9otoqmoiv.jpg",
+    insetImg:
+      "https://res.cloudinary.com/ag1y6hht/image/upload/v1786465383/pariwesh/branding/orja8fqgewhgmnsoajgy.jpg",
     path: "/shop?category=ethnic",
   },
 ];

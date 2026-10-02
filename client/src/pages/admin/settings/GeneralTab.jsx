@@ -150,17 +150,49 @@ const GeneralTab = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            type="datetime-local"
-            label="Countdown End Date & Time"
-            value={generalForm.countdownEndDate}
-            onChange={(e) =>
-              setGeneralForm({
-                ...generalForm,
-                countdownEndDate: e.target.value,
-              })
-            }
-          />
+          <div className="space-y-1.5">
+            <Input
+              type="datetime-local"
+              label="Countdown End Date & Time"
+              value={generalForm.countdownEndDate}
+              onChange={(e) =>
+                setGeneralForm({
+                  ...generalForm,
+                  countdownEndDate: e.target.value,
+                })
+              }
+            />
+            {(() => {
+              if (!generalForm.countdownEndDate) {
+                return (
+                  <p className="text-[10px] text-slate-500">
+                    ℹ️ Blank: Daily midnight rolling timer chalega.
+                  </p>
+                );
+              }
+              const d = new Date(generalForm.countdownEndDate);
+              const yr = d.getFullYear();
+              if (isNaN(d.getTime()) || yr < 2026) {
+                return (
+                  <p className="text-[10px] text-rose-600 font-semibold bg-rose-50 px-2 py-1 rounded border border-rose-200">
+                    ⚠️ Saal galat hai ({yr || "0001"}!) — Kripya 2026 select karein taaki timer website par live dikhe.
+                  </p>
+                );
+              }
+              if (d.getTime() <= Date.now()) {
+                return (
+                  <p className="text-[10px] text-amber-700 font-semibold bg-amber-50 px-2 py-1 rounded border border-amber-200">
+                    ⚠️ Yeh date beet chuki hai (Expired). Website par live countdown timer dikhane ke liye aage ki date/time chunein.
+                  </p>
+                );
+              }
+              return (
+                <p className="text-[10px] text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  ✅ Live Timer Target: {d.toLocaleString()}
+                </p>
+              );
+            })()}
+          </div>
           <Input
             className="md:col-span-2"
             label="Countdown Bar Title (Message)"
@@ -213,8 +245,7 @@ const GeneralTab = ({
         <div className="bg-[#FAF9F6] p-4.5 rounded-xl border border-slate-200/80 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-                <span className="text-accent-gold">✦</span>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center">
                 <span>Festive & Event Sale Campaign Manager</span>
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">

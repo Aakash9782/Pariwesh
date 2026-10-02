@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RiHeartLine, RiHeartFill, RiShoppingBagLine } from "react-icons/ri";
 import API from "../../services/api.js";
-import { ProductSkeleton } from "../../components/common/Skeleton.jsx";
+import { CollectionDetailSkeleton } from "../../components/common/Skeleton.jsx";
 import { toggleWishlistProduct } from "../../redux/slices/wishlistSlice.js";
 import { syncWishlistNow } from "../../services/hydrateCommerce.js";
 import SEO from "../../components/common/SEO.jsx";
@@ -43,13 +43,7 @@ const CollectionDetail = () => {
   };
 
   if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-16 grid grid-cols-2 md:grid-cols-4 gap-6">
-        {[1, 2, 3, 4].map((i) => (
-          <ProductSkeleton key={i} />
-        ))}
-      </div>
-    );
+    return <CollectionDetailSkeleton />;
   }
 
   if (error || !collection) {
@@ -192,7 +186,6 @@ const CollectionDetail = () => {
             {/* Mobile Micro Trust Indicators */}
             <div className="flex items-center gap-2 pt-1 overflow-x-auto no-scrollbar">
               <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-md border border-white/10 text-[10px] text-white/85 whitespace-nowrap">
-                <span className="text-[#c5a880]">✦</span>
                 <span className="text-white/70 uppercase tracking-wider text-[9px]">Pure Handloom</span>
               </div>
               <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-md border border-white/10 text-[10px] text-white/85 whitespace-nowrap">
@@ -200,7 +193,7 @@ const CollectionDetail = () => {
                 <span className="text-white/70 uppercase tracking-wider text-[9px]">Pan-India Dispatch</span>
               </div>
               <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-md border border-white/10 text-[10px] text-white/85 whitespace-nowrap">
-                <span className="text-[#c5a880]">★</span>
+                <span className="text-[#c5a880]">✓</span>
                 <span className="text-white/70 uppercase tracking-wider text-[9px]">Assured Quality</span>
               </div>
             </div>
@@ -220,8 +213,7 @@ const CollectionDetail = () => {
                   <span>←</span>
                   <span>All Collections</span>
                 </Link>
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#c5a880]/10 border border-[#c5a880]/30 text-[#c5a880] text-[11px] tracking-[0.25em] uppercase font-medium">
-                  <span>✦</span>
+                <div className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-[#c5a880]/10 border border-[#c5a880]/30 text-[#c5a880] text-[11px] tracking-[0.25em] uppercase font-medium">
                   <span>Pariwesh Luxury Atelier</span>
                 </div>
               </div>

@@ -16,7 +16,7 @@ import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 import {
   RiHeartLine,
   RiHeartFill,
-  RiSparklingFill,
+  RiAwardLine,
   RiShieldCheckLine,
   RiTruckLine,
   RiGiftLine,
@@ -275,10 +275,8 @@ const SalePage = () => {
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-16 text-center space-y-6">
           {/* Top Pill: Event Name */}
-          <div className="inline-flex items-center space-x-2 bg-amber-400/20 border border-amber-300/40 px-3.5 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-amber-200 backdrop-blur-md shadow-sm">
-            <span className="text-amber-300">✦</span>
+          <div className="inline-flex items-center px-3.5 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-amber-200 bg-amber-400/20 border border-amber-300/40 backdrop-blur-md shadow-sm">
             <span>{saleSettings.saleNavTitle}</span>
-            <span className="text-amber-300">✦</span>
           </div>
 
           {/* Main Headline */}
@@ -355,7 +353,7 @@ const SalePage = () => {
                 </span>
                 <span className="text-[10px] text-slate-400">|</span>
                 <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-700">
-                  {copiedCoupon ? "Copied! ✨" : "Tap to Copy"}
+                  {copiedCoupon ? "Copied!" : "Tap to Copy"}
                 </span>
                 {copiedCoupon ? (
                   <RiCheckLine className="text-emerald-600 text-sm" />
@@ -368,7 +366,7 @@ const SalePage = () => {
 
           {saleSettings.saleDiscountText && (
             <p className="text-[10.5px] uppercase tracking-widest text-amber-200/90 font-semibold pt-1">
-              ✦ {saleSettings.saleDiscountText} ✦
+              {saleSettings.saleDiscountText}
             </p>
           )}
         </div>
@@ -382,7 +380,7 @@ const SalePage = () => {
             </span>
             <span className="hidden sm:inline text-white/30">•</span>
             <span className="flex items-center gap-1.5">
-              <RiSparklingFill className="text-amber-300 text-sm" />
+              <RiAwardLine className="text-amber-300 text-sm" />
               <span>100% Artisan Handcrafted</span>
             </span>
             <span className="hidden sm:inline text-white/30">•</span>
@@ -542,10 +540,8 @@ const SalePage = () => {
                     {/* Quick Buy Slide-Up Frosted Glass Dock (DESKTOP HOVER ONLY) */}
                     <div className="hidden md:block absolute inset-x-0 bottom-0 z-20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out pointer-events-none group-hover:pointer-events-auto">
                       <div className="bg-white/95 backdrop-blur-md px-2 py-2.5 border-t border-accent-gold/40 shadow-[0_-4px_20px_rgba(0,0,0,0.12)] flex flex-col items-center space-y-1.5">
-                        <span className="text-[9px] uppercase tracking-[0.2em] font-extrabold text-slate-700 flex items-center space-x-1 select-none">
-                          <span className="text-accent-gold text-[8px]">✦</span>
+                        <span className="text-[9px] uppercase tracking-[0.2em] font-extrabold text-slate-700 flex items-center justify-center select-none">
                           <span>Quick Buy Size</span>
-                          <span className="text-accent-gold text-[8px]">✦</span>
                         </span>
                         <div className="flex justify-center items-center gap-1.5 w-full px-1">
                           {(product.sizes && product.sizes.length > 0

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
 import { useSearchParams } from "react-router-dom";
@@ -14,6 +14,7 @@ import Modal from "../../components/admin/ui/Modal.jsx";
 import EmptyState from "../../components/admin/ui/EmptyState.jsx";
 import TaxInvoiceModal from "../../components/common/TaxInvoiceModal.jsx";
 import ShippingLabelModal from "../../components/common/ShippingLabelModal.jsx";
+import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 import {
   RiSearchLine,
   RiPrinterLine,
@@ -27,6 +28,12 @@ import {
   RiArrowRightSLine,
   RiWhatsappLine,
   RiDeleteBinLine,
+  RiTruckLine,
+  RiInboxArchiveLine,
+  RiCheckDoubleLine,
+  RiMapPinLine,
+  RiTimeLine,
+  RiRefreshLine,
 } from "react-icons/ri";
 
 const getWhatsAppUrl = (order) => {
@@ -46,7 +53,7 @@ const getWhatsAppUrl = (order) => {
     "Valued Customer";
   const orderId = order.orderId || "";
 
-  const message = `Namaste ${customerName} ji! ✨\n\nPariwesh se aapka order #${orderId} confirm ho gaya hai.\n\nThank you so much for choosing PARIWESH! We are preparing your royal ensemble with great love and care.\n\nWe would love to welcome you back again for your future traditional and festive celebrations. If you need any assistance with size or styling, feel free to reply directly here.\n\nWarm regards,\nTeam PARIWESH 🌸\nhttps://pariwesh.in`;
+  const message = `Namaste ${customerName} ji!\n\nPariwesh se aapka order #${orderId} confirm ho gaya hai.\n\nThank you so much for choosing PARIWESH! We are preparing your royal ensemble with great love and care.\n\nWe would love to welcome you back again for your future traditional and festive celebrations. If you need any assistance with size or styling, feel free to reply directly here.\n\nWarm regards,\nTeam PARIWESH 🌸\nhttps://pariwesh.in`;
 
   return `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`;
 };
@@ -71,6 +78,9 @@ const OrdersPage = () => {
 
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState("");
+  const [workflowTab, setWorkflowTab] = useState(
+    searchParams.get("tab") || "all",
+  );
   const [statusFilter, setStatusFilter] = useState(
     searchParams.get("status") || "",
   );
@@ -127,6 +137,8 @@ const OrdersPage = () => {
 
   // Update filters dynamically when searchParams changes
   useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab !== null) setWorkflowTab(tab);
     const status = searchParams.get("status");
     if (status !== null) setStatusFilter(status);
     const pay = searchParams.get("paymentStatus");
@@ -436,11 +448,11 @@ const OrdersPage = () => {
   // Excel Spreadsheet table exporter (CSV compatible format)
   const handleExportExcel = () => {
     const headers =
-      "\ufeffOrder ID,Customer Name,Phone,Email,Total,Order Status,Payment Status,Courier,AWB,Created Date\n";
+      "\ufeffOrder ID,Customer Name,Phone,Email,City,State,Total,Payment Method,Order Status,Payment Status,Courier,AWB,Items Count,Created Date\n";
     const rows = orders
       .map(
         (o) =>
-          `"${o.orderId}","${o.customer?.name || ""}","${o.customer?.phone || ""}","${o.customer?.email || ""}",${o.pricing?.grandTotal || o.totalPrice || 0},"${o.orderStatus || ""}","${o.paymentStatus || ""}","${o.shippingProvider || "Not Assigned"}","${o.trackingId || "Pending"}","${new Date(o.createdAt).toLocaleDateString()}"`,
+          `"${o.orderId}","${o.customer?.name || o.shippingAddress?.fullName || ""}","${o.customer?.phone || o.shippingAddress?.phone || ""}","${o.customer?.email || ""}","${o.shippingAddress?.city || ""}","${o.shippingAddress?.state || ""}",${o.pricing?.grandTotal || o.totalPrice || 0},"${o.paymentMethod || ""}","${o.orderStatus || ""}","${o.paymentStatus || ""}","${o.shippingProvider || "Not Assigned"}","${o.trackingId || "Pending"}",${o.items?.reduce((ttl, itm) => ttl + itm.quantity, 0) || 0},"${new Date(o.createdAt).toLocaleDateString()}"`,
       )
       .join("\n");
     const blob = new Blob([headers + rows], {
@@ -453,16 +465,125 @@ const OrdersPage = () => {
     link.click();
   };
 
+  // Dispatch Intelligence Metrics
+  const orderMetrics = useMemo(() => {
+    let toPack = 0;
+    let inTransit = 0;
+    let delivered = 0;
+    let codQueueCount = 0;
+    let codQueueVal = 0;
+    let deliveredRevenue = 0;
+    let grossRevenue = 0;
+    let cancelledCount = 0;
+
+    orders.forEach((o) => {
+      const grand = Number(o.pricing?.grandTotal || o.totalPrice || 0);
+      const st = o.orderStatus;
+      const isCod = o.paymentMethod === "COD";
+
+      if (st !== "Cancelled") {
+        grossRevenue += grand;
+      } else {
+        cancelledCount += 1;
+      }
+
+      if (["Placed", "Confirmed", "Processing", "Packed"].includes(st)) {
+        toPack += 1;
+      }
+      if (["Ready to Ship", "Shipped"].includes(st)) {
+        inTransit += 1;
+      }
+      if (st === "Delivered") {
+        delivered += 1;
+        deliveredRevenue += grand;
+      }
+      if (isCod && ["Placed", "Confirmed", "Processing"].includes(st)) {
+        codQueueCount += 1;
+        codQueueVal += grand;
+      }
+    });
+
+    return {
+      total: orders.length,
+      toPack,
+      inTransit,
+      delivered,
+      codQueueCount,
+      codQueueVal,
+      deliveredRevenue,
+      grossRevenue,
+      cancelledCount,
+    };
+  }, [orders]);
+
+  const WORKFLOW_TABS = [
+    { id: "all", label: "All Orders", count: orderMetrics.total },
+    {
+      id: "to_pack",
+      label: "To Pack & Dispatch",
+      count: orderMetrics.toPack,
+      urgent: orderMetrics.toPack > 0,
+    },
+    {
+      id: "in_transit",
+      label: "In-Transit & Shipped",
+      count: orderMetrics.inTransit,
+    },
+    {
+      id: "delivered",
+      label: "Delivered",
+      count: orderMetrics.delivered,
+    },
+    {
+      id: "cod_queue",
+      label: "COD Confirmation",
+      count: orderMetrics.codQueueCount,
+      urgent: orderMetrics.codQueueCount > 0,
+    },
+    {
+      id: "cancelled",
+      label: "Cancelled",
+      count: orderMetrics.cancelledCount,
+    },
+  ];
+
   // Filter Queue Logic
   const filteredOrders = orders.filter((o) => {
     const term = searchTerm.toLowerCase();
+    const city = (o.shippingAddress?.city || "").toLowerCase();
+    const state = (o.shippingAddress?.state || "").toLowerCase();
     const matchSearch =
       o.orderId.toLowerCase().includes(term) ||
-      o.customer?.name.toLowerCase().includes(term) ||
-      o.customer?.phone.includes(searchTerm) ||
+      (o.customer?.name && o.customer.name.toLowerCase().includes(term)) ||
+      (o.shippingAddress?.fullName &&
+        o.shippingAddress.fullName.toLowerCase().includes(term)) ||
+      (o.customer?.phone && o.customer.phone.includes(searchTerm)) ||
+      (o.shippingAddress?.phone &&
+        o.shippingAddress.phone.includes(searchTerm)) ||
+      city.includes(term) ||
+      state.includes(term) ||
+      (o.trackingId && o.trackingId.toLowerCase().includes(term)) ||
       (o.razorpayPaymentId &&
         o.razorpayPaymentId.toLowerCase().includes(term)) ||
       (o.razorpayOrderId && o.razorpayOrderId.toLowerCase().includes(term));
+
+    // Pipeline Stage Tab
+    let matchTab = true;
+    if (workflowTab === "to_pack") {
+      matchTab = ["Placed", "Confirmed", "Processing", "Packed"].includes(
+        o.orderStatus,
+      );
+    } else if (workflowTab === "in_transit") {
+      matchTab = ["Ready to Ship", "Shipped"].includes(o.orderStatus);
+    } else if (workflowTab === "delivered") {
+      matchTab = o.orderStatus === "Delivered";
+    } else if (workflowTab === "cod_queue") {
+      matchTab =
+        o.paymentMethod === "COD" &&
+        !["Delivered", "Cancelled"].includes(o.orderStatus);
+    } else if (workflowTab === "cancelled") {
+      matchTab = o.orderStatus === "Cancelled";
+    }
 
     const matchStatus = statusFilter ? o.orderStatus === statusFilter : true;
     const matchPay = payFilter ? o.paymentStatus === payFilter : true;
@@ -474,15 +595,30 @@ const OrdersPage = () => {
     // Date range filter
     let matchDate = true;
     if (dateFilter === "today") {
-      const today = new Date().setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       matchDate = new Date(o.createdAt) >= today;
+    } else if (dateFilter === "yesterday") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const orderTime = new Date(o.createdAt).getTime();
+      matchDate =
+        orderTime >= yesterday.getTime() && orderTime < today.getTime();
     } else if (dateFilter === "week") {
       const lastWeek = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       matchDate = new Date(o.createdAt) >= lastWeek;
+    } else if (dateFilter === "month") {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      matchDate = new Date(o.createdAt) >= startOfMonth;
     }
 
     return (
       matchSearch &&
+      matchTab &&
       matchStatus &&
       matchPay &&
       matchMethod &&
@@ -502,103 +638,290 @@ const OrdersPage = () => {
           { label: "Orders" },
         ]}
         actions={
-          <Button
-            variant="outline"
-            className="flex items-center space-x-2 text-slate-700 hover:text-slate-900 border-slate-200"
-            onClick={handleExportExcel}
-          >
-            <RiFileExcelLine size={16} />
-            <span>Export Logistics xls</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchOrders}
+              className="flex items-center space-x-1.5 text-slate-700 hover:text-slate-900 border-slate-200"
+              title="Refresh Orders"
+            >
+              <RiRefreshLine size={15} />
+              <span>Refresh</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center space-x-2 text-slate-700 hover:text-slate-900 border-slate-200"
+              onClick={handleExportExcel}
+            >
+              <RiFileExcelLine size={16} />
+              <span>Export Logistics xls</span>
+            </Button>
+          </div>
         }
       />
 
-      {/* Advanced filters */}
-      <Card className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4">
-        {/* Search */}
-        <div className="md:col-span-2 relative">
-          <RiSearchLine
-            className="absolute left-3 top-3 text-slate-400"
-            size={16}
-          />
-          <input
-            type="text"
-            placeholder="Search by Order ID, buyer name, phone..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#FAF9F6] border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880] transition"
-          />
+      {/* 1. Dispatch Operations KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: To Pack & Dispatch */}
+        <Card
+          className={`p-4 flex flex-col justify-between space-y-2 border shadow-2xs hover:shadow-xs transition cursor-pointer ${
+            workflowTab === "to_pack"
+              ? "bg-rose-50/60 border-rose-300 ring-2 ring-rose-400/20"
+              : "bg-white border-slate-200"
+          }`}
+          onClick={() => {
+            setWorkflowTab("to_pack");
+            setStatusFilter("");
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10.5px] uppercase tracking-wider font-bold text-rose-800">
+              To Pack & Dispatch
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center">
+              <RiInboxArchiveLine size={18} />
+            </div>
+          </div>
+          <div>
+            <p className="text-2xl font-serif font-extrabold text-rose-950 tracking-tight font-mono">
+              {isLoading ? "—" : orderMetrics.toPack}
+            </p>
+            <p className="text-[10px] text-rose-700 font-medium mt-0.5">
+              {orderMetrics.toPack === 0
+                ? "Warehouse queue clear"
+                : "Awaiting packaging & courier handover"}
+            </p>
+          </div>
+        </Card>
+
+        {/* Card 2: In-Transit / Shipped */}
+        <Card
+          className={`p-4 flex flex-col justify-between space-y-2 border shadow-2xs hover:shadow-xs transition cursor-pointer ${
+            workflowTab === "in_transit"
+              ? "bg-blue-50/60 border-blue-300 ring-2 ring-blue-400/20"
+              : "bg-white border-slate-200"
+          }`}
+          onClick={() => {
+            setWorkflowTab("in_transit");
+            setStatusFilter("");
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10.5px] uppercase tracking-wider font-bold text-blue-800">
+              Active In-Transit
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+              <RiTruckLine size={18} />
+            </div>
+          </div>
+          <div>
+            <p className="text-2xl font-serif font-extrabold text-slate-900 tracking-tight font-mono">
+              {isLoading ? "—" : orderMetrics.inTransit}
+            </p>
+            <p className="text-[10px] text-slate-500 mt-0.5">
+              Dispatched with courier network
+            </p>
+          </div>
+        </Card>
+
+        {/* Card 3: COD Confirmation Queue */}
+        <Card
+          className={`p-4 flex flex-col justify-between space-y-2 border shadow-2xs hover:shadow-xs transition cursor-pointer ${
+            workflowTab === "cod_queue"
+              ? "bg-amber-50/60 border-amber-300 ring-2 ring-amber-400/20"
+              : "bg-white border-slate-200"
+          }`}
+          onClick={() => {
+            setWorkflowTab("cod_queue");
+            setStatusFilter("");
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10.5px] uppercase tracking-wider font-bold text-amber-800">
+              COD Risk Queue
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+              <RiTimeLine size={18} />
+            </div>
+          </div>
+          <div>
+            <p className="text-2xl font-serif font-extrabold text-slate-900 tracking-tight font-mono">
+              {isLoading ? "—" : orderMetrics.codQueueCount}
+              <span className="text-xs font-normal text-slate-500 ml-2">
+                (₹{orderMetrics.codQueueVal.toLocaleString("en-IN")})
+              </span>
+            </p>
+            <p className="text-[10px] text-amber-700 font-medium mt-0.5">
+              Verify customer before shipping to avoid RTO
+            </p>
+          </div>
+        </Card>
+
+        {/* Card 4: Delivered Revenue */}
+        <Card
+          className={`p-4 flex flex-col justify-between space-y-2 border shadow-2xs hover:shadow-xs transition cursor-pointer ${
+            workflowTab === "delivered"
+              ? "bg-emerald-50/60 border-emerald-300 ring-2 ring-emerald-400/20"
+              : "bg-white border-slate-200"
+          }`}
+          onClick={() => {
+            setWorkflowTab("delivered");
+            setStatusFilter("");
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10.5px] uppercase tracking-wider font-bold text-emerald-800">
+              Delivered Revenue
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <RiCheckDoubleLine size={18} />
+            </div>
+          </div>
+          <div>
+            <p className="text-2xl font-serif font-extrabold text-slate-900 tracking-tight font-mono">
+              ₹
+              {isLoading
+                ? "—"
+                : orderMetrics.deliveredRevenue.toLocaleString("en-IN")}
+            </p>
+            <p className="text-[10px] text-emerald-700 font-medium mt-0.5">
+              {orderMetrics.delivered} successful deliveries fulfilled
+            </p>
+          </div>
+        </Card>
+      </div>
+
+      {/* 2. Pipeline Stage Tabs & Advanced Filters */}
+      <Card className="p-4 space-y-3.5 bg-white border-slate-200 shadow-2xs">
+        {/* Pipeline Lifecycle Tabs */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1">
+            Dispatch Queue:
+          </span>
+          {WORKFLOW_TABS.map((tab) => {
+            const active = workflowTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  setWorkflowTab(tab.id);
+                  setStatusFilter("");
+                }}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold tracking-wide transition cursor-pointer ${
+                  active
+                    ? "bg-[#8a1c14] text-white shadow-xs font-bold"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                    active
+                      ? "bg-white/20 text-white font-bold"
+                      : tab.urgent
+                        ? "bg-rose-100 text-rose-700 font-bold"
+                        : "bg-slate-200 text-slate-600"
+                  }`}
+                >
+                  {isLoading ? "—" : tab.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Date Filter */}
-        <select
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value)}
-          className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#c5a880] transition"
-        >
-          <option value="all">Date: All Time</option>
-          <option value="today">Today</option>
-          <option value="week">Past 7 Days</option>
-        </select>
+        {/* Filter Controls */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3">
+          {/* Search */}
+          <div className="md:col-span-2 relative">
+            <RiSearchLine
+              className="absolute left-3 top-3 text-slate-400"
+              size={16}
+            />
+            <input
+              type="text"
+              placeholder="Search by Order ID, buyer name, phone, city..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#FAF9F6] border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880] transition"
+            />
+          </div>
 
-        {/* Status */}
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#c5a880] transition"
-        >
-          <option value="">Status: All</option>
-          <option value="Placed">Placed</option>
-          <option value="Confirmed">Confirmed</option>
-          <option value="Processing">Processing</option>
-          <option value="Packed">Packed</option>
-          <option value="Ready to Ship">Ready to Ship</option>
-          <option value="Shipped">Shipped</option>
-          <option value="Delivered">Delivered</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
+          {/* Date Filter */}
+          <select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#c5a880] transition"
+          >
+            <option value="all">Date: All Time</option>
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="week">Past 7 Days</option>
+            <option value="month">This Month (MTD)</option>
+          </select>
 
-        {/* Payment */}
-        <select
-          value={payFilter}
-          onChange={(e) => setPayFilter(e.target.value)}
-          className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#c5a880] transition"
-        >
-          <option value="">Payment: All</option>
-          <option value="Pending">Pending</option>
-          <option value="Paid">Paid</option>
-          <option value="Failed">Failed</option>
-          <option value="Refunded">Refunded</option>
-        </select>
+          {/* Status */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#c5a880] transition"
+          >
+            <option value="">Status: All</option>
+            <option value="Placed">Placed</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Processing">Processing</option>
+            <option value="Packed">Packed</option>
+            <option value="Ready to Ship">Ready to Ship</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
 
-        {/* Courier */}
-        <select
-          value={courierFilter}
-          onChange={(e) => setCourierFilter(e.target.value)}
-          className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#c5a880] transition"
-        >
-          <option value="">Courier Co</option>
-          {COURIERS.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+          {/* Payment */}
+          <select
+            value={payFilter}
+            onChange={(e) => setPayFilter(e.target.value)}
+            className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#c5a880] transition"
+          >
+            <option value="">Payment: All</option>
+            <option value="Pending">Pending</option>
+            <option value="Paid">Paid</option>
+            <option value="Failed">Failed</option>
+            <option value="Refunded">Refunded</option>
+          </select>
+
+          {/* Courier */}
+          <select
+            value={courierFilter}
+            onChange={(e) => setCourierFilter(e.target.value)}
+            className="bg-[#FAF9F6] border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#c5a880] transition"
+          >
+            <option value="">Courier Co: All</option>
+            {COURIERS.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
       </Card>
 
       {/* Orders Table Panel */}
       <Card className="overflow-hidden p-0">
         {/* DESKTOP TABLE VIEW (md+) */}
         <div className="hidden md:block overflow-x-auto w-full">
-          <table className="w-full text-left text-xs min-w-[900px] border-collapse">
+          <table className="w-full text-left text-xs min-w-[950px] border-collapse">
             <thead className="bg-[#FAF9F6] border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[10px] sticky top-0 z-10">
               <tr>
                 <th className="py-4 px-5">Order ID</th>
-                <th className="py-4 px-5">Customer Billing Details</th>
-                <th className="py-4 px-5">Date</th>
-                <th className="py-4 px-5">Items Qty</th>
+                <th className="py-4 px-5">Customer Billing & Destination</th>
+                <th className="py-4 px-5">Date Placed</th>
+                <th className="py-4 px-5">Garments & Sizes</th>
                 <th className="py-4 text-right px-5">Bill Value</th>
-                <th className="py-4 text-center px-5">Courier provider</th>
+                <th className="py-4 text-center px-5">Courier & AWB</th>
                 <th className="py-4 text-center px-5">Status Flags</th>
                 <th className="py-4 text-center px-5">Inspect</th>
               </tr>
@@ -617,8 +940,8 @@ const OrdersPage = () => {
                     <td className="py-4 px-5">
                       <SkeletonLoader className="h-3.5 w-20" />
                     </td>
-                    <td className="py-4 px-5 text-center">
-                      <SkeletonLoader className="h-3.5 w-10 mx-auto" />
+                    <td className="py-4 px-5">
+                      <SkeletonLoader className="h-10 w-36" />
                     </td>
                     <td className="py-4 px-5 text-right">
                       <SkeletonLoader className="h-4 w-16 ml-auto" />
@@ -651,16 +974,35 @@ const OrdersPage = () => {
                     </td>
                     <td className="py-4 px-5">
                       <p className="font-semibold text-slate-900 text-xs">
-                        {ord.customer?.name}
+                        {ord.customer?.name ||
+                          ord.shippingAddress?.fullName ||
+                          "Patron"}
                       </p>
-                      <p className="text-[10px] text-slate-500 font-mono mt-0.5">
-                        {ord.customer?.phone} | {ord.paymentMethod}
-                        {ord.razorpayPaymentId && (
-                          <span className="text-emerald-700 block font-semibold mt-0.5">
-                            Txn: {ord.razorpayPaymentId}
+                      <p className="text-[10.5px] text-slate-500 font-mono mt-0.5">
+                        {ord.customer?.phone ||
+                          ord.shippingAddress?.phone ||
+                          "No phone"}
+                      </p>
+                      {(ord.shippingAddress?.city ||
+                        ord.shippingAddress?.state) && (
+                        <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
+                          <RiMapPinLine
+                            size={11}
+                            className="text-[#c5a880] shrink-0"
+                          />
+                          <span className="truncate max-w-[170px]">
+                            {ord.shippingAddress.city
+                              ? `${ord.shippingAddress.city}, `
+                              : ""}
+                            {ord.shippingAddress.state || ""}
                           </span>
-                        )}
-                      </p>
+                        </p>
+                      )}
+                      {ord.razorpayPaymentId && (
+                        <span className="text-emerald-700 block font-semibold text-[10px] font-mono mt-0.5">
+                          Txn: {ord.razorpayPaymentId}
+                        </span>
+                      )}
                       {getWhatsAppUrl(ord) && (
                         <a
                           href={getWhatsAppUrl(ord)}
@@ -669,28 +1011,113 @@ const OrdersPage = () => {
                           title="Notify customer on WhatsApp"
                           className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 border border-emerald-200 transition"
                         >
-                          <RiWhatsappLine size={13} className="text-emerald-600" />
+                          <RiWhatsappLine
+                            size={13}
+                            className="text-emerald-600"
+                          />
                           <span>WhatsApp Notify</span>
                         </a>
                       )}
                     </td>
-                    <td className="py-4 px-5 text-slate-600 font-mono text-[10px]">
+                    <td className="py-4 px-5 text-slate-600 font-mono text-[10.5px]">
                       {new Date(ord.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="py-4 px-5 text-slate-600 font-mono text-center border-none">
-                      {ord.items?.reduce((ttl, itm) => ttl + itm.quantity, 0)}{" "}
-                      Units
+                    {/* Garments & Sizes Visual Preview */}
+                    <td className="py-4 px-5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex -space-x-2 shrink-0">
+                          {ord.items?.slice(0, 2).map((itm, i) => (
+                            <img
+                              key={i}
+                              src={
+                                itm.image
+                                  ? optimizeCloudinaryUrl(itm.image, 80)
+                                  : "/placeholder.png"
+                              }
+                              alt={itm.name}
+                              className="w-9 h-11 object-cover rounded border border-slate-200 shadow-2xs bg-slate-50"
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                              }}
+                            />
+                          ))}
+                          {(ord.items?.length || 0) > 2 && (
+                            <div className="w-9 h-11 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 shadow-2xs">
+                              +{ord.items.length - 2}
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <span className="font-semibold text-slate-800 text-[11px] block truncate max-w-[120px]">
+                              {ord.items?.[0]?.name || "Garment"}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              (
+                              {ord.items?.reduce(
+                                (ttl, itm) => ttl + itm.quantity,
+                                0,
+                              )}{" "}
+                              pcs)
+                            </span>
+                          </div>
+                          {/* Sizes badge pill */}
+                          <div className="flex items-center gap-1 mt-1 flex-wrap">
+                            {ord.items?.map((itm, i) => (
+                              <span
+                                key={i}
+                                className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-[#FAF9F6] text-[#8a1c14] border border-[#c5a880]/40"
+                              >
+                                {itm.size || "Free"}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </td>
-                    <td className="py-4 text-right px-5 font-bold text-slate-900 text-xs border-none">
-                      ₹{ord.pricing?.grandTotal || ord.totalPrice}
+                    {/* Bill Value */}
+                    <td className="py-4 text-right px-5 border-none">
+                      <div className="font-bold text-slate-900 text-xs font-sans">
+                        ₹
+                        {(
+                          ord.pricing?.grandTotal ||
+                          ord.totalPrice ||
+                          0
+                        ).toLocaleString("en-IN")}
+                      </div>
+                      <div className="mt-1">
+                        <span
+                          className={`inline-block px-1.5 py-0.5 rounded text-[8.5px] font-extrabold tracking-wide uppercase ${
+                            ord.paymentMethod === "COD"
+                              ? "bg-amber-100 text-amber-900 border border-amber-300"
+                              : "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                          }`}
+                        >
+                          {ord.paymentMethod === "COD"
+                            ? "Cash on Delivery"
+                            : "Prepaid (Online)"}
+                        </span>
+                      </div>
                     </td>
+                    {/* Courier & AWB */}
                     <td className="py-4 text-center px-5 border-none">
                       {ord.shippingProvider ? (
-                        <span className="font-medium text-slate-700">
-                          {ord.shippingProvider}
-                        </span>
+                        <div>
+                          <span className="font-medium text-slate-800 text-xs block">
+                            {ord.shippingProvider}
+                          </span>
+                          {ord.trackingId ? (
+                            <span className="text-[10px] text-slate-500 font-mono block mt-0.5">
+                              {ord.trackingId}
+                            </span>
+                          ) : (
+                            <span className="text-[9.5px] text-amber-600 font-medium block">
+                              AWB Pending
+                            </span>
+                          )}
+                        </div>
                       ) : (
-                        <span className="text-slate-400 italic">
+                        <span className="text-slate-400 italic text-xs">
                           Unassigned
                         </span>
                       )}
@@ -702,7 +1129,7 @@ const OrdersPage = () => {
                           className={`inline-block px-1.5 py-0.5 rounded-sm text-[9px] font-bold ${
                             ord.paymentStatus === "Paid"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                              : "bg-amber-50 text-amber-705 text-amber-700 border border-amber-100"
+                              : "bg-amber-50 text-amber-700 border border-amber-100"
                           }`}
                         >
                           {ord.paymentStatus}
@@ -718,7 +1145,7 @@ const OrdersPage = () => {
                             setCustomerNotes(ord.customerNotes || "");
                             setShowNotesForm(false);
                           }}
-                          className="text-[#c5a880] hover:underline font-semibold text-xs flex items-center justify-center"
+                          className="text-[#c5a880] hover:underline font-semibold text-xs flex items-center justify-center cursor-pointer"
                         >
                           Inspect <RiArrowRightSLine className="ml-0.5" />
                         </button>
@@ -784,38 +1211,96 @@ const OrdersPage = () => {
                   </div>
                 </div>
 
-                {/* Customer Info & Order Metas */}
-                <div className="space-y-1">
-                  <p className="font-semibold text-slate-900 text-xs">
-                    {ord.customer?.name || "Patron"}
-                  </p>
-                  <p className="text-[11px] text-slate-500 font-mono">
-                    {ord.customer?.phone || ord.shippingAddress?.phone || "No phone"} • {ord.paymentMethod}
-                  </p>
-                  <p className="text-[10px] text-slate-400 font-mono">
-                    {new Date(ord.createdAt).toLocaleDateString()} • {ord.items?.reduce((ttl, itm) => ttl + itm.quantity, 0)} Units
-                  </p>
-                  {getWhatsAppUrl(ord) && (
-                    <div className="pt-1">
-                      <a
-                        href={getWhatsAppUrl(ord)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 active:bg-emerald-100 border border-emerald-200 transition"
+                {/* Garment Preview + Customer Details */}
+                <div className="flex items-start gap-3">
+                  {ord.items?.[0]?.image && (
+                    <img
+                      src={optimizeCloudinaryUrl(ord.items[0].image, 100)}
+                      alt=""
+                      className="w-12 h-14 object-cover rounded-lg border border-slate-200 shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0 space-y-0.5">
+                    <p className="font-semibold text-slate-900 text-xs">
+                      {ord.customer?.name ||
+                        ord.shippingAddress?.fullName ||
+                        "Patron"}
+                    </p>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      {ord.customer?.phone ||
+                        ord.shippingAddress?.phone ||
+                        "No phone"}
+                    </p>
+                    {(ord.shippingAddress?.city ||
+                      ord.shippingAddress?.state) && (
+                      <p className="text-[10px] text-slate-500 flex items-center gap-1">
+                        <RiMapPinLine
+                          size={11}
+                          className="text-[#c5a880] shrink-0"
+                        />
+                        <span className="truncate">
+                          {ord.shippingAddress.city
+                            ? `${ord.shippingAddress.city}, `
+                            : ""}
+                          {ord.shippingAddress.state || ""}
+                        </span>
+                      </p>
+                    )}
+                    <div className="flex items-center gap-1.5 pt-1 flex-wrap">
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[8.5px] font-extrabold uppercase ${
+                          ord.paymentMethod === "COD"
+                            ? "bg-amber-100 text-amber-900 border border-amber-200"
+                            : "bg-emerald-100 text-emerald-900 border border-emerald-200"
+                        }`}
                       >
-                        <RiWhatsappLine size={14} className="text-emerald-600" />
-                        <span>WhatsApp Notify</span>
-                      </a>
+                        {ord.paymentMethod}
+                      </span>
+                      {ord.items?.map((itm, i) => (
+                        <span
+                          key={i}
+                          className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-[#FAF9F6] text-[#8a1c14] border border-[#c5a880]/30"
+                        >
+                          {itm.size || "Free"}
+                        </span>
+                      ))}
                     </div>
+                  </div>
+                </div>
+
+                {/* Date & WhatsApp */}
+                <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1">
+                  <span>
+                    {new Date(ord.createdAt).toLocaleDateString()} •{" "}
+                    {ord.items?.reduce((ttl, itm) => ttl + itm.quantity, 0)}{" "}
+                    Units
+                  </span>
+                  {getWhatsAppUrl(ord) && (
+                    <a
+                      href={getWhatsAppUrl(ord)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-bold bg-emerald-50 text-emerald-700 active:bg-emerald-100 border border-emerald-200 transition"
+                    >
+                      <RiWhatsappLine size={13} className="text-emerald-600" />
+                      <span>WhatsApp</span>
+                    </a>
                   )}
                 </div>
 
                 {/* Footer: Price & Inspect Button */}
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                   <div>
-                    <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Total Amount</span>
+                    <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">
+                      Total Amount
+                    </span>
                     <span className="font-bold text-slate-900 text-sm font-sans">
-                      ₹{ord.pricing?.grandTotal || ord.totalPrice}
+                      ₹
+                      {(
+                        ord.pricing?.grandTotal ||
+                        ord.totalPrice ||
+                        0
+                      ).toLocaleString("en-IN")}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">

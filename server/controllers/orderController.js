@@ -248,9 +248,16 @@ export const createOrder = async (req, res, next) => {
           couponInstance.userLimit &&
           userUsage.usageCount >= couponInstance.userLimit
         ) {
+          if (couponInstance.userLimit === 1) {
+            return sendError(
+              res,
+              `You have already redeemed this offer on a previous order. This promo is valid only once per customer.`,
+              400,
+            );
+          }
           return sendError(
             res,
-            `You have reached the usage limit for this coupon (${couponInstance.userLimit} time(s))`,
+            `You have reached the maximum allowed usage (${couponInstance.userLimit} times) for this coupon code.`,
             400,
           );
         }

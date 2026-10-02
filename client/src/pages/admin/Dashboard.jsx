@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
@@ -6,17 +6,62 @@ import PageHeader from "../../components/admin/ui/PageHeader.jsx";
 import Card from "../../components/admin/ui/Card.jsx";
 import Button from "../../components/admin/ui/Button.jsx";
 import SkeletonLoader from "../../components/admin/ui/SkeletonLoader.jsx";
+import StatusPill from "../../components/admin/ui/StatusPill.jsx";
+import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
 import {
   RiShoppingBag3Line,
   RiMoneyDollarCircleLine,
-  RiExchangeFundsLine,
   RiGroupLine,
   RiArchiveLine,
   RiAlertLine,
-  RiCompass3Line,
   RiPercentLine,
   RiArrowUpSLine,
+  RiArrowRightLine,
+  RiRefreshLine,
+  RiTruckLine,
+  RiTimeLine,
+  RiCheckDoubleLine,
+  RiAddLine,
+  RiMapPinLine,
+  RiExchangeDollarLine,
+  RiInboxArchiveLine,
+  RiShieldCheckLine,
+  RiArrowRightSLine,
 } from "react-icons/ri";
+
+const parseUserAgent = (ua = "") => {
+  if (!ua || ua === "::1" || ua === "127.0.0.1") return "Admin Terminal";
+  let os = "Desktop";
+  if (ua.includes("Windows")) os = "Windows";
+  else if (ua.includes("Macintosh") || ua.includes("Mac OS")) os = "macOS";
+  else if (ua.includes("Android")) os = "Android";
+  else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
+  else if (ua.includes("Linux")) os = "Linux";
+
+  let browser = "";
+  if (ua.includes("Edg")) browser = "Edge";
+  else if (ua.includes("Chrome")) browser = "Chrome";
+  else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
+  else if (ua.includes("Firefox")) browser = "Firefox";
+
+  return browser ? `${os} (${browser})` : os;
+};
+
+const formatRelativeTime = (dateStr) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diffSec = Math.floor((now - d) / 1000);
+  if (diffSec < 60) return "Just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDays = Math.floor(diffHr / 24);
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+};
 
 const DashboardModule = () => {
   const navigate = useNavigate();
@@ -28,29 +73,29 @@ const DashboardModule = () => {
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Stats computed from DB
+  // Computed Business Statistics
   const [stats, setStats] = useState({
     todayOrders: 0,
     todayRevenue: 0,
     monthlyRevenue: 0,
-    pending: 0,
-    processing: 0,
-    shipped: 0,
+    toPack: 0,
+    inTransit: 0,
     delivered: 0,
     cancelled: 0,
     refunds: 0,
     codPending: 0,
-    onlinePaid: 0,
+    codOrdersCount: 0,
+    onlinePaidCount: 0,
     totalCustomers: 0,
     totalProducts: 0,
     lowStock: 0,
     outOfStock: 0,
     aov: 0,
-    fulfillmentRate: 0,
+    fulfillmentRate: "0.0",
     newCustomersToday: 0,
     revenueByDay: [],
     categorySales: [],
-    momPct: 0,
+    rollingGrowth: "0.0",
   });
 
   const fetchData = async () => {
@@ -62,35 +107,15 @@ const DashboardModule = () => {
         API.get("/users"),
         API.get("/logs"),
         API.get("/notifications"),
+        API.get("/returns"),
       ]);
 
-      const orderRes =
-        results[0].status === "fulfilled" ? results[0].value : null;
-      const prodRes =
-        results[1].status === "fulfilled" ? results[1].value : null;
-      const custRes =
-        results[2].status === "fulfilled" ? results[2].value : null;
-      const logRes =
-        results[3].status === "fulfilled" ? results[3].value : null;
-      const notifRes =
-        results[4].status === "fulfilled" ? results[4].value : null;
-
-      if (results.some((r) => r.status === "rejected")) {
-        console.warn(
-          "Resilience Warning: Some dashboard metrics endpoints failed to load.",
-          results.map((r, i) => ({
-            index: i,
-            status: r.status,
-            reason: r.reason,
-          })),
-        );
-      }
-
-      const oList = orderRes?.data?.data || [];
-      const pList = prodRes?.data?.data || [];
-      const cList = custRes?.data?.data || [];
-      const lList = logRes?.data?.data || [];
-      const nList = notifRes?.data?.data || [];
+      const oList = results[0]?.status === "fulfilled" ? results[0].value?.data?.data || [] : [];
+      const pList = results[1]?.status === "fulfilled" ? results[1].value?.data?.data || [] : [];
+      const cList = results[2]?.status === "fulfilled" ? results[2].value?.data?.data || [] : [];
+      const lList = results[3]?.status === "fulfilled" ? results[3].value?.data?.data || [] : [];
+      const nList = results[4]?.status === "fulfilled" ? results[4].value?.data?.data || [] : [];
+      const rList = results[5]?.status === "fulfilled" ? results[5].value?.data?.data || [] : [];
 
       setOrders(oList);
       setProducts(pList);
@@ -98,7 +123,6 @@ const DashboardModule = () => {
       setLogs(lList);
       setNotifications(nList);
 
-      // Compute statistics
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -107,13 +131,12 @@ const DashboardModule = () => {
       let todayOrdersCount = 0;
       let todayRevenueSum = 0;
       let monthlyRevenueSum = 0;
-      let pendingCount = 0;
-      let processingCount = 0;
-      let shippedCount = 0;
+      let toPackCount = 0;
+      let inTransitCount = 0;
       let deliveredCount = 0;
       let cancelledCount = 0;
-      let refundRequests = 0;
-      let codPendingCount = 0;
+      let codPendingSum = 0;
+      let codOrdersCount = 0;
       let onlinePaidCount = 0;
       let totalRev = 0;
 
@@ -121,8 +144,7 @@ const DashboardModule = () => {
         const ordDate = new Date(ord.createdAt);
         const status = (ord.orderStatus || "").toLowerCase();
         const isCancelled = status === "cancelled" || status === "refunded";
-        const amt =
-          ord.pricing?.grandTotal || ord.pricing?.total || ord.totalPrice || 0;
+        const amt = Number(ord.pricing?.grandTotal || ord.pricing?.total || ord.totalPrice || 0);
 
         if (!isCancelled) {
           totalRev += amt;
@@ -139,55 +161,70 @@ const DashboardModule = () => {
           monthlyRevenueSum += amt;
         }
 
-        // Status counts map
-        if (status === "placed" || status === "pending") pendingCount++;
-        else if (status === "processing" || status === "packed")
-          processingCount++;
-        else if (status === "shipped") shippedCount++;
-        else if (status === "delivered") deliveredCount++;
-        else if (status === "cancelled") cancelledCount++;
-        else if (status === "refunded" || status === "return_requested")
-          refundRequests++;
+        // Group operational dispatch statuses
+        if (["placed", "pending", "confirmed", "processing", "packed"].includes(status)) {
+          toPackCount++;
+        } else if (["ready to ship", "shipped"].includes(status)) {
+          inTransitCount++;
+        } else if (status === "delivered") {
+          deliveredCount++;
+        } else if (status === "cancelled") {
+          cancelledCount++;
+        }
 
-        if (ord.paymentMethod === "COD" && ord.paymentStatus !== "Paid") {
-          codPendingCount += amt;
+        // COD tracking
+        if (ord.paymentMethod === "COD" && ord.paymentStatus !== "Paid" && !isCancelled) {
+          codPendingSum += amt;
+          codOrdersCount++;
         }
         if (ord.paymentStatus === "Paid") {
           onlinePaidCount++;
         }
       });
 
-      // Low stock & out of stock sizing
+      // Returns count from returns endpoint with fallback to order statuses
+      let refundRequests = rList.filter(
+        (r) => r.status === "Return_Requested" || r.status === "Pending_Approval",
+      ).length;
+      if (refundRequests === 0 && rList.length === 0) {
+        refundRequests = oList.filter(
+          (ord) =>
+            (ord.orderStatus || "").toLowerCase() === "return_requested" ||
+            (ord.orderStatus || "").toLowerCase() === "refunded",
+        ).length;
+      }
+
+      // Stock shortage detection
       let lowCount = 0;
       let outCount = 0;
       pList.forEach((p) => {
         const totalStock = Object.values(p.sizesStock || {}).reduce(
-          (acc, curr) => acc + curr,
+          (acc, curr) => acc + (Number(curr) || 0),
           0,
         );
         if (totalStock === 0) outCount++;
         else if (totalStock <= 5) lowCount++;
       });
 
-      const totalOrdersCount = oList.length || 1;
-      const computedAov = Math.round(totalRev / totalOrdersCount);
-
-      // Real metrics (no simulated visitors/conversion)
-      const newCustomersToday = cList.filter((u) => {
-        const d = new Date(u.createdAt);
-        return d >= today;
-      }).length;
-
       const actionableOrders = oList.filter((ord) => {
         const s = (ord.orderStatus || "").toLowerCase();
         return s !== "cancelled";
       }).length;
+
+      const computedAov =
+        actionableOrders > 0 ? Math.round(totalRev / actionableOrders) : 0;
+
       const fulfillmentRate =
         actionableOrders > 0
           ? ((deliveredCount / actionableOrders) * 100).toFixed(1)
           : "0.0";
 
-      // Last 14 days revenue series
+      const newCustomersToday = cList.filter((u) => {
+        const d = new Date(u.createdAt);
+        return d >= today;
+      }).length;
+
+      // Past 14 days daily revenue series
       const dayMs = 24 * 60 * 60 * 1000;
       const revenueByDay = [];
       for (let i = 13; i >= 0; i--) {
@@ -200,17 +237,18 @@ const DashboardModule = () => {
           if (s === "cancelled" || s === "refunded") return;
           const d = new Date(ord.createdAt);
           if (d >= dayStart && d < dayEnd) {
-            sum +=
+            sum += Number(
               ord.pricing?.grandTotal ||
-              ord.pricing?.total ||
-              ord.totalPrice ||
-              0;
+                ord.pricing?.total ||
+                ord.totalPrice ||
+                0,
+            );
             count++;
           }
         });
         revenueByDay.push({
           label: dayStart.toLocaleDateString("en-IN", {
-            day: "2-digit",
+            day: "numeric",
             month: "short",
           }),
           revenue: sum,
@@ -218,7 +256,34 @@ const DashboardModule = () => {
         });
       }
 
-      // Category revenue from order line items ↔ product catalog
+      // Apple-to-apple rolling growth comparison (Past 14 days vs Previous 14 days)
+      let past14Rev = 0;
+      let prev14Rev = 0;
+      const past14Start = new Date(today.getTime() - 14 * dayMs);
+      const prev14Start = new Date(today.getTime() - 28 * dayMs);
+
+      oList.forEach((ord) => {
+        const s = (ord.orderStatus || "").toLowerCase();
+        if (s === "cancelled" || s === "refunded") return;
+        const d = new Date(ord.createdAt);
+        const amt = Number(
+          ord.pricing?.grandTotal || ord.pricing?.total || ord.totalPrice || 0,
+        );
+        if (d >= past14Start && d <= new Date()) {
+          past14Rev += amt;
+        } else if (d >= prev14Start && d < past14Start) {
+          prev14Rev += amt;
+        }
+      });
+
+      let rollingGrowth = "0.0";
+      if (prev14Rev > 0) {
+        rollingGrowth = (((past14Rev - prev14Rev) / prev14Rev) * 100).toFixed(1);
+      } else if (past14Rev > 0) {
+        rollingGrowth = "100.0";
+      }
+
+      // Category revenue from line items
       const productById = new Map();
       pList.forEach((p) => {
         if (p._id) productById.set(String(p._id), p);
@@ -231,8 +296,8 @@ const DashboardModule = () => {
           const prod =
             productById.get(String(item.productId || "")) ||
             productById.get(String(item.sku || "").toLowerCase());
-          const cat = (prod?.category || "Uncategorized").toString();
-          const line = (item.price || 0) * (item.quantity || 1);
+          const cat = (prod?.category || item.category || "Traditional Wear").toString();
+          const line = Number(item.price || 0) * Number(item.quantity || 1);
           catTotals[cat] = (catTotals[cat] || 0) + line;
         });
       });
@@ -245,43 +310,20 @@ const DashboardModule = () => {
           pct: Math.round((rev / catTotalSum) * 100),
         }))
         .sort((a, b) => b.rev - a.rev)
-        .slice(0, 6);
-
-      // MoM revenue change from last 2 calendar months
-      const thisMonthStart = firstOfMonth;
-      const lastMonthStart = new Date(
-        today.getFullYear(),
-        today.getMonth() - 1,
-        1,
-      );
-      let lastMonthRev = 0;
-      oList.forEach((ord) => {
-        const d = new Date(ord.createdAt);
-        const amt =
-          ord.pricing?.grandTotal || ord.pricing?.total || ord.totalPrice || 0;
-        if (d >= lastMonthStart && d < thisMonthStart) lastMonthRev += amt;
-      });
-      const momPct =
-        lastMonthRev > 0
-          ? (((monthlyRevenueSum - lastMonthRev) / lastMonthRev) * 100).toFixed(
-              1,
-            )
-          : monthlyRevenueSum > 0
-            ? "100.0"
-            : "0.0";
+        .slice(0, 5);
 
       setStats({
         todayOrders: todayOrdersCount,
         todayRevenue: todayRevenueSum,
         monthlyRevenue: monthlyRevenueSum,
-        pending: pendingCount,
-        processing: processingCount,
-        shipped: shippedCount,
+        toPack: toPackCount,
+        inTransit: inTransitCount,
         delivered: deliveredCount,
         cancelled: cancelledCount,
         refunds: refundRequests,
-        codPending: codPendingCount,
-        onlinePaid: onlinePaidCount,
+        codPending: codPendingSum,
+        codOrdersCount,
+        onlinePaidCount,
         totalCustomers: cList.length,
         totalProducts: pList.length,
         lowStock: lowCount,
@@ -291,12 +333,14 @@ const DashboardModule = () => {
         newCustomersToday,
         revenueByDay,
         categorySales,
-        momPct,
+        rollingGrowth,
       });
 
-      toast.success("Dashboard metrics synced successfully");
+      if (toast?.success) {
+        toast.success("Executive store metrics refreshed");
+      }
     } catch (err) {
-      console.error("Dashboard fetching failure:", err);
+      console.error("Dashboard metrics refresh failed:", err);
     } finally {
       setIsLoading(false);
     }
@@ -306,10 +350,35 @@ const DashboardModule = () => {
     fetchData();
   }, []);
 
+  // Top 5 Recent Live Orders
+  const recentOrders = useMemo(() => {
+    return [...orders]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 5);
+  }, [orders]);
+
+  // Top Low Stock Shortage Products
+  const lowStockProducts = useMemo(() => {
+    return products
+      .map((p) => {
+        const stockEntries = Object.entries(p.sizesStock || {});
+        const total = stockEntries.reduce(
+          (acc, [, qty]) => acc + (Number(qty) || 0),
+          0,
+        );
+        const outSizes = stockEntries
+          .filter(([, qty]) => Number(qty) === 0)
+          .map(([sz]) => sz);
+        return { ...p, totalStock: total, outSizes };
+      })
+      .filter((p) => p.totalStock <= 5)
+      .sort((a, b) => a.totalStock - b.totalStock)
+      .slice(0, 5);
+  }, [products]);
+
   if (isLoading) {
     return (
-      <div className="space-y-8">
-        {/* Header Title Skeleton */}
+      <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
           <div className="space-y-2">
             <SkeletonLoader className="h-7 w-48" />
@@ -317,220 +386,437 @@ const DashboardModule = () => {
           </div>
           <SkeletonLoader className="h-9 w-32" />
         </div>
-
-        {/* Grid count cards Skeleton */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {Array.from({ length: 12 }).map((_, idx) => (
-            <div
-              key={idx}
-              className="bg-white border border-slate-200 p-4.5 rounded-lg flex flex-col justify-between space-y-4 shadow-sm"
-            >
-              <div className="flex justify-between items-center">
-                <SkeletonLoader className="h-3 w-20" />
-                <SkeletonLoader className="h-4 w-4 rounded-full" />
-              </div>
-              <SkeletonLoader className="h-6 w-12" />
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonLoader key={i} className="h-28 rounded-xl" />
           ))}
         </div>
-
-        {/* Charts Grid Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white border border-slate-200 p-6 rounded-lg space-y-4 shadow-xs">
-            <SkeletonLoader className="h-4 w-32" />
-            <SkeletonLoader className="h-64 w-full" />
-          </div>
-          <div className="bg-white border border-slate-200 p-6 rounded-lg space-y-6 shadow-xs">
-            <SkeletonLoader className="h-4 w-40" />
-            <div className="flex justify-center py-4">
-              <SkeletonLoader className="h-32 w-32 rounded-full" />
-            </div>
-            <div className="space-y-2">
-              <SkeletonLoader className="h-3 w-full" />
-              <SkeletonLoader className="h-3 w-4/5" />
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonLoader key={i} className="h-20 rounded-lg" />
+          ))}
         </div>
+        <SkeletonLoader className="h-72 rounded-xl" />
       </div>
     );
   }
 
-  const statCardsData = [
-    {
-      label: "Today's Orders",
-      val: stats.todayOrders,
-      icon: <RiShoppingBag3Line />,
-      path: "/admin/orders?date=today",
-    },
-    {
-      label: "Today's Revenue",
-      val: `₹${stats.todayRevenue}`,
-      icon: <RiMoneyDollarCircleLine className="text-emerald-600" />,
-      path: "/admin/analytics",
-    },
-    {
-      label: "Monthly Revenue",
-      val: `₹${stats.monthlyRevenue}`,
-      icon: <RiMoneyDollarCircleLine className="text-[#c5a880]" />,
-      path: "/admin/analytics",
-    },
-    {
-      label: "Pending Orders",
-      val: stats.pending,
-      icon: <RiShoppingBag3Line className="text-amber-500" />,
-      path: "/admin/orders?status=Placed",
-    },
-    {
-      label: "Processing Orders",
-      val: stats.processing,
-      icon: <RiCompass3Line className="text-blue-500" />,
-      path: "/admin/orders?status=Processing",
-    },
-    {
-      label: "Shipped Orders",
-      val: stats.shipped,
-      icon: <RiCompass3Line className="text-indigo-500" />,
-      path: "/admin/orders?status=Shipped",
-    },
-    {
-      label: "Delivered Orders",
-      val: stats.delivered,
-      icon: <RiShoppingBag3Line className="text-emerald-500" />,
-      path: "/admin/orders?status=Delivered",
-    },
-    {
-      label: "Cancelled Orders",
-      val: stats.cancelled,
-      icon: <RiShoppingBag3Line className="text-red-500" />,
-      path: "/admin/orders?status=Cancelled",
-    },
-    {
-      label: "Refund Requests",
-      val: stats.refunds,
-      icon: <RiExchangeFundsLine className="text-purple-500" />,
-      path: "/admin/returns?status=Return_Requested",
-    },
-    {
-      label: "COD Pending Volume",
-      val: `₹${stats.codPending}`,
-      icon: <RiMoneyDollarCircleLine className="text-amber-600" />,
-      path: "/admin/orders?paymentMethod=COD",
-    },
-    {
-      label: "Online Paid Volume",
-      val: stats.onlinePaid,
-      icon: <RiMoneyDollarCircleLine className="text-emerald-500" />,
-      path: "/admin/orders?paymentStatus=Paid",
-    },
-    {
-      label: "Total Customers",
-      val: stats.totalCustomers,
-      icon: <RiGroupLine className="text-sky-500" />,
-      path: "/admin/customers",
-    },
-    {
-      label: "Total Catalog Products",
-      val: stats.totalProducts,
-      icon: <RiArchiveLine className="text-slate-500" />,
-      path: "/admin/products",
-    },
-    {
-      label: "Low Stock Items",
-      val: stats.lowStock,
-      icon: <RiAlertLine className="text-amber-400" />,
-      path: "/admin/inventory?status=low",
-    },
-    {
-      label: "Out of Stock Items",
-      val: stats.outOfStock,
-      icon: <RiAlertLine className="text-red-500" />,
-      path: "/admin/inventory?status=out",
-    },
-    {
-      label: "Average Order Value (AOV)",
-      val: `₹${stats.aov}`,
-      icon: <RiPercentLine />,
-      path: "/admin/analytics",
-    },
-    {
-      label: "Fulfillment Rate",
-      val: `${stats.fulfillmentRate}%`,
-      icon: <RiPercentLine />,
-      path: "/admin/orders?status=Delivered",
-    },
-    {
-      label: "New Customers Today",
-      val: stats.newCustomersToday,
-      icon: <RiGroupLine className="text-sky-500" />,
-      path: "/admin/customers",
-    },
-  ];
-
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-8">
+      {/* Title Header with Live Refresh & Quick Action Shortcuts */}
       <PageHeader
-        title="Overview"
-        subtitle="Live store metrics from orders, catalog, and customers"
+        title="Executive Overview"
+        subtitle="Live omnichannel store metrics across catalog, logistics dispatch, and customer accounts"
         breadcrumbs={[{ label: "Admin" }, { label: "Dashboard" }]}
         actions={
-          <Button variant="primary" size="sm" onClick={fetchData}>
-            Sync Live Data
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchData}
+              className="flex items-center space-x-1.5 text-slate-700 hover:text-slate-900 border-slate-200"
+              title="Refresh Live Store Data"
+            >
+              <RiRefreshLine size={15} />
+              <span>Sync Live Data</span>
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => navigate("/admin/products")}
+              className="flex items-center space-x-1.5"
+            >
+              <RiAddLine size={16} />
+              <span>Add Product</span>
+            </Button>
+          </div>
         }
       />
 
-      {/* Grid count cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-        {statCardsData.map((card, idx) => (
-          <div
-            key={idx}
-            onClick={() => navigate(card.path)}
-            className="admin-stat-card flex flex-col justify-between space-y-3 cursor-pointer group p-4"
-          >
-            <div className="flex justify-between items-start text-slate-400">
-              <span className="text-[9px] uppercase font-bold tracking-wider leading-relaxed text-slate-500 font-display">
-                {card.label}
-              </span>
-              <span className="text-slate-400 text-sm group-hover:text-[#c5a880] transition-colors">
-                {card.icon}
-              </span>
+      {/* 1. PRIMARY FINANCIAL & BUSINESS PULSE (4 Core Master Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Today's Revenue */}
+        <Card
+          onClick={() => navigate("/admin/orders?date=today")}
+          className="p-5 flex flex-col justify-between space-y-3 border-slate-200 hover:border-slate-300 shadow-2xs hover:shadow-xs transition cursor-pointer group bg-white"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 font-display">
+              Today's Sales
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <RiMoneyDollarCircleLine size={18} />
             </div>
-            <p className="text-xl font-semibold tracking-tight text-slate-800 font-display">
-              {card.val}
+          </div>
+          <div>
+            <p className="text-2xl font-serif font-extrabold text-slate-900 tracking-tight font-mono">
+              ₹{stats.todayRevenue.toLocaleString("en-IN")}
+            </p>
+            <p className="text-[11px] text-emerald-700 font-medium mt-1 flex items-center gap-1">
+              <span>{stats.todayOrders} orders booked today</span>
             </p>
           </div>
-        ))}
+        </Card>
+
+        {/* Card 2: Month-to-Date (MTD) Gross Revenue */}
+        <Card
+          onClick={() => navigate("/admin/analytics")}
+          className="p-5 flex flex-col justify-between space-y-3 border-slate-200 hover:border-slate-300 shadow-2xs hover:shadow-xs transition cursor-pointer group bg-white"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 font-display">
+              Month-to-Date (MTD) Sales
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-[#FAF9F6] text-[#8a1c14] border border-[#c5a880]/30 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <RiShoppingBag3Line size={18} />
+            </div>
+          </div>
+          <div>
+            <p className="text-2xl font-serif font-extrabold text-slate-900 tracking-tight font-mono">
+              ₹{stats.monthlyRevenue.toLocaleString("en-IN")}
+            </p>
+            <p className="text-[11px] text-slate-500 font-medium mt-1">
+              {stats.delivered} delivered parcels fulfilled
+            </p>
+          </div>
+        </Card>
+
+        {/* Card 3: Average Order Value (AOV) */}
+        <Card
+          onClick={() => navigate("/admin/analytics")}
+          className="p-5 flex flex-col justify-between space-y-3 border-slate-200 hover:border-slate-300 shadow-2xs hover:shadow-xs transition cursor-pointer group bg-white"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 font-display">
+              Average Order Value (AOV)
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <RiExchangeDollarLine size={18} />
+            </div>
+          </div>
+          <div>
+            <p className="text-2xl font-serif font-extrabold text-slate-900 tracking-tight font-mono">
+              ₹{stats.aov.toLocaleString("en-IN")}
+            </p>
+            <p className="text-[11px] text-slate-500 font-medium mt-1">
+              Fulfillment rate: {stats.fulfillmentRate}%
+            </p>
+          </div>
+        </Card>
+
+        {/* Card 4: Patron Base (Total Customers) */}
+        <Card
+          onClick={() => navigate("/admin/customers")}
+          className="p-5 flex flex-col justify-between space-y-3 border-slate-200 hover:border-slate-300 shadow-2xs hover:shadow-xs transition cursor-pointer group bg-white"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 font-display">
+              Customer Base
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <RiGroupLine size={18} />
+            </div>
+          </div>
+          <div>
+            <p className="text-2xl font-serif font-extrabold text-slate-900 tracking-tight font-mono">
+              {stats.totalCustomers}
+              <span className="text-xs font-normal text-slate-500 ml-1.5 font-sans">
+                patrons
+              </span>
+            </p>
+            <p className="text-[11px] text-sky-700 font-medium mt-1">
+              {stats.newCustomersToday === 0
+                ? "Established customer ledger"
+                : `+${stats.newCustomersToday} registered today`}
+            </p>
+          </div>
+        </Card>
       </div>
 
-      {/* Live charts from orders */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Chart 1: Last 14 days revenue bars */}
-        <Card className="flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-600 font-display">
-              Revenue — Last 14 Days
+      {/* 2. OPERATIONAL DISPATCH & RISK ATTENTION CENTER (Urgent Badges) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {/* Action 1: To Pack & Dispatch */}
+        <div
+          onClick={() => navigate("/admin/orders?tab=to_pack")}
+          className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-50 transition cursor-pointer flex items-center justify-between group shadow-2xs"
+        >
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+              <span className="text-[10px] uppercase tracking-wider font-extrabold text-rose-800 font-display">
+                To Pack & Dispatch
+              </span>
+            </div>
+            <p className="text-xl font-bold text-rose-950 font-mono">
+              {stats.toPack}{" "}
+              <span className="text-xs font-normal text-rose-700 font-sans">
+                Parcels
+              </span>
+            </p>
+            <p className="text-[10px] text-rose-600">Pending courier handoff</p>
+          </div>
+          <RiArrowRightSLine
+            size={20}
+            className="text-rose-400 group-hover:translate-x-1 transition-transform"
+          />
+        </div>
+
+        {/* Action 2: COD Verification Queue */}
+        <div
+          onClick={() => navigate("/admin/orders?tab=cod_queue")}
+          className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/70 hover:bg-amber-50 transition cursor-pointer flex items-center justify-between group shadow-2xs"
+        >
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+              <span className="text-[10px] uppercase tracking-wider font-extrabold text-amber-800 font-display">
+                COD Confirmation
+              </span>
+            </div>
+            <p className="text-xl font-bold text-amber-950 font-mono">
+              ₹{stats.codPending.toLocaleString("en-IN")}{" "}
+              <span className="text-xs font-normal text-amber-700 font-sans">
+                ({stats.codOrdersCount})
+              </span>
+            </p>
+            <p className="text-[10px] text-amber-600">Call buyer to prevent RTO</p>
+          </div>
+          <RiArrowRightSLine
+            size={20}
+            className="text-amber-400 group-hover:translate-x-1 transition-transform"
+          />
+        </div>
+
+        {/* Action 3: Return Claims Pending */}
+        <div
+          onClick={() => navigate("/admin/returns?tab=action_needed")}
+          className="p-3.5 rounded-xl border border-purple-200 bg-purple-50/70 hover:bg-purple-50 transition cursor-pointer flex items-center justify-between group shadow-2xs"
+        >
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+              <span className="text-[10px] uppercase tracking-wider font-extrabold text-purple-800 font-display">
+                Return Claims
+              </span>
+            </div>
+            <p className="text-xl font-bold text-purple-950 font-mono">
+              {stats.refunds}{" "}
+              <span className="text-xs font-normal text-purple-700 font-sans">
+                Pending
+              </span>
+            </p>
+            <p className="text-[10px] text-purple-600">
+              {stats.refunds === 0 ? "Queue clean" : "Awaiting review / QC"}
+            </p>
+          </div>
+          <RiArrowRightSLine
+            size={20}
+            className="text-purple-400 group-hover:translate-x-1 transition-transform"
+          />
+        </div>
+
+        {/* Action 4: Inventory Shortage Alerts */}
+        <div
+          onClick={() => navigate("/admin/inventory?status=deficit")}
+          className="p-3.5 rounded-xl border border-orange-200 bg-orange-50/70 hover:bg-orange-50 transition cursor-pointer flex items-center justify-between group shadow-2xs"
+        >
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+              <span className="text-[10px] uppercase tracking-wider font-extrabold text-orange-800 font-display">
+                Stock Shortage
+              </span>
+            </div>
+            <p className="text-xl font-bold text-orange-950 font-mono">
+              {stats.lowStock + stats.outOfStock}{" "}
+              <span className="text-xs font-normal text-orange-700 font-sans">
+                Items
+              </span>
+            </p>
+            <p className="text-[10px] text-orange-600">
+              {stats.outOfStock} Out of Stock • {stats.lowStock} Low Stock
+            </p>
+          </div>
+          <RiArrowRightSLine
+            size={20}
+            className="text-orange-400 group-hover:translate-x-1 transition-transform"
+          />
+        </div>
+      </div>
+
+      {/* 3. RECENT LIVE ORDERS FEED (Crucial missing section!) */}
+      <Card className="p-0 overflow-hidden border-slate-200 shadow-2xs bg-white">
+        <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 className="font-display font-medium text-sm text-slate-900 tracking-wide uppercase">
+              Recent Live Orders
             </h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Live customer transactions across India awaiting dispatch
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/admin/orders")}
+            className="text-xs font-semibold text-[#8a1c14] hover:text-[#c5a880] flex items-center gap-1 transition cursor-pointer"
+          >
+            <span>View All Orders</span>
+            <RiArrowRightLine size={14} />
+          </button>
+        </div>
+
+        {recentOrders.length === 0 ? (
+          <div className="py-12 text-center text-slate-400 italic text-xs">
+            No customer orders registered yet
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {recentOrders.map((ord, idx) => (
+              <div
+                key={idx}
+                className="p-4 sm:px-5 hover:bg-slate-50/60 transition flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
+              >
+                {/* Order Identity & Customer Destination */}
+                <div className="flex items-center gap-3.5 min-w-[220px]">
+                  <div className="w-10 h-10 rounded-lg bg-[#FAF9F6] border border-[#c5a880]/30 flex flex-col items-center justify-center shrink-0">
+                    <span className="text-[9px] font-mono text-slate-400 uppercase">
+                      ID
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-900 font-mono">
+                      #{ord.orderId?.slice(-4) || ord.orderId}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-slate-900 text-xs">
+                        {ord.customer?.name ||
+                          ord.shippingAddress?.fullName ||
+                          "Patron"}
+                      </p>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {formatRelativeTime(ord.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-[10.5px] text-slate-500 flex items-center gap-1 mt-0.5">
+                      <RiMapPinLine size={11} className="text-[#c5a880] shrink-0" />
+                      <span>
+                        {ord.shippingAddress?.city
+                          ? `${ord.shippingAddress.city}, `
+                          : ""}
+                        {ord.shippingAddress?.state || "India"}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Ordered Garment & Size */}
+                <div className="flex items-center gap-2.5 min-w-[200px]">
+                  {ord.items?.[0]?.image ? (
+                    <img
+                      src={optimizeCloudinaryUrl(ord.items[0].image, 80)}
+                      alt=""
+                      className="w-8 h-10 object-cover rounded border border-slate-200 bg-slate-50 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-8 h-10 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                      <RiShoppingBag3Line size={14} />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-800 text-[11px] truncate max-w-[160px]">
+                      {ord.items?.[0]?.name || "Garment Outfit"}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {ord.items?.reduce((ttl, itm) => ttl + itm.quantity, 0)}{" "}
+                        pcs
+                      </span>
+                      {ord.items?.[0]?.size && (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-[#FAF9F6] text-[#8a1c14] border border-[#c5a880]/40">
+                          {ord.items[0].size}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bill Value & Payment Tag */}
+                <div className="min-w-[130px] md:text-right">
+                  <div className="font-bold text-slate-900 text-xs font-sans">
+                    ₹
+                    {(
+                      ord.pricing?.grandTotal ||
+                      ord.totalPrice ||
+                      0
+                    ).toLocaleString("en-IN")}
+                  </div>
+                  <span
+                    className={`inline-block px-1.5 py-0.2 rounded text-[8.5px] font-extrabold uppercase mt-0.5 ${
+                      ord.paymentMethod === "COD"
+                        ? "bg-amber-100 text-amber-900 border border-amber-200"
+                        : "bg-emerald-100 text-emerald-900 border border-emerald-200"
+                    }`}
+                  >
+                    {ord.paymentMethod === "COD" ? "COD" : "Prepaid"}
+                  </span>
+                </div>
+
+                {/* Status Flag */}
+                <div className="min-w-[120px] md:text-center">
+                  <StatusPill status={ord.orderStatus} />
+                </div>
+
+                {/* Action Link */}
+                <div className="shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/admin/orders?view=${ord._id}`)}
+                    className="px-3 py-1 rounded-lg bg-[#FAF9F6] hover:bg-amber-50 text-[#8a1c14] border border-[#c5a880]/40 font-bold text-xs flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                  >
+                    <span>Inspect</span>
+                    <RiArrowRightSLine size={15} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* 4. PERFORMANCE CHARTS (14-Day Trajectory & Category Share) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Chart 1: Last 14 days revenue bars with rolling growth rate */}
+        <Card className="flex flex-col p-5 bg-white border-slate-200 shadow-2xs">
+          <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+            <div>
+              <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-700 font-display">
+                Revenue — Last 14 Days
+              </h3>
+              <p className="text-[10.5px] text-slate-400 mt-0.5">
+                Daily omnichannel sales trajectory
+              </p>
+            </div>
             <span
               className={`text-[10px] font-bold px-2 py-0.5 rounded flex items-center border font-mono ${
-                Number(stats.momPct) >= 0
-                  ? "text-emerald-700 bg-emerald-50 border-emerald-100"
-                  : "text-red-700 bg-red-50 border-red-100"
+                Number(stats.rollingGrowth) >= 0
+                  ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                  : "text-amber-700 bg-amber-50 border-amber-200"
               }`}
             >
               <RiArrowUpSLine
-                className={`mr-0.5 ${Number(stats.momPct) < 0 ? "rotate-180" : ""}`}
+                className={`mr-0.5 ${Number(stats.rollingGrowth) < 0 ? "rotate-180" : ""}`}
               />{" "}
-              {Number(stats.momPct) >= 0 ? "+" : ""}
-              {stats.momPct}% MoM
+              {Number(stats.rollingGrowth) >= 0 ? "+" : ""}
+              {stats.rollingGrowth}% vs prev 14d
             </span>
           </div>
-          {(!stats.revenueByDay || stats.revenueByDay.length === 0) &&
-          !orders.length ? (
+
+          {stats.revenueByDay.length === 0 ? (
             <p className="text-xs text-slate-400 italic py-16 text-center">
-              No order revenue yet
+              No order revenue generated yet
             </p>
           ) : (
-            <div className="h-64 flex items-end gap-1.5 px-1 pt-6 relative">
+            <div className="h-60 flex items-end gap-1.5 px-1 pt-6 relative">
               {(() => {
                 const maxRev = Math.max(
                   ...stats.revenueByDay.map((d) => d.revenue),
@@ -542,22 +828,22 @@ const DashboardModule = () => {
                     <div
                       key={idx}
                       className="flex-1 flex flex-col items-center justify-end h-full group relative"
-                      title={`₹${d.revenue.toLocaleString("en-IN")} · ${d.orders} orders`}
+                      title={`${d.label}: ₹${d.revenue.toLocaleString("en-IN")} (${d.orders} orders)`}
                     >
-                      <span className="absolute -top-5 text-[8px] font-mono text-slate-500 opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
+                      <span className="absolute -top-6 text-[8.5px] font-mono text-slate-700 font-bold opacity-0 group-hover:opacity-100 transition whitespace-nowrap bg-white px-1 py-0.5 rounded border border-slate-200 shadow-2xs z-20">
                         ₹
                         {d.revenue >= 1000
                           ? `${(d.revenue / 1000).toFixed(1)}k`
                           : d.revenue}
                       </span>
                       <div
-                        className="w-full rounded-t bg-[#c5a880]/80 group-hover:bg-[#c5a880] transition-all min-h-[4px]"
+                        className="w-full rounded-t bg-[#c5a880]/80 group-hover:bg-[#8a1c14] transition-all min-h-[4px]"
                         style={{ height: `${h}%` }}
                       />
                       {(idx === 0 ||
                         idx === stats.revenueByDay.length - 1 ||
                         idx % 3 === 0) && (
-                        <span className="text-[8px] text-slate-400 font-mono mt-1 truncate w-full text-center">
+                        <span className="text-[8.5px] text-slate-400 font-mono mt-1.5 truncate w-full text-center">
                           {d.label.split(" ")[0]}
                         </span>
                       )}
@@ -570,24 +856,34 @@ const DashboardModule = () => {
         </Card>
 
         {/* Chart 2: Category sales from live orders */}
-        <Card className="flex flex-col">
-          <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-600 mb-6 font-display">
-            Sales by Category
-          </h3>
+        <Card className="flex flex-col p-5 bg-white border-slate-200 shadow-2xs">
+          <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+            <div>
+              <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-700 font-display">
+                Sales by Category
+              </h3>
+              <p className="text-[10.5px] text-slate-400 mt-0.5">
+                Demand distribution across royal ethnic ensembles
+              </p>
+            </div>
+            <span className="text-[10.5px] text-[#c5a880] font-bold font-mono">
+              Share (%)
+            </span>
+          </div>
+
           <div className="space-y-4 flex-grow flex flex-col justify-center">
-            {!stats.categorySales || stats.categorySales.length === 0 ? (
-              <p className="text-xs text-slate-400 italic py-8 text-center">
-                No category sales data yet — place orders to populate
+            {stats.categorySales.length === 0 ? (
+              <p className="text-xs text-slate-400 italic py-12 text-center">
+                No category sales recorded yet
               </p>
             ) : (
               stats.categorySales.map((row, idx) => {
                 const colors = [
+                  "bg-[#8a1c14]",
                   "bg-[#c5a880]",
-                  "bg-[#a88f65]",
-                  "bg-slate-400",
-                  "bg-slate-500",
-                  "bg-amber-400",
-                  "bg-stone-400",
+                  "bg-amber-600",
+                  "bg-slate-600",
+                  "bg-stone-500",
                 ];
                 const formatRev =
                   row.rev >= 100000
@@ -598,17 +894,18 @@ const DashboardModule = () => {
                 return (
                   <div key={idx} className="space-y-1.5">
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-700 font-medium capitalize">
+                      <span className="text-slate-800 font-semibold capitalize">
                         {row.cat}
                       </span>
-                      <span className="text-slate-500 font-semibold font-mono">
-                        {formatRev} ({row.pct}%)
+                      <span className="text-slate-600 font-semibold font-mono">
+                        {formatRev}{" "}
+                        <span className="text-[#8a1c14]">({row.pct}%)</span>
                       </span>
                     </div>
                     <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                       <div
-                        className={`h-full ${colors[idx % colors.length]} rounded-full`}
-                        style={{ width: `${Math.max(row.pct, 2)}%` }}
+                        className={`h-full ${colors[idx % colors.length]} rounded-full transition-all duration-500`}
+                        style={{ width: `${Math.max(row.pct, 3)}%` }}
                       />
                     </div>
                   </div>
@@ -619,45 +916,56 @@ const DashboardModule = () => {
         </Card>
       </div>
 
-      {/* Split Activity logs & Low stock products list */}
+      {/* 5. AUDIT LOGS & INVENTORY DEFICIT WATCHLIST */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Side: Recent Activity Logs */}
-        <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col shadow-xs">
+        {/* Left Side: Clean Security & Activity Logs */}
+        <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col shadow-2xs">
           <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
-            <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-700 font-display">
-              Security & Activity Logs
-            </h3>
+            <div>
+              <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-700 font-display">
+                Security & Activity Logs
+              </h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                Staff operational audit trail
+              </p>
+            </div>
             <span className="text-[10px] text-[#c5a880] font-semibold font-mono">
-              100 Max Records
+              Audit Guard
             </span>
           </div>
+
           <div className="flex-grow overflow-y-auto max-h-72 space-y-2.5">
             {logs.length === 0 ? (
-              <p className="text-xs text-slate-400 italic py-8 text-center">
-                No logs generated yet
+              <p className="text-xs text-slate-400 italic py-10 text-center">
+                No system activity logs recorded yet
               </p>
             ) : (
-              logs.slice(0, 8).map((log, idx) => (
+              logs.slice(0, 6).map((log, idx) => (
                 <div
                   key={idx}
-                  className="bg-slate-50 hover:bg-slate-100/50 border border-slate-200 p-3 rounded-lg flex items-center justify-between text-xs text-slate-700 transition"
+                  className="bg-[#FAF9F6] border border-slate-200/80 p-3 rounded-lg flex items-center justify-between text-xs text-slate-700 transition hover:bg-slate-50"
                 >
-                  <div className="space-y-1 pr-4">
-                    <p className="font-semibold text-slate-800">{log.action}</p>
-                    <p className="text-[10px] text-slate-400">
+                  <div className="space-y-0.5 pr-4">
+                    <p className="font-semibold text-slate-900 text-[11.5px]">
+                      {log.action}
+                    </p>
+                    <p className="text-[10px] text-slate-500">
                       by{" "}
-                      <span className="font-semibold text-slate-600">
-                        {log.adminName}
+                      <span className="font-semibold text-[#8a1c14]">
+                        {log.adminName || "Admin"}
                       </span>{" "}
-                      ({log.device})
+                      • {parseUserAgent(log.device)}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[10px] text-slate-500 font-mono">
-                      {log.ipAddress}
+                    <p className="text-[10px] text-slate-400 font-mono">
+                      {formatRelativeTime(log.createdAt)}
                     </p>
-                    <p className="text-[9px] text-slate-400 mt-0.5">
-                      {new Date(log.createdAt).toLocaleTimeString()}
+                    <p className="text-[9px] text-slate-400 mt-0.5 font-mono">
+                      {new Date(log.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </p>
                   </div>
                 </div>
@@ -666,85 +974,85 @@ const DashboardModule = () => {
           </div>
         </div>
 
-        {/* Right Side: Low Stock Products Grid Widget */}
-        <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col shadow-xs">
+        {/* Right Side: Inventory Shortage Alerts */}
+        <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col shadow-2xs">
           <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
-            <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-700 font-display">
-              Inventory Shortage Alerts
-            </h3>
-            <span className="text-[9px] bg-red-50 border border-red-200 text-red-700 font-bold px-2 py-0.5 rounded">
-              Needs Replenishing
-            </span>
-          </div>
-          <div className="flex-grow overflow-y-auto max-h-72 space-y-2">
-            {products.filter(
-              (p) =>
-                Object.values(p.sizesStock || {}).reduce(
-                  (acc, curr) => acc + curr,
-                  0,
-                ) <= 5,
-            ).length === 0 ? (
-              <p className="text-xs text-slate-400 italic py-8 text-center">
-                All catalog items have healthy stock levels
+            <div>
+              <h3 className="text-xs font-semibold tracking-wide uppercase text-slate-700 font-display">
+                Inventory Shortage Alerts
+              </h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                Garments needing restock to prevent lost sales
               </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate("/admin/inventory")}
+              className="text-[10px] text-[#8a1c14] hover:text-[#c5a880] font-bold font-mono transition cursor-pointer"
+            >
+              Restock All →
+            </button>
+          </div>
+
+          <div className="flex-grow overflow-y-auto max-h-72 space-y-2">
+            {lowStockProducts.length === 0 ? (
+              <div className="py-10 text-center space-y-1">
+                <RiShieldCheckLine size={24} className="mx-auto text-emerald-500" />
+                <p className="text-xs text-slate-500 font-medium">
+                  Healthy Catalog Stock Levels
+                </p>
+                <p className="text-[10px] text-slate-400">
+                  All active garment sizes have sufficient buffer inventory
+                </p>
+              </div>
             ) : (
-              products
-                .filter(
-                  (p) =>
-                    Object.values(p.sizesStock || {}).reduce(
-                      (acc, curr) => acc + curr,
-                      0,
-                    ) <= 5,
-                )
-                .slice(0, 6)
-                .map((prod, idx) => {
-                  const total = Object.values(prod.sizesStock || {}).reduce(
-                    (acc, curr) => acc + curr,
-                    0,
-                  );
-                  return (
-                    <div
-                      key={idx}
-                      className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg flex items-center justify-between text-xs transition hover:bg-slate-100/50"
-                    >
-                      <div className="flex items-center space-x-3">
-                        {prod.images && prod.images[0] && (
-                          <img
-                            src={prod.images[0]}
-                            className="w-9 h-9 object-cover rounded border border-slate-200"
-                            alt=""
-                          />
-                        )}
-                        <div>
-                          <p className="font-semibold text-slate-800">
-                            {prod.name}
-                          </p>
-                          <p className="text-[10px] text-slate-400 font-mono">
-                            {prod.sku}
-                          </p>
-                        </div>
+              lowStockProducts.map((prod, idx) => (
+                <div
+                  key={idx}
+                  className="bg-[#FAF9F6] border border-slate-200/80 p-2.5 rounded-lg flex items-center justify-between text-xs transition hover:bg-slate-50"
+                >
+                  <div className="flex items-center space-x-3">
+                    {prod.images && prod.images[0] ? (
+                      <img
+                        src={optimizeCloudinaryUrl(prod.images[0], 80)}
+                        className="w-9 h-11 object-cover rounded border border-slate-200 shrink-0"
+                        alt=""
+                      />
+                    ) : (
+                      <div className="w-9 h-11 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                        <RiArchiveLine size={16} />
                       </div>
-                      <div className="text-right">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            total === 0
-                              ? "bg-red-50 text-red-700 border border-red-100"
-                              : "bg-amber-50 text-amber-700 border border-amber-100"
-                          }`}
-                        >
-                          {total === 0
-                            ? "Out of Stock"
-                            : `${total} Units Remaining`}
-                        </span>
-                        <div className="text-[9px] text-slate-400 mt-1 uppercase tracking-wider font-mono">
-                          {Object.entries(prod.sizesStock || {})
-                            .map(([sz, stock]) => `${sz}:${stock}`)
-                            .join(" | ")}
-                        </div>
-                      </div>
+                    )}
+                    <div>
+                      <p className="font-semibold text-slate-900 text-[11.5px] truncate max-w-[150px]">
+                        {prod.name}
+                      </p>
+                      <p className="text-[10px] text-slate-400 font-mono">
+                        {prod.sku}
+                      </p>
                     </div>
-                  );
-                })
+                  </div>
+
+                  <div className="text-right">
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${
+                        prod.totalStock === 0
+                          ? "bg-rose-100 text-rose-800 border border-rose-200"
+                          : "bg-amber-100 text-amber-800 border border-amber-200"
+                      }`}
+                    >
+                      {prod.totalStock === 0
+                        ? "Out of Stock"
+                        : `${prod.totalStock} Units Left`}
+                    </span>
+                    {prod.outSizes && prod.outSizes.length > 0 && (
+                      <p className="text-[9px] text-rose-600 font-mono mt-0.5 font-semibold">
+                        Out of {prod.outSizes.join(", ")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </div>

@@ -318,8 +318,7 @@ const ShopListings = () => {
         {/* DESKTOP SIDEBAR FILTER */}
         <aside className="hidden md:block w-64 flex-shrink-0 bg-white/70 backdrop-blur-xl border border-white/80 p-6 rounded-2xl space-y-7 sticky top-36 z-30 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
           <div className="flex justify-between items-center pb-3.5 border-b border-slate-200/60">
-            <h3 className="text-xs font-display font-bold uppercase tracking-wider text-slate-900 flex items-center space-x-1.5">
-              <span className="text-accent-gold text-[10px]">✦</span>
+            <h3 className="text-xs font-display font-bold uppercase tracking-wider text-slate-900 flex items-center">
               <span>Refine Search</span>
             </h3>
             <button
@@ -625,10 +624,8 @@ const ShopListings = () => {
                       {/* Quick Buy Slide-Up Frosted Glass Dock (DESKTOP HOVER ONLY) */}
                       <div className="hidden md:block absolute inset-x-0 bottom-0 z-20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out pointer-events-none group-hover:pointer-events-auto">
                         <div className="bg-white/95 backdrop-blur-md px-2 py-2.5 border-t border-accent-gold/40 shadow-[0_-4px_20px_rgba(0,0,0,0.12)] flex flex-col items-center space-y-1.5">
-                          <span className="text-[9px] uppercase tracking-[0.2em] font-extrabold text-slate-700 flex items-center space-x-1 select-none">
-                            <span className="text-accent-gold text-[8px]">✦</span>
+                          <span className="text-[9px] uppercase tracking-[0.2em] font-extrabold text-slate-700 flex items-center justify-center select-none">
                             <span>Quick Buy Size</span>
-                            <span className="text-accent-gold text-[8px]">✦</span>
                           </span>
                           <div className="flex justify-center items-center gap-1.5 w-full px-1">
                             {(product.sizes && product.sizes.length > 0
@@ -868,8 +865,7 @@ const ShopListings = () => {
 
           <div className="relative w-full max-w-xs bg-white/95 backdrop-blur-2xl h-full ml-auto flex flex-col z-10 p-6 overflow-y-auto space-y-8 animate-slide-left border-l border-white/60 shadow-2xl">
             <div className="flex justify-between items-center pb-4 border-b border-slate-200/60">
-              <h3 className="text-xs font-display font-bold uppercase tracking-wider text-slate-900 flex items-center space-x-1.5">
-                <span className="text-accent-gold text-[10px]">✦</span>
+              <h3 className="text-xs font-display font-bold uppercase tracking-wider text-slate-900 flex items-center">
                 <span>Refinement Controls</span>
               </h3>
               <button

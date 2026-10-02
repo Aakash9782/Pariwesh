@@ -207,7 +207,8 @@ export const getReturnRequests = async (req, res, next) => {
     }
 
     const returns = await ReturnRequest.find(filter)
-      .populate("orderId", "orderId paymentMethod clientNotes")
+      .populate("orderId", "orderId paymentMethod clientNotes customer pricing")
+      .populate("customerId", "name email phone")
       .sort({ createdAt: -1 });
 
     return sendSuccess(res, "Return requests retrieved successfully", returns);
@@ -222,14 +223,16 @@ export const getReturnRequests = async (req, res, next) => {
 export const getReturnRequestById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const returnReq = await ReturnRequest.findById(id).populate("orderId");
+    const returnReq = await ReturnRequest.findById(id)
+      .populate("orderId")
+      .populate("customerId", "name email phone");
     if (!returnReq) {
       return sendError(res, "Return request not found", 404);
     }
 
     if (
       req.user.role !== "admin" &&
-      returnReq.customerId.toString() !== req.user._id.toString()
+      returnReq.customerId?.toString() !== req.user._id.toString()
     ) {
       return sendError(res, "Unauthorized access", 403);
     }
@@ -262,14 +265,13 @@ export const updateReturnStatus = async (req, res, next) => {
     }
 
     const order = await Order.findById(returnReq.orderId);
-    if (!order) {
-      return sendError(res, "Pertaining order not found", 404);
-    }
 
     // 1. Process Timeline and transitions
     if (status) {
       returnReq.status = status;
-      order.orderStatus = status; // Sync orderStatus with returnStatus
+      if (order) {
+        order.orderStatus = status; // Sync orderStatus with returnStatus
+      }
 
       if (status === "Return_Approved") {
         returnReq.timeline.reviewedAt = new Date();
@@ -277,7 +279,9 @@ export const updateReturnStatus = async (req, res, next) => {
       } else if (status === "Return_Rejected") {
         returnReq.timeline.reviewedAt = new Date();
         if (rejectionReason) returnReq.rejectionReason = rejectionReason;
-        order.orderStatus = "Delivered"; // Revert order status back to Delivered
+        if (order) {
+          order.orderStatus = "Delivered"; // Revert order status back to Delivered
+        }
       } else if (status === "Return_In_Transit") {
         returnReq.timeline.pickedAt = new Date();
       } else if (status === "Return_Received") {

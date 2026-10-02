@@ -299,7 +299,7 @@ const PremiumBannerSlider = ({ adConfig, handleCopyCode, copiedCode }) => {
                       </span>
                     ) : (
                       <span className="flex items-center gap-1.5">
-                        ✨ {currentSlide.code.toUpperCase()}
+                        {currentSlide.code.toUpperCase()}
                       </span>
                     )}
                   </button>

@@ -7,15 +7,17 @@ import Icon from "../theme/icons.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import HeroSlider from "../components/home/HeroSlider.jsx";
 import CampaignBanners from "../components/home/CampaignBanners.jsx";
-import Skeleton, { ProductSkeleton } from "../components/common/Skeleton.jsx";
+import Skeleton, { ProductSkeleton, HeroSkeleton } from "../components/common/Skeleton.jsx";
 import { optimizeCloudinaryUrl } from "../utils/cloudinary.js";
 import { addToCart } from "../redux/slices/cartSlice.js";
 import { toggleWishlistProduct } from "../redux/slices/wishlistSlice.js";
 import API from "../services/api.js";
 import { useAlert } from "../contexts/AlertContext.jsx";
+import { useSettings } from "../contexts/SettingsContext.jsx";
 import { syncCartNow, syncWishlistNow } from "../services/hydrateCommerce.js";
 import {
-  RiSparklingFill,
+  RiHeartLine,
+  RiScissorsLine,
   RiStarFill,
   RiTruckLine,
   RiExchangeLine,
@@ -25,6 +27,11 @@ import {
   RiAwardLine,
   RiLeafLine,
   RiShoppingBagLine,
+  RiGiftLine,
+  RiFileCopyLine,
+  RiCheckLine,
+  RiTimerLine,
+  RiCoupon3Line,
 } from "react-icons/ri";
 
 const formatProductTitle = (name) => {
@@ -65,72 +72,84 @@ const Home = () => {
     }
   };
 
-  // Festive Ad Campaign configuration state
-  const [adConfig, setAdConfig] = useState({
-    active: false,
-    title: "Diwali Festive Dhamaka!",
-    subtitle:
-      "Up to 50% Off on all hand-knit Zari premium anarkalis. Free delivery apply!",
-    code: "FESTIVE50",
-    link: "/shop",
-    theme: "royal-gold",
-  });
+  const {
+    settings,
+    isLoaded: settingsLoaded,
+    loading: settingsLoading,
+    isCountdownActive,
+    isCampaignBannersActive,
+    isSlideBarActive,
+    slideshowImages,
+  } = useSettings();
 
-  const [dynCampaignBannersActive, setDynCampaignBannersActive] = useState(
-    () => {
-      const cached = localStorage.getItem("homeCampaignBannersActive");
-      return cached === null ? true : cached === "true";
-    },
-  );
+  const adConfig = React.useMemo(() => {
+    let adState = {
+      active:
+        settings.festiveAdActive === "true" ||
+        settings.festiveAdActive === true,
+      title: settings.festiveAdTitle || "Diwali Festive Dhamaka!",
+      subtitle:
+        settings.festiveAdSubtitle ||
+        "Up to 50% Off on all hand-knit Zari premium anarkalis. Free delivery apply!",
+      code: settings.festiveAdCode || "FESTIVE50",
+      link: settings.festiveAdLink || "/shop",
+      theme: settings.festiveAdTheme || "royal-gold",
+    };
 
-  const [dynCampaignBanners, setDynCampaignBanners] = useState(() => {
-    const cached = localStorage.getItem("homeCampaignBanners");
-    if (cached) {
+    if (settings.festiveBannerSettings) {
       try {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        const parsed = JSON.parse(settings.festiveBannerSettings);
+        const now = new Date();
+        const start = parsed.startDate ? new Date(parsed.startDate) : null;
+        const end = parsed.endDate ? new Date(parsed.endDate) : null;
+        const isDateValid = (!start || now >= start) && (!end || now <= end);
+
+        adState = {
+          ...adState,
+          ...parsed,
+          active:
+            (parsed.enabled === true || parsed.enabled === "true") &&
+            isDateValid,
+        };
+      } catch (e) {
+        console.error("Failed to parse festiveBannerSettings", e);
+      }
+    }
+    return adState;
+  }, [
+    settings.festiveAdActive,
+    settings.festiveAdTitle,
+    settings.festiveAdSubtitle,
+    settings.festiveAdCode,
+    settings.festiveAdLink,
+    settings.festiveAdTheme,
+    settings.festiveBannerSettings,
+  ]);
+
+  const dynCampaignBanners = React.useMemo(() => {
+    if (settings.homeCampaignBanners) {
+      try {
+        const parsed = JSON.parse(settings.homeCampaignBanners);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(
+            (b) => b && typeof b.image === "string" && b.image.trim() !== "",
+          );
+        }
       } catch (e) {}
     }
-    return [
-      {
-        title: "Classic Cotton Zari",
-        subtitle: "HERITAGE COUTURE",
-        path: "/shop?tag=Best Seller",
-        image: "/hero.png",
-      },
-      {
-        title: "Handcrafted Linens",
-        subtitle: "SUMMER ESSENTIALS",
-        path: "/shop?category=kurtis",
-        image: "/hero.png",
-      },
-    ];
-  });
+    return [];
+  }, [settings.homeCampaignBanners]);
 
-  const [settingsLoading, setSettingsLoading] = useState(() => {
-    return !localStorage.getItem("homeCategories");
-  });
-
-  const [sliderConfig, setSliderConfig] = useState(() => {
-    const loadedImages = [
-      localStorage.getItem("slideImg1"),
-      localStorage.getItem("slideImg2"),
-      localStorage.getItem("slideImg3"),
-      localStorage.getItem("slideImg4"),
-      localStorage.getItem("slideImg5"),
-    ].filter(Boolean);
+  const sliderConfig = React.useMemo(() => {
     const fallbackImages = [
       "https://res.cloudinary.com/ag1y6hht/image/upload/v1786455681/pariwesh/branding/k6antr9fp5fsmoh2rqje.webp",
       "https://res.cloudinary.com/ag1y6hht/image/upload/v1786455684/pariwesh/branding/afbm96t3d1zvhmzr2cyf.webp",
     ];
     return {
-      active:
-        localStorage.getItem("slideBarActive") === null
-          ? true
-          : localStorage.getItem("slideBarActive") === "true",
-      images: loadedImages.length > 0 ? loadedImages : fallbackImages,
+      active: isSlideBarActive,
+      images: slideshowImages.length > 0 ? slideshowImages : fallbackImages,
     };
-  });
+  }, [isSlideBarActive, slideshowImages]);
 
   const [activeSlide, setActiveSlide] = useState(0);
 
@@ -139,75 +158,64 @@ const Home = () => {
   const [productsLoading, setProductsLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(false);
   const [selectedCardSizes, setSelectedCardSizes] = useState({});
+  const [activeProductTab, setActiveProductTab] = useState("all");
+  const [couponCopied, setCouponCopied] = useState(false);
+  const [addedSuccessId, setAddedSuccessId] = useState(null);
 
-  // Custom dynamic states for homepage elements
-  const [dynCategories, setDynCategories] = useState(() => {
-    const cached = localStorage.getItem("homeCategories");
-    if (cached) {
+  const dynCategories = React.useMemo(() => {
+    if (settings.homeCategories) {
       try {
-        const parsed = JSON.parse(cached);
+        const parsed = JSON.parse(settings.homeCategories);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch (e) {}
     }
     return [
       {
-        title: "Designer Suits",
-        desc: "Anarkalis & Shararas",
+        title: "Co-ord Set",
+        path: "/shop?category=ethnic",
         image:
-          "https://res.cloudinary.com/ag1y6hht/image/upload/v1786469511/pariwesh/branding/qa60obplqlfvl22etfrf.webp",
-        path: "/shop?category=suits",
+          "https://res.cloudinary.com/ag1y6hht/image/upload/v1789573547/pariwesh/branding/veu17up5chcbjnawwy4m.jpg",
       },
       {
-        title: "Premium Kurtis",
-        desc: "Everyday Tunics",
+        title: "Premium",
+        path: "/shop?category=kurtis",
         image:
           "https://res.cloudinary.com/ag1y6hht/image/upload/v1786469512/pariwesh/branding/koccofqqa25dpzb0tnbs.jpg",
-        path: "/shop?category=kurtis",
       },
       {
-        title: "Co-Ord Sets",
-        desc: "Modern Ethnic",
+        title: "Kurti",
+        path: "/shop?category=suits",
         image:
-          "https://res.cloudinary.com/ag1y6hht/image/upload/v1786469512/pariwesh/branding/alycelwkqig0v2jihgar.webp",
-        path: "/shop?category=co-ord-sets",
+          "https://res.cloudinary.com/ag1y6hht/image/upload/v1789573547/pariwesh/branding/goo9hcxm9dxxkm6ptbm7.jpg",
       },
       {
         title: "Best Sellers",
-        desc: "Top Trending",
+        path: "/shop?tag=Best Seller",
         image:
           "https://res.cloudinary.com/ag1y6hht/image/upload/v1786469513/pariwesh/branding/pplpu2q5mphur1ibgoye.webp",
-        path: "/shop?tag=Best Seller",
       },
       {
         title: "New Arrivals",
-        desc: "Fresh Designs",
+        path: "/shop?tag=New Arrival",
         image:
           "https://res.cloudinary.com/ag1y6hht/image/upload/v1786469514/pariwesh/branding/kamnlpss5rjxgshulntw.webp",
-        path: "/shop?tag=New Arrival",
       },
     ];
-  });
+  }, [settings.homeCategories]);
 
-  const [dynStoryImage, setDynStoryImage] = useState(() => {
-    return (
-      localStorage.getItem("homeStoryImage") ||
-      "https://res.cloudinary.com/ag1y6hht/image/upload/v1786469506/pariwesh/branding/njoe76zn0iop6wts2xo5.png"
-    );
-  });
+  const dynStoryImage =
+    settings.homeStoryImage ||
+    "https://res.cloudinary.com/ag1y6hht/image/upload/v1789573299/pariwesh/branding/hpb8m1di4ytmpgczczkn.jpg";
 
+  const [timeLeft, setTimeLeft] = useState(null);
+  const [isCountdownExpired, setIsCountdownExpired] = useState(false);
 
-  // Dynamic Flash Sale Countdown State
-  const [countdownConfig, setCountdownConfig] = useState({
-    active: true,
-    endDate: "",
-    title: "Limited Collection Closes In:",
-  });
-
-  const [timeLeft, setTimeLeft] = useState({
-    hours: 12,
-    minutes: 45,
-    seconds: 30,
-  });
+  const effectiveCountdownDate = React.useMemo(() => {
+    if (settings.saleEventActive && settings.saleEndDate) {
+      return settings.saleEndDate;
+    }
+    return settings.countdownEndDate || null;
+  }, [settings.saleEventActive, settings.saleEndDate, settings.countdownEndDate]);
 
   const handleCopyCode = () => {
     if (adConfig.code) {
@@ -264,30 +272,6 @@ const Home = () => {
               };
             });
           setProducts(dbProducts);
-
-          // If no admin custom slides are set, dynamically feature top store products on the slider
-          const hasCustomSlides = [
-            localStorage.getItem("slideImg1"),
-            localStorage.getItem("slideImg2"),
-            localStorage.getItem("slideImg3"),
-            localStorage.getItem("slideImg4"),
-            localStorage.getItem("slideImg5"),
-          ].some(Boolean);
-
-          if (!hasCustomSlides && dbProducts.length > 0) {
-            const featuredItems = dbProducts.filter((p) => p.featured);
-            const sliderPool = featuredItems.length >= 2 ? featuredItems : dbProducts;
-            const dynamicSlides = sliderPool
-              .map((p) => p.images?.[0])
-              .filter(Boolean)
-              .slice(0, 5);
-            if (dynamicSlides.length > 0) {
-              setSliderConfig((prev) => ({
-                ...prev,
-                images: dynamicSlides,
-              }));
-            }
-          }
         } else {
           setProducts([]);
         }
@@ -305,209 +289,6 @@ const Home = () => {
     };
   }, []);
 
-  // Banner + countdown settings in one request
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchSettings = async () => {
-      try {
-        const res = await API.get("/settings");
-        if (cancelled) return;
-        if (!res.data?.success || !res.data.data) {
-          applyLocalSettingsFallback();
-          return;
-        }
-
-        const settings = res.data.data;
-
-        let adState = {
-          active:
-            settings.festiveAdActive === "true" ||
-            settings.festiveAdActive === true,
-          title: settings.festiveAdTitle || "Diwali Festive Dhamaka!",
-          subtitle:
-            settings.festiveAdSubtitle ||
-            "Up to 50% Off on all hand-knit Zari premium anarkalis. Free delivery apply!",
-          code: settings.festiveAdCode || "FESTIVE50",
-          link: settings.festiveAdLink || "/shop",
-          theme: settings.festiveAdTheme || "royal-gold",
-        };
-
-        if (settings.festiveBannerSettings) {
-          try {
-            const parsed = JSON.parse(settings.festiveBannerSettings);
-            const now = new Date();
-            const start = parsed.startDate ? new Date(parsed.startDate) : null;
-            const end = parsed.endDate ? new Date(parsed.endDate) : null;
-            const isDateValid =
-              (!start || now >= start) && (!end || now <= end);
-
-            adState = {
-              ...adState,
-              ...parsed,
-              active:
-                (parsed.enabled === true || parsed.enabled === "true") &&
-                isDateValid,
-            };
-          } catch (e) {
-            console.error("Failed to parse festiveBannerSettings", e);
-          }
-        }
-
-        if (!cancelled) {
-          setAdConfig(adState);
-
-          const fallbackImages = [
-            "/hero.png",
-            "/hero.png",
-            "/hero.png",
-            "/hero.png",
-            "/hero.png",
-          ];
-          const loadedImages = [
-            settings.slideImg1,
-            settings.slideImg2,
-            settings.slideImg3,
-            settings.slideImg4,
-            settings.slideImg5,
-          ].filter(Boolean);
-
-          setSliderConfig({
-            active:
-              settings.slideBarActive === undefined
-                ? true
-                : settings.slideBarActive === "true" ||
-                  settings.slideBarActive === true,
-            images: loadedImages.length > 0 ? loadedImages : fallbackImages,
-          });
-
-          // Sync slideshow images to localStorage
-          safeSetItem(
-            "slideBarActive",
-            settings.slideBarActive === undefined
-              ? "true"
-              : String(settings.slideBarActive),
-          );
-          safeSetItem("slideImg1", settings.slideImg1 || "");
-          safeSetItem("slideImg2", settings.slideImg2 || "");
-          safeSetItem("slideImg3", settings.slideImg3 || "");
-          safeSetItem("slideImg4", settings.slideImg4 || "");
-          safeSetItem("slideImg5", settings.slideImg5 || "");
-
-          setCountdownConfig({
-            active:
-              settings.countdownActive === undefined
-                ? true
-                : settings.countdownActive === "true" ||
-                  settings.countdownActive === true,
-            endDate: settings.countdownEndDate || "",
-            title: settings.countdownTitle || "Limited Collection Closes In:",
-          });
-
-          // Fetch new dynamic settings for homepage elements
-          if (settings.homeStoryImage) {
-            setDynStoryImage(settings.homeStoryImage);
-            safeSetItem("homeStoryImage", settings.homeStoryImage);
-          }
-          if (settings.homeCategories) {
-            try {
-              const parsed = JSON.parse(settings.homeCategories);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setDynCategories(parsed);
-                safeSetItem("homeCategories", settings.homeCategories);
-              }
-            } catch (e) {
-              console.error("Failed to parse homeCategories:", e);
-            }
-          }
-          if (settings.homeCampaignBanners) {
-            try {
-              const parsed = JSON.parse(settings.homeCampaignBanners);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setDynCampaignBanners(parsed);
-                safeSetItem(
-                  "homeCampaignBanners",
-                  settings.homeCampaignBanners,
-                );
-              }
-            } catch (e) {
-              console.error("Failed to parse homeCampaignBanners:", e);
-            }
-          }
-          const cBannersActive =
-            settings.homeCampaignBannersActive === undefined
-              ? true
-              : settings.homeCampaignBannersActive === "true" ||
-                settings.homeCampaignBannersActive === true;
-          setDynCampaignBannersActive(cBannersActive);
-          safeSetItem("homeCampaignBannersActive", String(cBannersActive));
-        }
-      } catch (err) {
-        console.error("Error loaded settings:", err);
-        if (!cancelled) applyLocalSettingsFallback();
-      } finally {
-        if (!cancelled) setSettingsLoading(false);
-      }
-    };
-
-    const applyLocalSettingsFallback = () => {
-      setAdConfig({
-        active: localStorage.getItem("festiveAdActive") === "true",
-        title:
-          localStorage.getItem("festiveAdTitle") || "Diwali Festive Dhamaka!",
-        subtitle:
-          localStorage.getItem("festiveAdSubtitle") ||
-          "Up to 50% Off on all hand-knit Zari premium anarkalis. Free delivery apply!",
-        code: localStorage.getItem("festiveAdCode") || "FESTIVE50",
-        link: localStorage.getItem("festiveAdLink") || "/shop",
-        theme: localStorage.getItem("festiveAdTheme") || "royal-gold",
-      });
-      setDynCampaignBannersActive(
-        localStorage.getItem("homeCampaignBannersActive") === null
-          ? true
-          : localStorage.getItem("homeCampaignBannersActive") === "true",
-      );
-
-      const fallbackImages = ["/hero.png"];
-      const loadedImages = [
-        localStorage.getItem("slideImg1"),
-        localStorage.getItem("slideImg2"),
-        localStorage.getItem("slideImg3"),
-        localStorage.getItem("slideImg4"),
-        localStorage.getItem("slideImg5"),
-      ].filter(Boolean);
-
-      setSliderConfig({
-        active:
-          localStorage.getItem("slideBarActive") === null
-            ? true
-            : localStorage.getItem("slideBarActive") === "true",
-        images: loadedImages.length > 0 ? loadedImages : fallbackImages,
-      });
-
-      // Load fallbacks from localStorage for new dynamic settings
-      const localStoryImage = localStorage.getItem("homeStoryImage");
-      if (localStoryImage) {
-        setDynStoryImage(localStoryImage);
-      }
-      const localCategories = localStorage.getItem("homeCategories");
-      if (localCategories) {
-        try {
-          const parsed = JSON.parse(localCategories);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setDynCategories(parsed);
-          }
-        } catch (e) {}
-      }
-      setSettingsLoading(false);
-    };
-
-    fetchSettings();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   useEffect(() => {
     if (!sliderConfig.active || sliderConfig.images.length === 0) return;
     const interval = setInterval(() => {
@@ -517,52 +298,59 @@ const Home = () => {
   }, [sliderConfig.active, sliderConfig.images.length]);
 
   useEffect(() => {
-    if (!countdownConfig.active) return;
+    if (!isCountdownActive) return;
 
-    const timer = setInterval(() => {
-      if (countdownConfig.endDate) {
-        // Target date mode
-        const target = new Date(countdownConfig.endDate).getTime();
-        const now = new Date().getTime();
+    const calculateTime = () => {
+      if (effectiveCountdownDate) {
+        const target = new Date(effectiveCountdownDate).getTime();
+        const now = Date.now();
         const difference = target - now;
 
         if (difference <= 0) {
-          setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
-          clearInterval(timer);
-        } else {
-          const hours = Math.floor(difference / (1000 * 60 * 60));
-          const minutes = Math.floor(
-            (difference % (1000 * 60 * 60)) / (1000 * 60),
-          );
-          const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-          setTimeLeft({ hours, minutes, seconds });
+          setIsCountdownExpired(true);
+          setTimeLeft(null);
+          return false;
         }
+
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor(
+          (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+        );
+        const minutes = Math.floor(
+          (difference % (1000 * 60 * 60)) / (1000 * 60),
+        );
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+        setIsCountdownExpired(false);
+        setTimeLeft({ days, hours, minutes, seconds });
+        return true;
       } else {
-        // Cycling fallback mode (cycles 24 hours continuously)
-        setTimeLeft((prev) => {
-          let { hours, minutes, seconds } = prev;
-          if (seconds > 0) {
-            seconds--;
-          } else {
-            seconds = 59;
-            if (minutes > 0) {
-              minutes--;
-            } else {
-              minutes = 59;
-              if (hours > 0) {
-                hours--;
-              } else {
-                hours = 24;
-              }
-            }
-          }
-          return { hours, minutes, seconds };
-        });
+        // Cycling 24-hr fallback mode to end of current day
+        const now = new Date();
+        const endOfDay = new Date(now);
+        endOfDay.setHours(23, 59, 59, 999);
+        const diff = endOfDay.getTime() - now.getTime();
+
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        setIsCountdownExpired(false);
+        setTimeLeft({ days: 0, hours, minutes, seconds });
+        return true;
+      }
+    };
+
+    calculateTime();
+    const timer = setInterval(() => {
+      const shouldContinue = calculateTime();
+      if (!shouldContinue) {
+        clearInterval(timer);
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [countdownConfig]);
+  }, [isCountdownActive, effectiveCountdownDate]);
 
   const handleQuickAddToCart = (product, size) => {
     dispatch(
@@ -582,11 +370,54 @@ const Home = () => {
       }),
     );
     syncCartNow();
+    setAddedSuccessId(product._id);
+    setTimeout(() => setAddedSuccessId(null), 1800);
     showAlert(
       `"${product.name}" (Size: ${size}) has been added to your shopping bag!`,
       "Added to Bag",
     );
   };
+
+  const activePromoCode =
+    settings.salePromoCode || settings.festiveAdCode || "PARIWESHGOLD";
+
+  const promoCodeDiscountText =
+    settings.saleDiscountText || "Flat 15% OFF On Handcrafted Ensembles Above ₹1,499";
+
+  const handleCopyCoupon = (code) => {
+    if (!code) return;
+    navigator.clipboard.writeText(code.trim().toUpperCase());
+    setCouponCopied(true);
+    showAlert(
+      `Promo code "${code.trim().toUpperCase()}" copied! Apply at checkout.`,
+      "Coupon Copied",
+    );
+    setTimeout(() => setCouponCopied(false), 2500);
+  };
+
+  const displayedHomeProducts = React.useMemo(() => {
+    if (!products || products.length === 0) return [];
+    let list = [...products];
+
+    if (activeProductTab === "best-seller") {
+      const filtered = list.filter((p) => p.bestSeller || p.trending);
+      return filtered.length > 0 ? filtered : list.slice(0, 8);
+    }
+    if (activeProductTab === "new-arrival") {
+      const filtered = list.filter((p) => p.newArrival);
+      return filtered.length > 0 ? filtered : list.slice(0, 8);
+    }
+    if (activeProductTab === "under-2499") {
+      const filtered = list.filter((p) => Number(p.sellingPrice) <= 2499);
+      return filtered.length > 0 ? filtered : list;
+    }
+
+    return list.sort((a, b) => {
+      if (a.trending && !b.trending) return -1;
+      if (!a.trending && b.trending) return 1;
+      return 0;
+    });
+  }, [products, activeProductTab]);
 
   const websiteSchema = [
     {
@@ -623,11 +454,15 @@ const Home = () => {
         structuredData={websiteSchema}
       />
       {/* SECTION 1: HERO SPOTLIGHT SLIDER (Vibrant premium hero layout) */}
-      <HeroSlider
-        sliderConfig={sliderConfig}
-        activeSlide={activeSlide}
-        setActiveSlide={setActiveSlide}
-      />
+      {settingsLoading ? (
+        <HeroSkeleton />
+      ) : (
+        <HeroSlider
+          sliderConfig={sliderConfig}
+          activeSlide={activeSlide}
+          setActiveSlide={setActiveSlide}
+        />
+      )}
 
       {/* MARQUEE VALUE BANNER */}
       <div className="bg-[#8a1c14] text-white py-3 border-y border-white/10 overflow-hidden select-none">
@@ -742,8 +577,53 @@ const Home = () => {
         </div>
       </section>
 
+      {/* 1-TAP LUXURY FESTIVE COUPON STRIP */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-2">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#FAF7F2] via-[#FFFDF9] to-[#FAF7F2] border border-[#c5a880]/40 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-3.5 text-center sm:text-left">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 border border-[#c5a880]/50 flex items-center justify-center text-[#8a1c14] shrink-0 shadow-2xs">
+              <RiGiftLine size={22} />
+            </div>
+            <div>
+              <div className="flex items-center justify-center sm:justify-start gap-2">
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#8a1c14]">
+                  Exclusive Festive Voucher
+                </span>
+                <span className="text-[8.5px] bg-red-100 text-red-700 px-2 py-0.2 rounded font-bold uppercase tracking-wider">
+                  Limited Offer
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm font-serif font-medium text-slate-900 mt-0.5">
+                {promoCodeDiscountText}
+              </p>
+            </div>
+          </div>
+
+          {/* Click to Copy Voucher Badge */}
+          <button
+            type="button"
+            onClick={() => handleCopyCoupon(activePromoCode)}
+            className="flex items-center space-x-2.5 bg-white hover:bg-amber-50/60 border border-dashed border-[#8a1c14]/50 hover:border-[#8a1c14] px-4 py-2.5 rounded-xl shadow-2xs transition-all duration-200 cursor-pointer group active:scale-95 shrink-0"
+            title="Click to copy coupon code"
+          >
+            <span className="text-xs font-mono font-bold tracking-wider text-[#8a1c14]">
+              {activePromoCode}
+            </span>
+            <span className="text-slate-300">|</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-700">
+              {couponCopied ? "✓ Copied!" : "Tap to Copy"}
+            </span>
+            {couponCopied ? (
+              <RiCheckLine className="text-emerald-600 text-sm" />
+            ) : (
+              <RiFileCopyLine className="text-slate-400 group-hover:text-slate-700 text-sm" />
+            )}
+          </button>
+        </div>
+      </section>
+
       {/* CAMPAIGN BANNER CARDS GRID (Mobile-First visual cards block) */}
-      {dynCampaignBannersActive && (
+      {settingsLoaded && isCampaignBannersActive && dynCampaignBanners.length > 0 && (
         <CampaignBanners
           banners={dynCampaignBanners}
           settingsLoading={settingsLoading}
@@ -841,45 +721,115 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Countdown Integration */}
-            {countdownConfig.active && (
-              <div className="space-y-3 bg-white p-4 border border-borderLight rounded-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-[#8a1c14] uppercase tracking-wider">
-                    {countdownConfig.title}
-                  </span>
-                  <span className="text-[8px] bg-red-100 text-red-700 px-2 py-0.5 uppercase tracking-widest font-black rounded-none">
-                    Live offer
+            {/* LUXURY ROYAL COUNTDOWN WIDGET */}
+            {settingsLoaded && isCountdownActive && !isCountdownExpired && timeLeft && (
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6F0] to-[#F5EFEB] border border-[#c5a880]/40 p-4 sm:p-5 shadow-sm space-y-3.5">
+                {/* Subtle Decorative Golden Corner Accent */}
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-[#c5a880]/15 to-transparent rounded-bl-full pointer-events-none" />
+
+                {/* Top Status Header */}
+                <div className="flex items-center justify-between gap-2 relative z-10">
+                  <div className="inline-flex items-center space-x-1.5 bg-rose-500/10 text-[#8a1c14] border border-rose-200/70 px-2.5 py-0.5 rounded-full">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#8a1c14]"></span>
+                    </span>
+                    <span className="text-[9px] font-black uppercase tracking-widest">
+                      Live Festive Offer
+                    </span>
+                  </div>
+
+                  <span className="text-[10px] text-slate-400 font-medium flex items-center space-x-1">
+                    <RiTimerLine size={13} className="text-[#c5a880]" />
+                    <span>Ending Soon</span>
                   </span>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <div className="text-center font-mono">
-                    <span className="text-xl font-bold font-serif text-textPrimary">
-                      {String(timeLeft.hours).padStart(2, "0")}
+
+                {/* Main Offer Title / Message */}
+                <h4 className="text-xs sm:text-sm font-serif font-bold text-slate-900 tracking-wide leading-snug line-clamp-2">
+                  {settings.countdownTitle || "Exclusive Limited-Period Collection Ends In:"}
+                </h4>
+
+                {/* Symmetrical 4-Column Luxury Digit Tiles */}
+                <div className="grid grid-cols-4 gap-2 sm:gap-2.5 my-2">
+                  {/* Days */}
+                  <div className="bg-white/95 border border-[#c5a880]/35 rounded-xl py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center transition-transform duration-200 hover:scale-[1.02]">
+                    <span className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
+                      {String(timeLeft.days || 0).padStart(2, "0")}
                     </span>
-                    <span className="text-[8px] uppercase tracking-widest block text-textSecondary">
-                      Hrs
+                    <span className="text-[8px] sm:text-[8.5px] uppercase font-bold tracking-[0.2em] text-[#8a1c14] mt-1.5">
+                      Days
                     </span>
                   </div>
-                  <span className="text-textSecondary">:</span>
-                  <div className="text-center font-mono">
-                    <span className="text-xl font-bold font-serif text-textPrimary">
-                      {String(timeLeft.minutes).padStart(2, "0")}
+
+                  {/* Hours */}
+                  <div className="bg-white/95 border border-[#c5a880]/35 rounded-xl py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center transition-transform duration-200 hover:scale-[1.02]">
+                    <span className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
+                      {String(timeLeft.hours || 0).padStart(2, "0")}
                     </span>
-                    <span className="text-[8px] uppercase tracking-widest block text-textSecondary">
-                      Min
+                    <span className="text-[8px] sm:text-[8.5px] uppercase font-bold tracking-[0.2em] text-[#8a1c14] mt-1.5">
+                      Hours
                     </span>
                   </div>
-                  <span className="text-textSecondary">:</span>
-                  <div className="text-center font-mono text-[#8a1c14]">
-                    <span className="text-xl font-bold font-serif text-[#8a1c14] animate-pulse">
-                      {String(timeLeft.seconds).padStart(2, "0")}
+
+                  {/* Minutes */}
+                  <div className="bg-white/95 border border-[#c5a880]/35 rounded-xl py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center transition-transform duration-200 hover:scale-[1.02]">
+                    <span className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
+                      {String(timeLeft.minutes || 0).padStart(2, "0")}
                     </span>
-                    <span className="text-[8px] uppercase tracking-widest block">
-                      Sec
+                    <span className="text-[8px] sm:text-[8.5px] uppercase font-bold tracking-[0.2em] text-[#8a1c14] mt-1.5">
+                      Mins
+                    </span>
+                  </div>
+
+                  {/* Seconds */}
+                  <div className="bg-white/95 border border-[#8a1c14]/30 rounded-xl py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center transition-transform duration-200 hover:scale-[1.02] bg-rose-50/20">
+                    <span className="text-2xl sm:text-3xl font-serif font-bold text-[#8a1c14] leading-none animate-pulse">
+                      {String(timeLeft.seconds || 0).padStart(2, "0")}
+                    </span>
+                    <span className="text-[8px] sm:text-[8.5px] uppercase font-bold tracking-[0.2em] text-[#8a1c14] mt-1.5">
+                      Secs
                     </span>
                   </div>
                 </div>
+
+                {/* 1-Tap Coupon Voucher Ticket Strip */}
+                {activePromoCode && (
+                  <div className="bg-white/90 border border-dashed border-[#c5a880]/80 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-2xs">
+                    <div className="flex items-center space-x-2 min-w-0">
+                      <div className="w-6 h-6 rounded-md bg-amber-50 border border-[#c5a880]/40 flex items-center justify-center text-[#8a1c14] shrink-0">
+                        <RiCoupon3Line size={13} />
+                      </div>
+                      <div className="truncate">
+                        <span className="text-[9px] text-slate-500 font-medium block">
+                          Coupon Code:
+                        </span>
+                        <span className="text-xs font-mono font-bold tracking-wider text-slate-900">
+                          {activePromoCode}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCopyCoupon(activePromoCode)}
+                      className="inline-flex items-center space-x-1 bg-[#8a1c14] hover:bg-[#6e140e] text-white text-[9.5px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-2xs cursor-pointer transition-all active:scale-95 shrink-0"
+                      title="Click to copy coupon code"
+                    >
+                      {couponCopied ? (
+                        <>
+                          <RiCheckLine size={13} className="text-emerald-300" />
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <RiFileCopyLine size={12} className="opacity-80" />
+                          <span>Copy Code</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -911,6 +861,44 @@ const Home = () => {
           </p>
         </div>
 
+        {/* Step A: Luxury Filter Tabs */}
+        {!productsLoading && products.length > 0 && (
+          <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+            {[
+              { id: "all", label: "All Styles", count: products.length },
+              { id: "best-seller", label: "Best Sellers" },
+              { id: "new-arrival", label: "New Arrivals" },
+              { id: "under-2499", label: "Under ₹2,499" },
+            ].map((tab) => {
+              const isActive = activeProductTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveProductTab(tab.id)}
+                  className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-[13px] font-medium tracking-wide transition-all duration-300 cursor-pointer ${
+                    isActive
+                      ? "bg-[#8a1c14] text-white shadow-md shadow-[#8a1c14]/20 scale-102 font-semibold"
+                      : "bg-[#FAF7F3] hover:bg-[#F2ECE4] text-slate-700 border border-slate-200/70 hover:border-[#c5a880]/50"
+                  }`}
+                >
+                  {tab.label}
+                  {tab.count !== undefined && (
+                    <span
+                      className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : "bg-slate-200 text-slate-600"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Products Grid */}
         {productsLoading ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-8">
@@ -934,15 +922,21 @@ const Home = () => {
               Browse Shop
             </Link>
           </div>
+        ) : displayedHomeProducts.length === 0 ? (
+          <div className="py-12 text-center bg-[#FAF7F3] rounded-xl border border-slate-200/60 max-w-xl mx-auto px-4">
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+              No products found in this category
+            </p>
+            <button
+              onClick={() => setActiveProductTab("all")}
+              className="mt-3 text-xs font-bold text-[#8a1c14] underline cursor-pointer"
+            >
+              View All Styles
+            </button>
+          </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4 sm:gap-y-8">
-            {[...products]
-              .sort((a, b) => {
-                if (a.trending && !b.trending) return -1;
-                if (!a.trending && b.trending) return 1;
-                return 0;
-              })
-              .map((product) => {
+            {displayedHomeProducts.map((product) => {
                 let badgeText = "";
                 if (
                   product.tag &&
@@ -1042,10 +1036,8 @@ const Home = () => {
                   {/* Quick Buy Slide-Up Frosted Glass Dock (DESKTOP HOVER ONLY) */}
                   <div className="hidden md:block absolute inset-x-0 bottom-0 z-20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out pointer-events-none group-hover:pointer-events-auto">
                     <div className="bg-white/95 backdrop-blur-md px-2 py-2.5 border-t border-accent-gold/40 shadow-[0_-4px_20px_rgba(0,0,0,0.12)] flex flex-col items-center space-y-1.5">
-                      <span className="text-[9px] uppercase tracking-[0.2em] font-extrabold text-slate-700 flex items-center space-x-1 select-none">
-                        <span className="text-accent-gold text-[8px]">✦</span>
+                      <span className="text-[9px] uppercase tracking-[0.2em] font-extrabold text-slate-700 flex items-center justify-center select-none">
                         <span>Quick Buy Size</span>
-                        <span className="text-accent-gold text-[8px]">✦</span>
                       </span>
                       <div className="flex justify-center items-center gap-1.5 w-full px-1">
                         {(product.sizes && product.sizes.length > 0
@@ -1177,7 +1169,7 @@ const Home = () => {
                     )}
                   </div>
 
-                  {/* Refined Luxury Action Button */}
+                  {/* Refined Luxury Action Button with instant tactile feedback */}
                   <button
                     type="button"
                     onClick={(e) => {
@@ -1190,12 +1182,25 @@ const Home = () => {
                           : "M");
                       handleQuickAddToCart(product, chosenSize);
                     }}
-                    className="w-full bg-[#8a1c14] hover:bg-[#70150e] text-white font-bold text-[10px] sm:text-[10.5px] uppercase tracking-[0.14em] py-2 rounded-lg shadow-xs hover:shadow-sm active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center space-x-1.5 mt-1"
+                    className={`w-full font-bold text-[10px] sm:text-[10.5px] uppercase tracking-[0.14em] py-2 rounded-lg shadow-xs hover:shadow-sm active:scale-[0.98] transition-all duration-300 cursor-pointer flex items-center justify-center space-x-1.5 mt-1 ${
+                      addedSuccessId === product._id
+                        ? "bg-emerald-700 text-white shadow-emerald-700/25"
+                        : "bg-[#8a1c14] hover:bg-[#70150e] text-white"
+                    }`}
                   >
-                    <RiShoppingBagLine size={13} />
-                    <span>
-                      ADD TO BAG {selectedCardSizes[product._id] ? `(${selectedCardSizes[product._id]})` : ""}
-                    </span>
+                    {addedSuccessId === product._id ? (
+                      <>
+                        <RiCheckLine size={14} className="animate-bounce" />
+                        <span>ADDED TO BAG!</span>
+                      </>
+                    ) : (
+                      <>
+                        <RiShoppingBagLine size={13} />
+                        <span>
+                          ADD TO BAG {selectedCardSizes[product._id] ? `(${selectedCardSizes[product._id]})` : ""}
+                        </span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -1226,7 +1231,7 @@ const Home = () => {
             {/* Pillar 1 */}
             <div className="bg-white/80 hover:bg-white backdrop-blur-md border border-slate-200/80 hover:border-accent-gold/60 p-8 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl transition-all duration-500 text-center flex flex-col items-center space-y-4 group">
               <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-accent-gold/40 flex items-center justify-center text-accent-gold group-hover:scale-110 group-hover:bg-[#8a1c14] group-hover:text-white transition-all duration-300 shadow-xs">
-                <RiSparklingFill size={26} />
+                <RiHeartLine size={26} />
               </div>
               <div className="space-y-1.5">
                 <h3 className="text-sm font-serif font-bold text-slate-900 tracking-wide uppercase">
@@ -1389,7 +1394,7 @@ const Home = () => {
             </div>
 
             <div className="flex flex-col items-center space-y-1.5 p-2">
-              <RiSparklingFill size={24} className="text-accent-gold" />
+              <RiScissorsLine size={24} className="text-accent-gold" />
               <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                 100% Handcrafted
               </h4>

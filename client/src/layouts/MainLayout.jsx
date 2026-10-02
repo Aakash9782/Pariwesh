@@ -23,8 +23,10 @@ import { clearCart } from "../redux/slices/cartSlice.js";
 import { clearWishlist } from "../redux/slices/wishlistSlice.js";
 import API from "../services/api.js";
 import { useAlert } from "../contexts/AlertContext.jsx";
+import { useSettings } from "../contexts/SettingsContext.jsx";
 import { hydrateCommerce } from "../services/hydrateCommerce.js";
 import Loader from "../components/common/Loader.jsx";
+import { PageSuspenseSkeleton } from "../components/common/Skeleton.jsx";
 import Footer from "../components/common/Footer.jsx";
 import { optimizeCloudinaryUrl } from "../utils/cloudinary.js";
 
@@ -118,103 +120,14 @@ const MainLayout = () => {
     }
   }, [isAuthenticated, location.pathname, navigate, user]);
 
-  const [logoUrl, setLogoUrl] = useState(
-    () => localStorage.getItem("brandLogoUrl") || "",
-  );
-  const [announcementText, setAnnouncementText] = useState(
-    () =>
-      localStorage.getItem("announcementText") ||
-      "✨ USE CODE PARIWESHGOLD TO GET 15% OFF + FREE SHIPPING ON APPAREL ABOVE ₹1500 ✨",
-  );
-  const [announcementActive, setAnnouncementActive] = useState(
-    () => localStorage.getItem("announcementActive") !== "false",
-  );
-
-  const [saleEventActive, setSaleEventActive] = useState(
-    () => localStorage.getItem("saleEventActive") !== "false",
-  );
-  const [saleNavTitle, setSaleNavTitle] = useState(
-    () => localStorage.getItem("saleNavTitle") || "NAVRATRI SALE IS LIVE",
-  );
-  const [saleNavBadge, setSaleNavBadge] = useState(
-    () => localStorage.getItem("saleNavBadge") || "Sale",
-  );
-
-  React.useEffect(() => {
-    const fetchLogoFromDB = async () => {
-      try {
-        const res = await API.get("/settings");
-        if (res.data && res.data.success && res.data.data) {
-          const dbLogo = res.data.data.brandLogoUrl;
-          if (dbLogo !== undefined) {
-            setLogoUrl(dbLogo);
-            if (dbLogo) {
-              localStorage.setItem("brandLogoUrl", dbLogo);
-            } else {
-              localStorage.removeItem("brandLogoUrl");
-            }
-          }
-
-          const dbAnnText = res.data.data.announcementText;
-          if (dbAnnText !== undefined) {
-            setAnnouncementText(dbAnnText);
-            localStorage.setItem("announcementText", dbAnnText);
-          }
-          const dbAnnActive = res.data.data.announcementActive;
-          if (dbAnnActive !== undefined) {
-            const isActive = dbAnnActive === "true" || dbAnnActive === true;
-            setAnnouncementActive(isActive);
-            localStorage.setItem("announcementActive", String(isActive));
-          }
-
-          if (res.data.data.saleEventActive !== undefined) {
-            const isSaleAct =
-              res.data.data.saleEventActive === "true" ||
-              res.data.data.saleEventActive === true;
-            setSaleEventActive(isSaleAct);
-            localStorage.setItem("saleEventActive", String(isSaleAct));
-          }
-          if (res.data.data.saleNavTitle !== undefined) {
-            setSaleNavTitle(res.data.data.saleNavTitle);
-            localStorage.setItem("saleNavTitle", res.data.data.saleNavTitle);
-          }
-          if (res.data.data.saleNavBadge !== undefined) {
-            setSaleNavBadge(res.data.data.saleNavBadge);
-            localStorage.setItem("saleNavBadge", res.data.data.saleNavBadge);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load brand settings from DB:", err);
-      }
-    };
-    fetchLogoFromDB();
-
-    const handleUpdate = () => {
-      setLogoUrl(localStorage.getItem("brandLogoUrl") || "");
-      setAnnouncementText(
-        localStorage.getItem("announcementText") ||
-          "✨ USE CODE PARIWESHGOLD TO GET 15% OFF + FREE SHIPPING ON APPAREL ABOVE ₹1500 ✨",
-      );
-      setAnnouncementActive(
-        localStorage.getItem("announcementActive") !== "false",
-      );
-      setSaleEventActive(
-        localStorage.getItem("saleEventActive") !== "false",
-      );
-      setSaleNavTitle(
-        localStorage.getItem("saleNavTitle") || "NAVRATRI SALE IS LIVE",
-      );
-      setSaleNavBadge(
-        localStorage.getItem("saleNavBadge") || "Sale",
-      );
-    };
-    window.addEventListener("logo-updated", handleUpdate);
-    window.addEventListener("settings-updated", handleUpdate);
-    return () => {
-      window.removeEventListener("logo-updated", handleUpdate);
-      window.removeEventListener("settings-updated", handleUpdate);
-    };
-  }, []);
+  const {
+    isAnnouncementActive: announcementActive,
+    announcementText,
+    isSaleEventActive: saleEventActive,
+    saleNavTitle,
+    saleNavBadge,
+    brandLogoUrl: logoUrl,
+  } = useSettings();
 
   // Dynamically update the website favicon to match the custom brand logo
   React.useEffect(() => {
@@ -267,19 +180,27 @@ const MainLayout = () => {
         </defs>
       </svg>
 
-      {/* 1. STICKY ANNOUNCEMENT BAR */}
+      {/* 1. STICKY ANNOUNCEMENT BAR (Clickable & Pause-on-hover) */}
       {announcementActive && (
-        <div className="w-full bg-secondary text-primary py-2 text-[10px] sm:text-xs font-display tracking-widest uppercase transition-all duration-300 overflow-hidden relative whitespace-nowrap select-none border-b border-[#c5a880]/30 shadow-xs">
-          <div className="animate-marquee flex items-center justify-around min-w-full">
+        <Link
+          to={saleEventActive ? "/sale" : "/shop"}
+          className="w-full bg-secondary text-primary py-2 text-[10px] sm:text-xs font-display tracking-widest uppercase transition-all duration-300 overflow-hidden relative whitespace-nowrap select-none border-b border-[#c5a880]/30 shadow-xs block cursor-pointer group"
+          title="Click to explore collection"
+        >
+          <div className="animate-marquee flex items-center justify-around min-w-full group-hover:[animation-play-state:paused]">
             {/* Repeated text blocks for infinite seamless flow */}
             {[...Array(12)].map((_, index) => (
               <span key={index} className="mx-6 flex items-center shrink-0">
-                <span className="font-semibold tracking-[0.2em]">{announcementText}</span>
-                <span className="mx-6 text-accent-gold select-none text-xs">✦</span>
+                <span className="font-semibold tracking-[0.2em] group-hover:underline">
+                  {announcementText}
+                </span>
+                <span className="mx-6 text-accent-gold/60 select-none text-[9px]">
+                  •
+                </span>
               </span>
             ))}
           </div>
-        </div>
+        </Link>
       )}
 
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/90 border-b border-[#c5a880]/30 shadow-[0_4px_25px_rgba(0,0,0,0.03)] transition-all duration-300">
@@ -355,9 +276,15 @@ const MainLayout = () => {
             >
               <RiHeartLine size={19} className="group-hover:scale-110 transition-transform" />
               {wishlistProducts.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#8a1c14] text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-xs pointer-events-none">
+                <motion.span
+                  key={wishlistProducts.length}
+                  initial={{ scale: 0.4 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 18 }}
+                  className="absolute -top-1 -right-1 bg-[#8a1c14] text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-xs pointer-events-none"
+                >
                   {wishlistProducts.length}
-                </span>
+                </motion.span>
               )}
             </Link>
 
@@ -373,9 +300,15 @@ const MainLayout = () => {
             >
               <RiShoppingBagLine size={19} className="group-hover:scale-110 transition-transform" />
               {totalCartQuantity > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#8a1c14] text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-xs pointer-events-none">
+                <motion.span
+                  key={totalCartQuantity}
+                  initial={{ scale: 0.4 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 18 }}
+                  className="absolute -top-1 -right-1 bg-[#8a1c14] text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-xs pointer-events-none"
+                >
                   {totalCartQuantity}
-                </span>
+                </motion.span>
               )}
             </Link>
 
@@ -504,7 +437,6 @@ const MainLayout = () => {
               {/* Drawer Header */}
               <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-[#FDFBF7]">
                 <div className="flex items-center space-x-2">
-                  <span className="text-accent-gold text-xs">✦</span>
                   <span className="font-display font-bold tracking-[0.2em] text-sm uppercase text-[#8a1c14]">
                     PARIWESH
                   </span>
@@ -671,7 +603,7 @@ const MainLayout = () => {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.22, ease: "easeInOut" }}
           >
-            <React.Suspense fallback={<Loader />}>
+            <React.Suspense fallback={<PageSuspenseSkeleton />}>
               <Outlet />
             </React.Suspense>
           </motion.div>

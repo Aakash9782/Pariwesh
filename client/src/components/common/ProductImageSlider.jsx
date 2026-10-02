@@ -77,33 +77,32 @@ const ProductImageSlider = ({
 
   return (
     <div
-      className="w-full h-full relative select-none"
+      className="w-full h-full relative select-none overflow-hidden"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {images.map((img, idx) => {
-        // Just-in-time rendering: do not load/render subsequent images
-        // until we actually reach them in the slideshow sequence.
-        // This avoids downloading all images for all grid products upfront.
-        if (idx > maxSeenIndex) return null;
-
-        return (
-          <img
+      {/* Smooth Horizontal Sliding Carousel Track */}
+      <div
+        className="w-full h-full flex transition-transform duration-500 cubic-bezier(0.25, 1, 0.5, 1) will-change-transform"
+        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+      >
+        {images.map((img, idx) => (
+          <div
             key={img + "-" + idx}
-            src={optimizeCloudinaryUrl(img, 400)}
-            alt={alt}
-            loading="lazy"
-            decoding="async"
-            width="400"
-            height="500"
-            className={`absolute inset-0 w-full h-full object-cover transform-gpu group-hover:scale-[1.12] transition-all duration-[700ms] ease-in-out origin-top ${
-              idx === currentIndex
-                ? "opacity-100 z-[2]"
-                : "opacity-0 z-0 pointer-events-none"
-            }`}
-          />
-        );
-      })}
+            className="w-full h-full shrink-0 relative overflow-hidden"
+          >
+            <img
+              src={optimizeCloudinaryUrl(img, 400)}
+              alt={alt}
+              loading={idx === 0 ? "eager" : "lazy"}
+              decoding="async"
+              width="400"
+              height="500"
+              className="w-full h-full object-cover transform-gpu group-hover:scale-[1.08] transition-transform duration-700 ease-out origin-top pointer-events-none select-none"
+            />
+          </div>
+        ))}
+      </div>
 
       {hasMultipleImages && (
         <>
@@ -152,7 +151,7 @@ const ProductImageSlider = ({
           </button>
 
           {/* Image indicator dots */}
-          <div className="absolute bottom-2.5 md:bottom-2.5 md:group-hover:bottom-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/35 backdrop-blur-xs opacity-80 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 pointer-events-auto">
+          <div className="absolute bottom-2.5 md:bottom-2.5 md:group-hover:bottom-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md opacity-85 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 pointer-events-auto shadow-sm">
             {images.map((_, idx) => (
               <button
                 key={idx}
@@ -162,7 +161,7 @@ const ProductImageSlider = ({
                 aria-label={`Go to image ${idx + 1}`}
                 className={`transition-all duration-300 rounded-full cursor-pointer ${
                   idx === currentIndex
-                    ? "w-3 h-1.5 bg-[#c5a880] shadow-xs"
+                    ? "w-4 h-1.5 bg-[#c5a880] shadow-xs"
                     : "w-1.5 h-1.5 bg-white/60 hover:bg-white"
                 }`}
               />

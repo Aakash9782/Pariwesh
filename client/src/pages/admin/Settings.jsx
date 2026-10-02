@@ -19,9 +19,11 @@ import SlideshowTab from "./settings/SlideshowTab.jsx";
 import AdminManagementTab from "./settings/AdminManagementTab.jsx";
 import HomepageTab from "./settings/HomepageTab.jsx";
 import MetaPixelTab from "./settings/MetaPixelTab.jsx";
+import { useSettings } from "../../contexts/SettingsContext.jsx";
 
 const SettingsPage = () => {
   const { showAlert: alert, showConfirm } = useAlert();
+  const { refreshSettings } = useSettings();
 
   const [activeTab, setActiveTab] = useState("general");
   const [dbSettings, setDbSettings] = useState({});
@@ -54,7 +56,7 @@ const SettingsPage = () => {
     countdownTitle: "Limited Collection Closes In:",
     countdownEndDate: "",
     announcementText:
-      "✨ USE CODE PARIWESHGOLD TO GET 15% OFF + FREE SHIPPING ON APPAREL ABOVE ₹1500 ✨",
+      "USE CODE PARIWESHGOLD TO GET 15% OFF + FREE SHIPPING ON APPAREL ABOVE ₹1500",
     announcementActive: "true",
     saleEventActive: "true",
     saleNavTitle: "NAVRATRI SALE IS LIVE",
@@ -124,7 +126,8 @@ const SettingsPage = () => {
   const fetchSettings = async () => {
     try {
       setSettingsLoading(true);
-      const res = await API.get("/settings");
+      const liveData = await refreshSettings();
+      const res = liveData ? { data: { success: true, data: liveData } } : await API.get("/settings");
       if (res.data?.success) {
         const data = res.data.data || {};
         setDbSettings(data);
@@ -157,7 +160,7 @@ const SettingsPage = () => {
           countdownEndDate: data.countdownEndDate || "",
           announcementText:
             data.announcementText ||
-            "✨ USE CODE PARIWESHGOLD TO GET 15% OFF + FREE SHIPPING ON APPAREL ABOVE ₹1500 ✨",
+            "USE CODE PARIWESHGOLD TO GET 15% OFF + FREE SHIPPING ON APPAREL ABOVE ₹1500",
           announcementActive:
             data.announcementActive === undefined
               ? "true"

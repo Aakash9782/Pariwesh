@@ -52,9 +52,9 @@ const Footer = () => {
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-center gap-5 text-[11px] tracking-[0.3em] uppercase">
           <div className="h-[1px] w-16 md:w-28 bg-gradient-to-r from-transparent via-[#c5a880]/30 to-[#c5a880]/60" />
           <span className="text-white/70 font-light">TIMELESS SILHOUETTES</span>
-          <span className="text-[#c5a880] text-xs">✦</span>
+          <span className="text-[#c5a880]/60 text-[9px]">•</span>
           <span className="text-[#c5a880] font-medium tracking-[0.32em]">MODERN CRAFT</span>
-          <span className="text-[#c5a880] text-xs">✦</span>
+          <span className="text-[#c5a880]/60 text-[9px]">•</span>
           <span className="text-white/70 font-light">INDIAN SOUL</span>
           <div className="h-[1px] w-16 md:w-28 bg-gradient-to-l from-transparent via-[#c5a880]/30 to-[#c5a880]/60" />
         </div>

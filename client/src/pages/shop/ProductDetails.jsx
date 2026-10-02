@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   RiShoppingBagLine,
   RiHeartLine,
@@ -84,6 +85,30 @@ const ProductDetails = () => {
 
   // Gesture Drag/Swipe Gestures for Product Image Gallery
   const [pointerStart, setPointerStart] = useState(null);
+  const [slideDirection, setSlideDirection] = useState(1);
+
+  const detailSlideVariants = {
+    enter: (dir) => ({
+      x: dir > 0 ? 80 : -80,
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        x: { type: "spring", stiffness: 320, damping: 30 },
+        opacity: { duration: 0.28 },
+      },
+    },
+    exit: (dir) => ({
+      x: dir > 0 ? -80 : 80,
+      opacity: 0,
+      transition: {
+        x: { type: "spring", stiffness: 320, damping: 30 },
+        opacity: { duration: 0.2 },
+      },
+    }),
+  };
 
   const handlePointerDown = (e) => {
     setPointerStart(e.clientX);
@@ -92,7 +117,7 @@ const ProductDetails = () => {
   const handlePointerUp = (e) => {
     if (pointerStart === null) return;
     const distance = pointerStart - e.clientX;
-    const minSwipeDistance = 50;
+    const minSwipeDistance = 40;
 
     if (
       Math.abs(distance) > minSwipeDistance &&
@@ -104,11 +129,13 @@ const ProductDetails = () => {
         if (distance > 0) {
           // Swipe Left -> Next Image
           const nextIndex = (currentIndex + 1) % product.images.length;
+          setSlideDirection(1);
           setActiveImage(product.images[nextIndex]);
         } else {
           // Swipe Right -> Previous Image
           const prevIndex =
             (currentIndex - 1 + product.images.length) % product.images.length;
+          setSlideDirection(-1);
           setActiveImage(product.images[prevIndex]);
         }
       }
@@ -477,7 +504,6 @@ const ProductDetails = () => {
       {/* Dynamic alert indicator */}
       {addedPopup && (
         <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md text-white px-6 py-3.5 rounded-full shadow-2xl text-xs uppercase tracking-widest font-semibold flex items-center space-x-3.5 border border-accent-gold/40 animate-fade-in animate-slide-up">
-          <span className="text-accent-gold">✨</span>
           <span>Successfully Added To Bag!</span>
           <span className="text-slate-400">|</span>
           <Link
@@ -522,13 +548,21 @@ const ProductDetails = () => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <img
-                src={getOptimizedImageUrl(activeImage, 1000)}
-                alt={product.name}
-                className="w-full h-full object-cover transition-all duration-300 select-none"
-                draggable="false"
-                fetchPriority="high"
-              />
+              <AnimatePresence mode="wait" custom={slideDirection} initial={false}>
+                <motion.img
+                  key={activeImage}
+                  custom={slideDirection}
+                  variants={detailSlideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  src={getOptimizedImageUrl(activeImage, 1000)}
+                  alt={product.name}
+                  className="w-full h-full object-cover select-none will-change-transform"
+                  draggable="false"
+                  fetchPriority="high"
+                />
+              </AnimatePresence>
             )}
           </div>
 
@@ -558,28 +592,34 @@ const ProductDetails = () => {
 
             {/* Images Thumbnails */}
             {product.images &&
-              product.images.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    setActiveVideo(null);
-                    setActiveImage(img);
-                  }}
-                  className={`aspect-[3/4] border rounded-lg overflow-hidden transition-all duration-300 ${
-                    !activeVideo && activeImage === img
-                      ? "border-accent-gold ring-2 ring-accent-gold/20 scale-[1.02]"
-                      : "border-slate-200 hover:border-slate-450 hover:border-slate-400"
-                  }`}
-                >
-                  <img
-                    src={getOptimizedImageUrl(img, 250)}
-                    alt={`detail thumbnail ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </button>
-              ))}
+              product.images.map((img, idx) => {
+                const currentIdx = product.images.indexOf(activeImage);
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setActiveVideo(null);
+                      if (img !== activeImage) {
+                        setSlideDirection(idx >= currentIdx ? 1 : -1);
+                        setActiveImage(img);
+                      }
+                    }}
+                    className={`aspect-[3/4] border rounded-lg overflow-hidden transition-all duration-300 cursor-pointer ${
+                      !activeVideo && activeImage === img
+                        ? "border-accent-gold ring-2 ring-accent-gold/25 scale-[1.04] shadow-xs"
+                        : "border-slate-200 hover:border-slate-400 opacity-80 hover:opacity-100"
+                    }`}
+                  >
+                    <img
+                      src={getOptimizedImageUrl(img, 250)}
+                      alt={`detail thumbnail ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </button>
+                );
+              })}
           </div>
         </div>
 
@@ -587,8 +627,7 @@ const ProductDetails = () => {
         <div className="lg:col-span-5 space-y-6 bg-white p-6 md:p-8 border border-[#c5a880]/30 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.05)]">
           <div className="space-y-2.5">
             <div className="flex items-center gap-2">
-              <span className="bg-amber-50 text-amber-900 text-[9.5px] font-extrabold uppercase tracking-[0.22em] px-3 py-1 rounded-full border border-[#c5a880]/35 shadow-2xs inline-flex items-center gap-1.5">
-                <span className="text-[#c5a880]">✦</span>
+              <span className="bg-amber-50 text-amber-900 text-[9.5px] font-extrabold uppercase tracking-[0.22em] px-3 py-1 rounded-full border border-[#c5a880]/35 shadow-2xs inline-flex items-center">
                 <span>{product.tag || "Pariwesh Exclusive"}</span>
               </span>
             </div>
@@ -849,7 +888,7 @@ const ProductDetails = () => {
                 </div>
               </div>
               <div className="flex items-center space-x-2 bg-purple-50/70 border border-purple-200/60 rounded-xl p-2.5 shadow-2xs">
-                <span className="text-base shrink-0">✨</span>
+                <RiScissorsLine className="text-purple-600 text-base shrink-0" />
                 <div className="leading-tight min-w-0">
                   <span className="block text-[11px] font-bold text-slate-800 truncate">100% Handcrafted</span>
                   <span className="block text-[9px] text-slate-500 truncate">Bespoke luxury fabrics</span>
@@ -988,7 +1027,6 @@ const ProductDetails = () => {
         <div className="lg:col-span-6 space-y-6">
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <span className="text-[#c5a880] text-xs">✦</span>
               <h3 className="text-xs font-bold uppercase text-slate-900 tracking-[0.2em]">
                 Product Story & Details
               </h3>
@@ -1151,7 +1189,6 @@ const ProductDetails = () => {
         {/* Right Column: Technical Specifications Dropdowns */}
         <div className="lg:col-span-6 space-y-4">
           <div className="flex items-center space-x-2">
-            <span className="text-[#c5a880] text-xs">✦</span>
             <h3 className="text-xs font-bold uppercase text-slate-900 tracking-[0.2em]">
               Technical Specifications
             </h3>

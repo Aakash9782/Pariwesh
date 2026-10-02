@@ -21,8 +21,11 @@ const SEED_COUPONS = [
   },
 ];
 
-// Helper to seed special offers dynamically
+// Helper to seed special offers dynamically (only once, never resurrect deleted offers)
 export const seedSpecialOffers = async () => {
+  const seeded = await Setting.findOne({ key: "seeded_special_offers" });
+  if (seeded) return;
+
   const defaultOffers = [
     {
       code: "SUMMER10",
@@ -80,6 +83,8 @@ export const seedSpecialOffers = async () => {
       await Coupon.create(offer);
     }
   }
+
+  await Setting.create({ key: "seeded_special_offers", value: "true" });
 };
 
 // @desc    Get all coupons (Seeds default coupons if empty)
@@ -200,9 +205,16 @@ export const validateCoupon = async (req, res, next) => {
         coupon.userLimit &&
         userUsage.usageCount >= coupon.userLimit
       ) {
+        if (coupon.userLimit === 1) {
+          return sendError(
+            res,
+            `You have already redeemed this offer on a previous order. This promo is valid only once per customer.`,
+            400,
+          );
+        }
         return sendError(
           res,
-          `You have reached the usage limit for this coupon (${coupon.userLimit} time(s))`,
+          `You have reached the maximum allowed usage (${coupon.userLimit} times) for this coupon code.`,
           400,
         );
       }
@@ -343,28 +355,72 @@ export const createCoupon = async (req, res, next) => {
       status,
     } = req.body;
 
-    if (!code || value === undefined) {
+    if (!code || value === undefined || value === "") {
       return sendError(res, "Please fill in all mandatory coupon details", 400);
+    }
+
+    const numValue = Number(value);
+    if (isNaN(numValue) || numValue <= 0) {
+      return sendError(res, "Discount value must be greater than 0", 400);
+    }
+
+    const finalDiscountType = discountType === "Flat" ? "Flat" : "Percentage";
+    if (finalDiscountType === "Percentage" && numValue > 100) {
+      return sendError(res, "Percentage discount cannot exceed 100%", 400);
+    }
+
+    let parsedExpiry = undefined;
+    if (expiryDate && expiryDate !== "") {
+      const d = new Date(expiryDate);
+      if (isNaN(d.getTime())) {
+        return sendError(res, "Invalid expiry date format", 400);
+      }
+      d.setHours(23, 59, 59, 999);
+      parsedExpiry = d;
+    }
+
+    let parsedStartDate = undefined;
+    if (startDate && startDate !== "") {
+      const d = new Date(startDate);
+      if (isNaN(d.getTime())) {
+        return sendError(res, "Invalid start date format", 400);
+      }
+      d.setHours(0, 0, 0, 0);
+      parsedStartDate = d;
     }
 
     const newCoupon = await Coupon.create({
       code: code.toUpperCase().trim(),
-      discountType: discountType || "Percentage",
-      value: Number(value),
+      discountType: finalDiscountType,
+      value: numValue,
       status: status || "Active",
       ordersUsed: 0,
-      usageLimit: usageLimit !== undefined ? Number(usageLimit) : 9999,
-      userLimit: userLimit !== undefined ? Number(userLimit) : 1,
-      expiryDate: expiryDate ? new Date(expiryDate) : undefined,
+      usageLimit:
+        usageLimit !== undefined && usageLimit !== ""
+          ? Math.max(1, Number(usageLimit))
+          : 9999,
+      userLimit:
+        userLimit !== undefined && userLimit !== ""
+          ? Math.max(1, Number(userLimit))
+          : 1,
+      expiryDate: parsedExpiry,
       name,
       description,
-      minQuantity: minQuantity !== undefined ? Number(minQuantity) : 0,
-      minAmount: minAmount !== undefined ? Number(minAmount) : 0,
+      minQuantity:
+        minQuantity !== undefined && minQuantity !== ""
+          ? Math.max(0, Number(minQuantity))
+          : 0,
+      minAmount:
+        minAmount !== undefined && minAmount !== ""
+          ? Math.max(0, Number(minAmount))
+          : 0,
       maxDiscount:
-        maxDiscount !== undefined && maxDiscount !== ""
-          ? Number(maxDiscount)
+        maxDiscount !== undefined &&
+        maxDiscount !== "" &&
+        finalDiscountType === "Percentage"
+          ? Math.max(0, Number(maxDiscount))
           : undefined,
-      startDate: startDate ? new Date(startDate) : undefined,
+      startDate: parsedStartDate,
       priority: priority !== undefined ? Number(priority) : 1,
       canCombine: canCombine !== undefined ? Boolean(canCombine) : false,
       isSpecialOffer:
@@ -400,25 +456,97 @@ export const updateCoupon = async (req, res, next) => {
     const { code } = req.params;
     const updateData = { ...req.body };
 
-    // Prevent modifying read-only/immutable MongoDB/Mongoose fields
+    // Prevent modifying read-only/immutable MongoDB fields and usage metrics
     delete updateData._id;
     delete updateData.createdAt;
     delete updateData.updatedAt;
     delete updateData.__v;
+    delete updateData.ordersUsed;
+    delete updateData.usedBy;
+
+    const existing = await Coupon.findOne({ code: code.toUpperCase().trim() });
+    if (!existing) {
+      return sendError(res, "Coupon not found", 404);
+    }
 
     if (updateData.code) {
       updateData.code = updateData.code.toUpperCase().trim();
     }
 
+    if (updateData.value !== undefined && updateData.value !== "") {
+      const numValue = Number(updateData.value);
+      if (isNaN(numValue) || numValue <= 0) {
+        return sendError(res, "Discount value must be greater than 0", 400);
+      }
+      const discType = updateData.discountType || existing.discountType;
+      if (discType === "Percentage" && numValue > 100) {
+        return sendError(res, "Percentage discount cannot exceed 100%", 400);
+      }
+      updateData.value = numValue;
+    }
+
+    if (updateData.minAmount !== undefined) {
+      updateData.minAmount =
+        updateData.minAmount !== "" && updateData.minAmount !== null
+          ? Math.max(0, Number(updateData.minAmount))
+          : 0;
+    }
+    if (updateData.minQuantity !== undefined) {
+      updateData.minQuantity =
+        updateData.minQuantity !== "" && updateData.minQuantity !== null
+          ? Math.max(0, Number(updateData.minQuantity))
+          : 0;
+    }
+    if (updateData.usageLimit !== undefined) {
+      updateData.usageLimit =
+        updateData.usageLimit !== "" && updateData.usageLimit !== null
+          ? Math.max(1, Number(updateData.usageLimit))
+          : 9999;
+    }
+    if (updateData.userLimit !== undefined) {
+      updateData.userLimit =
+        updateData.userLimit !== "" && updateData.userLimit !== null
+          ? Math.max(1, Number(updateData.userLimit))
+          : 1;
+    }
+    if (updateData.maxDiscount !== undefined) {
+      updateData.maxDiscount =
+        updateData.maxDiscount !== "" && updateData.maxDiscount !== null
+          ? Math.max(0, Number(updateData.maxDiscount))
+          : null;
+    }
+
+    if (updateData.expiryDate !== undefined) {
+      if (!updateData.expiryDate || updateData.expiryDate === "") {
+        updateData.expiryDate = null;
+      } else {
+        const d = new Date(updateData.expiryDate);
+        if (isNaN(d.getTime())) {
+          return sendError(res, "Invalid expiry date format", 400);
+        }
+        d.setHours(23, 59, 59, 999);
+        updateData.expiryDate = d;
+      }
+    }
+
+    if (updateData.startDate !== undefined) {
+      if (!updateData.startDate || updateData.startDate === "") {
+        updateData.startDate = null;
+      } else {
+        const d = new Date(updateData.startDate);
+        if (isNaN(d.getTime())) {
+          return sendError(res, "Invalid start date format", 400);
+        }
+        d.setHours(0, 0, 0, 0);
+        updateData.startDate = d;
+      }
+    }
+
     const coupon = await Coupon.findOneAndUpdate(
-      { code: code.toUpperCase() },
+      { code: code.toUpperCase().trim() },
       updateData,
       { new: true, runValidators: true },
     );
-
-    if (!coupon) {
-      return sendError(res, "Coupon not found", 404);
-    }
 
     await logActivity(req, `Coupon Updated: ${coupon.code}`);
     return sendSuccess(res, "Coupon updated successfully", coupon);

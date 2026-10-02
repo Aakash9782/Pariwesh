@@ -224,7 +224,7 @@ export const emailOrderStatusUpdate = async (order) => {
     to,
     subject,
     html,
-    type: "other",
+    type: "order_update",
     meta: { orderId: order?.orderId, orderStatus: order?.orderStatus },
   });
 };

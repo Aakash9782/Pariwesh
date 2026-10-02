@@ -9,6 +9,70 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth >= 768 : true,
   );
+  const [direction, setDirection] = useState(1);
+  const prevSlideRef = React.useRef(activeSlide);
+  const touchStartX = React.useRef(null);
+
+  useEffect(() => {
+    if (activeSlide !== prevSlideRef.current) {
+      setDirection(activeSlide > prevSlideRef.current ? 1 : -1);
+      prevSlideRef.current = activeSlide;
+    }
+  }, [activeSlide]);
+
+  const goToSlide = (idx) => {
+    if (idx === activeSlide) return;
+    setDirection(idx > activeSlide ? 1 : -1);
+    setActiveSlide(idx);
+  };
+
+  const handleTouchStart = (e) => {
+    if (!sliderConfig.images || sliderConfig.images.length <= 1) return;
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null || !sliderConfig.images || sliderConfig.images.length <= 1) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    const minSwipe = 40;
+    if (diff > minSwipe) {
+      // Swiped Left -> Next Slide
+      const next = (activeSlide + 1) % sliderConfig.images.length;
+      goToSlide(next);
+    } else if (diff < -minSwipe) {
+      // Swiped Right -> Prev Slide
+      const prev = (activeSlide - 1 + sliderConfig.images.length) % sliderConfig.images.length;
+      goToSlide(prev);
+    }
+    touchStartX.current = null;
+  };
+
+  const slideVariants = {
+    enter: (dir) => ({
+      x: dir > 0 ? 120 : -120,
+      opacity: 0,
+      scale: 0.96,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      scale: 1,
+      transition: {
+        x: { type: "spring", stiffness: 280, damping: 28 },
+        opacity: { duration: 0.35, ease: "easeOut" },
+        scale: { duration: 0.35, ease: "easeOut" },
+      },
+    },
+    exit: (dir) => ({
+      x: dir > 0 ? -120 : 120,
+      opacity: 0,
+      scale: 0.96,
+      transition: {
+        x: { type: "spring", stiffness: 280, damping: 28 },
+        opacity: { duration: 0.25, ease: "easeIn" },
+      },
+    }),
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -31,18 +95,19 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
           {/* Right Image Showcase Area (Shifted right with perfect breathing space) */}
           <div className="absolute right-0 top-0 bottom-0 w-[64%] lg:w-[66%] flex items-center justify-end pr-8 lg:pr-14 pl-12 z-0 overflow-hidden bg-gradient-to-br from-[#F8F5EE] via-[#F4EFE5] to-[#EBE4D5]">
             {/* Main Foreground Model Image - Shifted right & fitted with breathing headroom */}
-            <AnimatePresence mode="wait" initial={false}>
+            <AnimatePresence mode="wait" custom={direction} initial={false}>
               <motion.img
                 key={activeSlide}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
                 src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide], 850)}
                 alt="Pariwesh Collection"
                 width="600"
                 height="550"
-                initial={activeSlide === 0 ? false : { opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-                className="relative z-10 h-[92%] max-w-full object-contain object-right drop-shadow-[0_20px_45px_rgba(0,0,0,0.12)]"
+                className="relative z-10 h-[92%] max-w-full object-contain object-right drop-shadow-[0_20px_45px_rgba(0,0,0,0.12)] will-change-transform"
                 fetchPriority={activeSlide === 0 ? "high" : "auto"}
                 loading={activeSlide === 0 ? "eager" : "lazy"}
                 decoding={activeSlide === 0 ? "sync" : "async"}
@@ -103,7 +168,6 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
             {/* Top Tag, Headline & Description */}
             <div className="space-y-3.5 lg:space-y-4">
               <div className="flex items-center space-x-2 text-[#c5a880]">
-                <span className="text-xs">✦</span>
                 <span className="text-xs uppercase tracking-[0.25em] font-extrabold text-[#c5a880]">
                   Spring / Summer 2026 Collection
                 </span>
@@ -118,9 +182,7 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
 
               {/* Gold filigree divider */}
               <div className="flex items-center space-x-2 text-[#c5a880] pt-0.5">
-                <span className="h-[1px] w-8 bg-[#c5a880]/50" />
-                <span className="text-xs">✦</span>
-                <span className="h-[1px] w-8 bg-[#c5a880]/50" />
+                <span className="h-[1px] w-12 bg-[#c5a880]/50" />
               </div>
 
               <p className="text-xs lg:text-sm text-slate-600 leading-relaxed font-light max-w-sm">
@@ -191,10 +253,10 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
               {sliderConfig.images.map((_, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setActiveSlide(idx)}
+                  onClick={() => goToSlide(idx)}
                   className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                     idx === activeSlide
-                      ? "bg-[#c5a880] w-6 shadow-xs"
+                      ? "bg-[#c5a880] w-7 shadow-xs"
                       : "bg-white/90 hover:bg-white w-2 shadow-xs border border-slate-300"
                   }`}
                   aria-label={`Go to slide ${idx + 1}`}
@@ -213,20 +275,25 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
         <div className="md:hidden w-full px-3 sm:px-4 py-3 bg-white">
         <div className="relative rounded-[24px] overflow-hidden bg-[#FBF9F5] border border-[#c5a880]/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
           {/* Image Showcase Area - Image FITS completely with zero cropping */}
-          <div className="relative h-[340px] xs:h-[380px] w-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#F7F4EC] via-[#F3EFE4] to-[#E9E2D2]">
+          <div
+            className="relative h-[340px] xs:h-[380px] w-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#F7F4EC] via-[#F3EFE4] to-[#E9E2D2] touch-pan-y"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             {/* Main Fitted Model Image */}
-            <AnimatePresence mode="wait" initial={false}>
+            <AnimatePresence mode="wait" custom={direction} initial={false}>
               <motion.img
                 key={activeSlide}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
                 src={optimizeCloudinaryUrl(sliderConfig.images[activeSlide], 500)}
                 alt="Pariwesh Collection Mobile"
                 width="380"
                 height="380"
-                initial={activeSlide === 0 ? false : { opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="relative z-10 max-h-full max-w-full object-contain drop-shadow-md"
+                className="relative z-10 max-h-full max-w-full object-contain drop-shadow-md will-change-transform"
                 fetchPriority={activeSlide === 0 ? "high" : "auto"}
                 loading={activeSlide === 0 ? "eager" : "lazy"}
                 decoding={activeSlide === 0 ? "sync" : "async"}
@@ -239,10 +306,10 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
                 {sliderConfig.images.map((_, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setActiveSlide(idx)}
+                    onClick={() => goToSlide(idx)}
                     className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                       idx === activeSlide
-                        ? "bg-[#8a1c14] w-5 shadow-xs"
+                        ? "bg-[#8a1c14] w-6 shadow-xs"
                         : "bg-white/80 w-1.5 shadow-xs"
                     }`}
                     aria-label={`Go to slide ${idx + 1}`}
@@ -255,7 +322,7 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
           {/* Text & CTA Card Area below image */}
           <div className="p-4 sm:p-5 bg-white text-center space-y-2 border-t border-[#c5a880]/20">
             <span className="text-[9px] uppercase tracking-[0.22em] text-[#8a1c14] font-extrabold block">
-              ✦ Spring / Summer 2026 Collection
+              Spring / Summer 2026 Collection
             </span>
 
             <h1 className="text-2xl xs:text-3xl font-serif font-normal tracking-tight leading-tight text-slate-900">
@@ -267,9 +334,7 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
 
             {/* Filigree ornament */}
             <div className="flex items-center justify-center space-x-2 text-[#c5a880] py-0.5">
-              <span className="h-[1px] w-8 bg-[#c5a880]/50" />
-              <span className="text-[10px]">✦</span>
-              <span className="h-[1px] w-8 bg-[#c5a880]/50" />
+              <span className="h-[1px] w-12 bg-[#c5a880]/50" />
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed font-light max-w-xs mx-auto">
