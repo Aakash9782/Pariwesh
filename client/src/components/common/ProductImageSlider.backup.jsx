@@ -7,7 +7,6 @@ const ProductImageSlider = ({
   autoPlay = false,
   intervalMs = 5000,
   priority = false,
-  showDots = false,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [maxSeenIndex, setMaxSeenIndex] = useState(0);
@@ -167,25 +166,23 @@ const ProductImageSlider = ({
             </svg>
           </button>
 
-          {/* Image indicator dots (only if explicitly enabled) */}
-          {showDots && (
-            <div className="absolute bottom-2.5 md:bottom-2.5 md:group-hover:bottom-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md opacity-85 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 pointer-events-auto shadow-sm">
-              {images.map((_, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={(e) => handleDotClick(e, idx)}
-                  onMouseEnter={(e) => handleDotClick(e, idx)}
-                  aria-label={`Go to image ${idx + 1}`}
-                  className={`transition-all duration-300 rounded-full cursor-pointer ${
-                    idx === currentIndex
-                      ? "w-4 h-1.5 bg-[#c5a880] shadow-xs"
-                      : "w-1.5 h-1.5 bg-white/60 hover:bg-white"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
+          {/* Image indicator dots */}
+          <div className="absolute bottom-2.5 md:bottom-2.5 md:group-hover:bottom-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md opacity-85 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 pointer-events-auto shadow-sm">
+            {images.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={(e) => handleDotClick(e, idx)}
+                onMouseEnter={(e) => handleDotClick(e, idx)}
+                aria-label={`Go to image ${idx + 1}`}
+                className={`transition-all duration-300 rounded-full cursor-pointer ${
+                  idx === currentIndex
+                    ? "w-4 h-1.5 bg-[#c5a880] shadow-xs"
+                    : "w-1.5 h-1.5 bg-white/60 hover:bg-white"
+                }`}
+              />
+            ))}
+          </div>
         </>
       )}
     </div>

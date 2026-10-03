@@ -29,6 +29,7 @@ const ProductTable = ({
   handleDuplicate,
   handleDelete,
   executeBulkPublish,
+  executeBulkTag,
   executeBulkDelete,
   initialFormState,
   setForm,
@@ -79,10 +80,14 @@ const ProductTable = ({
 
     // Status / tags checks
     let matchStatus = true;
-    if (statusFilter === "trending")
-      matchStatus = p.tag === "Trending" || p.trending;
+    if (statusFilter === "bestseller")
+      matchStatus = Boolean(p.bestSeller) || p.tag === "Best Seller" || /best/i.test(p.tag || "");
+    else if (statusFilter === "newarrival")
+      matchStatus = Boolean(p.newArrival) || p.tag === "New Arrival" || /new/i.test(p.tag || "");
+    else if (statusFilter === "trending")
+      matchStatus = Boolean(p.trending) || p.tag === "Trending" || /trend/i.test(p.tag || "");
     else if (statusFilter === "featured")
-      matchStatus = p.tag === "Best Seller" || p.featured;
+      matchStatus = Boolean(p.featured) || p.tag === "Featured" || /feature/i.test(p.tag || "");
 
     return matchSearch && matchCat && matchPrice && matchStock && matchStatus;
   });
@@ -218,31 +223,59 @@ const ProductTable = ({
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
-          <option value="all">All Visibility</option>
-          <option value="featured">Best Seller</option>
-          <option value="trending">Trending</option>
+          <option value="all">All Visibility / Badges</option>
+          <option value="bestseller">⭐ Best Sellers</option>
+          <option value="newarrival">✨ New Arrivals</option>
+          <option value="trending">🔥 Trending</option>
+          <option value="featured">👑 Featured</option>
         </Select>
       </div>
 
       {/* Bulk actions bar if selected */}
       {selectedIds.length > 0 && (
-        <div className="bg-amber-50/70 border border-[#c5a880]/20 p-4 rounded-lg flex items-center justify-between animate-fade-in shadow-xxs">
-          <span className="text-xs text-slate-600 font-semibold font-sans">
+        <div className="bg-amber-50/70 border border-[#c5a880]/20 p-4 rounded-lg flex flex-wrap items-center justify-between gap-3 animate-fade-in shadow-xxs">
+          <span className="text-xs text-slate-700 font-semibold font-sans">
             Selected{" "}
-            <strong className="text-[#c5a880] font-bold">
+            <strong className="text-[#8a1c14] font-bold">
               {selectedIds.length}
             </strong>{" "}
-            items in database index
+            items in database index:
           </span>
-          <div className="flex space-x-3">
-            <Button variant="outline" size="xs" onClick={executeBulkPublish}>
-              Tag as Featured
-            </Button>
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={executeBulkDelete}
-              className="bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-bold tracking-wider uppercase py-1.5 px-3.5 rounded hover:bg-rose-100/50 transition shadow-xxs"
+              type="button"
+              onClick={() => executeBulkTag ? executeBulkTag("bestSeller") : executeBulkPublish()}
+              className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-[10px] font-bold py-1.5 px-3 rounded-lg transition shadow-2xs cursor-pointer"
             >
-              Bulk Delete
+              ⭐ + Best Seller
+            </button>
+            <button
+              type="button"
+              onClick={() => executeBulkTag && executeBulkTag("newArrival")}
+              className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold py-1.5 px-3 rounded-lg transition shadow-2xs cursor-pointer"
+            >
+              ✨ + New Arrival
+            </button>
+            <button
+              type="button"
+              onClick={() => executeBulkTag && executeBulkTag("featured")}
+              className="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-[10px] font-bold py-1.5 px-3 rounded-lg transition shadow-2xs cursor-pointer"
+            >
+              👑 + Featured
+            </button>
+            <button
+              type="button"
+              onClick={() => executeBulkTag && executeBulkTag("clear")}
+              className="bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 text-[10px] font-bold py-1.5 px-3 rounded-lg transition shadow-2xs cursor-pointer"
+            >
+              Clear Badges
+            </button>
+            <button
+              type="button"
+              onClick={executeBulkDelete}
+              className="bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3.5 rounded-lg hover:bg-rose-100 transition shadow-2xs cursor-pointer"
+            >
+              Delete
             </button>
           </div>
         </div>
@@ -373,11 +406,33 @@ const ProductTable = ({
                           )}
                         </td>
                         <td className="py-4 px-5 space-y-1">
-                          <p className="font-semibold text-slate-800 text-sm tracking-tight">
-                            {p.name}
-                          </p>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="font-semibold text-slate-800 text-sm tracking-tight">
+                              {p.name}
+                            </p>
+                            {(Boolean(p.bestSeller) || /best/i.test(p.tag || "")) && (
+                              <span className="bg-red-50 text-red-700 border border-red-200 text-[9px] font-bold px-1.5 py-0.5 rounded leading-none">
+                                ⭐ Best Seller
+                              </span>
+                            )}
+                            {(Boolean(p.newArrival) || /new/i.test(p.tag || "")) && (
+                              <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold px-1.5 py-0.5 rounded leading-none">
+                                ✨ New Arrival
+                              </span>
+                            )}
+                            {(Boolean(p.trending) || /trend/i.test(p.tag || "")) && (
+                              <span className="bg-orange-50 text-orange-700 border border-orange-200 text-[9px] font-bold px-1.5 py-0.5 rounded leading-none">
+                                🔥 Trending
+                              </span>
+                            )}
+                            {(Boolean(p.featured) || /feature/i.test(p.tag || "")) && (
+                              <span className="bg-purple-50 text-purple-700 border border-purple-200 text-[9px] font-bold px-1.5 py-0.5 rounded leading-none">
+                                👑 Featured
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[10px] text-slate-400 font-mono tracking-wider">
-                            {p.sku}
+                            {p.sku} {p.tag && !["Regular", "Best Seller", "New Arrival", "Trending", "Featured"].includes(p.tag) && `• ${p.tag}`}
                           </p>
                         </td>
                         <td className="py-4 px-5 font-semibold text-slate-500 capitalize font-mono text-[10px]">
@@ -491,9 +546,28 @@ const ProductTable = ({
                       {/* Info */}
                       <div className="min-w-0 flex-grow space-y-1">
                         <div className="flex items-start justify-between gap-1">
-                          <p className="font-bold text-slate-900 text-xs tracking-tight leading-snug line-clamp-2">
-                            {p.name}
-                          </p>
+                          <div className="min-w-0">
+                            <p className="font-bold text-slate-900 text-xs tracking-tight leading-snug line-clamp-2">
+                              {p.name}
+                            </p>
+                            <div className="flex items-center gap-1 flex-wrap mt-0.5">
+                              {(Boolean(p.bestSeller) || /best/i.test(p.tag || "")) && (
+                                <span className="bg-red-50 text-red-700 border border-red-200 text-[8px] font-bold px-1 py-0.2 rounded">
+                                  ⭐ Best Seller
+                                </span>
+                              )}
+                              {(Boolean(p.newArrival) || /new/i.test(p.tag || "")) && (
+                                <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[8px] font-bold px-1 py-0.2 rounded">
+                                  ✨ New
+                                </span>
+                              )}
+                              {(Boolean(p.trending) || /trend/i.test(p.tag || "")) && (
+                                <span className="bg-orange-50 text-orange-700 border border-orange-200 text-[8px] font-bold px-1 py-0.2 rounded">
+                                  🔥 Trending
+                                </span>
+                              )}
+                            </div>
+                          </div>
                           <span
                             className={`px-1.5 py-0.5 border rounded text-[8.5px] font-bold uppercase shrink-0 ${
                               p.status === "draft"

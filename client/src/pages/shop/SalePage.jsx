@@ -369,6 +369,9 @@ const SalePage = () => {
               {saleSettings.saleDiscountText}
             </p>
           )}
+          <p className="text-[9.5px] tracking-wider text-white/60 font-medium pt-1">
+            *Terms &amp; Conditions Applied • Valid on select styles
+          </p>
         </div>
 
         {/* Trust Badges Strip on Bottom of Banner */}
@@ -467,7 +470,7 @@ const SalePage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4 sm:gap-y-8">
-            {displayedProducts.map((product) => {
+            {displayedProducts.map((product, pIdx) => {
               const mrp = Number(product.mrp) || 0;
               const price = Number(product.price || product.sellingPrice) || 0;
               const savingRupees = mrp > price ? mrp - price : 0;
@@ -484,14 +487,20 @@ const SalePage = () => {
                   key={product._id}
                   className="group relative bg-white/90 hover:bg-white backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/80 hover:border-[#c5a880]/50 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_rgba(197,168,128,0.2)] hover:-translate-y-1 flex flex-col h-full transition-all duration-300"
                 >
-                  {/* Saving Rupee Highlight Badge */}
-                  {savingRupees > 0 && (
+                  {/* Luxury Product Badge (Percentage OFF or Tag) */}
+                  {product.tag && !["regular", "normal", "standard"].includes(product.tag.toLowerCase()) ? (
                     <div className="absolute top-3 left-3 z-20 pointer-events-none">
                       <span className="inline-flex items-center px-2 py-0.5 rounded bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider shadow-md border border-amber-300/30">
-                        SAVE ₹{savingRupees.toLocaleString("en-IN")}
+                        {product.tag}
                       </span>
                     </div>
-                  )}
+                  ) : discountPercent > 0 ? (
+                    <div className="absolute top-3 left-3 z-20 pointer-events-none">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider shadow-md border border-amber-300/30">
+                        {discountPercent}% OFF
+                      </span>
+                    </div>
+                  ) : null}
 
                   {/* Wishlist Button */}
                   <button
@@ -525,6 +534,7 @@ const SalePage = () => {
                         images={product.images}
                         alt={product.name}
                         autoPlay={false}
+                        priority={pIdx < 2}
                       />
                     </div>
 

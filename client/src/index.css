@@ -183,7 +183,7 @@ textarea {
 
 @layer base {
   body {
-    @apply bg-bgLight text-textPrimary font-sans antialiased overflow-x-hidden transition-colors duration-300;
+    @apply bg-bgLight text-textPrimary font-sans antialiased overflow-x-clip transition-colors duration-300;
   }
 
   h1,
@@ -544,5 +544,20 @@ textarea {
   );
   animation: luxuryShimmer 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   content: '';
+}
+
+@keyframes scrollProgress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.scroll-progress-bar {
+  transform-origin: 0% 50%;
+  animation: scrollProgress auto linear;
+  animation-timeline: scroll();
 }
 

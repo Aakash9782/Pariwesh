@@ -607,7 +607,6 @@ const Cart = () => {
 
       const payload = {
         items: orderItemsPayload,
-        shippingAddress: address,
         pricing: {
           subtotal,
           delivery,

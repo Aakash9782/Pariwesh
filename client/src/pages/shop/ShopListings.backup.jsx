@@ -9,9 +9,7 @@ import {
   RiHeartLine,
   RiHeartFill,
   RiArrowUpDownLine,
-  RiCheckLine,
 } from "react-icons/ri";
-import { motion, AnimatePresence } from "framer-motion";
 import Button from "../../components/common/Button.jsx";
 import ProductImageSlider from "../../components/common/ProductImageSlider.jsx";
 import { ProductSkeleton } from "../../components/common/Skeleton.jsx";
@@ -70,8 +68,6 @@ const ShopListings = () => {
     searchParams.get("search") || "",
   );
   const [selectedCardSizes, setSelectedCardSizes] = useState({});
-  const [quickSizeProduct, setQuickSizeProduct] = useState(null);
-  const [addedSuccessId, setAddedSuccessId] = useState(null);
 
   const [products, setProducts] = useState([]);
   const [isApiLoading, setIsApiLoading] = useState(true);
@@ -277,8 +273,6 @@ const ShopListings = () => {
       }),
     );
     syncCartNow();
-    setAddedSuccessId(product._id);
-    setTimeout(() => setAddedSuccessId(null), 1800);
     showAlert(
       `"${product.name}" (Size: ${size}) has been added to your shopping bag!`,
       "Added to Bag",
@@ -607,182 +601,266 @@ const ShopListings = () => {
           ) : filteredProducts.length > 0 ? (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-                {paginatedProducts.map((product, pIdx) => {
-                  let badgeText = "";
-                  if (
-                    product.tag &&
-                    !["regular", "normal", "standard"].includes(
-                      product.tag.trim().toLowerCase(),
-                    )
-                  ) {
-                    badgeText = product.tag;
-                  } else if (product.bestSeller) {
-                    badgeText = "Best Seller";
-                  } else if (product.newArrival) {
-                    badgeText = "New Arrival";
-                  } else if (product.trending) {
-                    badgeText = "Trending";
-                  }
+                {paginatedProducts.map((product, pIdx) => (
+                  <div
+                    key={product._id}
+                    className="group relative bg-white/80 hover:bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/80 hover:border-[#c5a880]/40 shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_12px_32px_rgba(197,168,128,0.18),0_4px_12px_rgba(0,0,0,0.03)] hover:-translate-y-1 flex flex-col h-full transition-all duration-400"
+                  >
+                    {/* Product Badge - Supports custom Tag, Best Seller, New Arrival, and Trending */}
+                    {(() => {
+                      let badgeText = "";
+                      if (
+                        product.tag &&
+                        !["regular", "normal", "standard"].includes(
+                          product.tag.trim().toLowerCase(),
+                        )
+                      ) {
+                        badgeText = product.tag;
+                      } else if (product.bestSeller) {
+                        badgeText = "Best Seller";
+                      } else if (product.newArrival) {
+                        badgeText = "New Arrival";
+                      } else if (product.trending) {
+                        badgeText = "Trending";
+                      }
 
-                  return (
-                    <div
-                      key={product._id}
-                      className="group relative bg-white rounded-2xl overflow-hidden border border-slate-200/75 hover:border-[#c5a880]/60 shadow-[0_3px_14px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_28px_rgba(138,28,20,0.12)] hover:-translate-y-1 flex flex-col h-full transition-all duration-300"
-                    >
-                      {/* Media Container: Full Bleed (Edge-to-edge, zero margin, no awkward arch cut) */}
-                      <div className="aspect-[3/4] sm:aspect-[4/5] overflow-hidden relative block bg-[#FBF9F5]">
-                        {/* Wishlist Button */}
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            trackAddToWishlist(product);
-                            dispatch(toggleWishlistProduct(product));
-                            syncWishlistNow();
-                          }}
-                          className={`absolute top-2.5 right-2.5 z-20 w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-200 shadow-sm border border-white/60 cursor-pointer ${
-                            wishlistItems.some((p) => p._id === product._id)
-                              ? "bg-white text-[#8a1c14] scale-105 ring-2 ring-[#8a1c14]/30"
-                              : "bg-white/90 hover:bg-white text-slate-700 hover:text-[#8a1c14] active:scale-95"
-                          }`}
-                          aria-label="Wishlist"
-                        >
-                          {wishlistItems.some((p) => p._id === product._id) ? (
-                            <RiHeartFill size={14} />
-                          ) : (
-                            <RiHeartLine size={14} />
-                          )}
-                        </button>
+                      if (!badgeText) return null;
 
-                        {/* Image / Video Link */}
-                        <Link
-                          to={`/product/${product.slug}`}
-                          className="w-full h-full block"
-                        >
-                          {product.video ? (
-                            <video
-                              src={product.video}
-                              className="w-full h-full object-cover group-hover:scale-105 transform-gpu transition-transform duration-700 ease-out origin-top"
-                              muted
-                              loop
-                              autoPlay
-                              playsInline
-                            />
-                          ) : (
-                            <div className="w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out">
-                              <ProductImageSlider
-                                images={product.images}
-                                alt={product.name}
-                                priority={pIdx < 2}
-                              />
-                            </div>
-                          )}
-                        </Link>
-
-                        {/* Floating Rating Badge */}
-                        {Number(product.reviewsCount) > 0 && (
-                          <div className="absolute bottom-2.5 left-2.5 z-10 bg-white/95 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-800 shadow-xs border border-white/80 flex items-center space-x-1 pointer-events-none">
-                            <span className="text-amber-500 text-[10.5px]">★</span>
-                            <span>{Number(product.rating || 4.8).toFixed(1)}</span>
-                            <span className="text-slate-400 font-normal">({product.reviewsCount})</span>
-                          </div>
-                        )}
-
-                        {/* Floating Luxury Quick-Add Bag Button (Myntra/Suitswala Style) */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (product.sizes && product.sizes.length > 1) {
-                              setQuickSizeProduct(product);
-                            } else {
-                              handleQuickAddToCart(product, product.sizes?.[0] || "M");
-                            }
-                          }}
-                          className={`absolute bottom-2.5 right-2.5 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 shadow-md cursor-pointer active:scale-90 ${
-                            addedSuccessId === product._id
-                              ? "bg-emerald-600 text-white"
-                              : "bg-white/95 hover:bg-[#8a1c14] text-slate-800 hover:text-white border border-white hover:border-[#8a1c14]"
-                          }`}
-                          title="Quick Add to Bag"
-                          aria-label="Add to bag"
-                        >
-                          {addedSuccessId === product._id ? (
-                            <RiCheckLine size={16} className="animate-bounce" />
-                          ) : (
-                            <RiShoppingBagLine size={15} />
-                          )}
-                        </button>
-                      </div>
-
-                      {/* Info Area - Clean & Balanced Typography */}
-                      <div className="p-2.5 sm:p-3 flex flex-col flex-grow justify-between space-y-1.5 text-left bg-white">
-                        <div className="space-y-1">
-                          {/* Category & Clean Fabric Tag + Badge */}
-                          <div className="flex items-center justify-between gap-1.5 min-h-[18px]">
-                            <div className="flex items-center space-x-1.5 min-w-0">
-                              {badgeText && (
-                                <span className="text-[7.5px] sm:text-[8px] bg-[#8a1c14] text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0 leading-none">
-                                  {badgeText
-                                    .replace(/Everyday Essential/i, "Essential")
-                                    .replace(/New Arrival/i, "New")
-                                    .replace(/Best Seller/i, "Bestseller")}
-                                </span>
-                              )}
-                              <span className="text-[9px] sm:text-[9.5px] text-[#c5a880] uppercase tracking-[0.16em] font-extrabold truncate">
-                                {product.fabric && product.fabric.length <= 18 ? `${product.fabric} • ` : ""}
-                                {(product.category || "Ethnic Wear").replace(/-/g, " ")}
-                              </span>
-                            </div>
-                            {product.colorVariants && product.colorVariants.length > 1 && (
-                              <span className="text-[8.5px] sm:text-[9px] text-slate-400 font-bold uppercase tracking-wider shrink-0">
-                                {product.colorVariants.length} Colors
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Product Title */}
-                          <h3 className="text-xs sm:text-[13px] font-sans font-medium text-slate-900 leading-snug group-hover:text-[#8a1c14] transition-colors duration-200 line-clamp-2 min-h-[2rem]">
-                            <Link to={`/product/${product.slug}`}>
-                              {formatProductTitle(product.name)}
-                            </Link>
-                          </h3>
-
-                          {/* Available Sizes Hint */}
-                          <div className="flex items-center space-x-1 text-[9px] text-slate-400 font-sans pt-0.5">
-                            <span className="font-semibold uppercase text-[8px] tracking-wider text-slate-400">Sizes:</span>
-                            <span className="font-medium text-slate-600 truncate">
-                              {product.sizes && product.sizes.length > 0
-                                ? product.sizes.join(", ")
-                                : "M, L, XL, XXL"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Pricing Row - 100% UNTOUCHED */}
-                        <div className="flex items-baseline space-x-2 pt-1 font-sans">
-                          <span className="text-sm sm:text-base font-extrabold text-slate-900 font-sans tracking-tight">
-                            {formatCurrency(product.price)}
+                      return (
+                        <div className="absolute top-3.5 left-3.5 z-20 pointer-events-none">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-xs bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.16em] shadow-md border border-amber-300/30">
+                            {badgeText}
                           </span>
-                          {product.mrp > product.price && (
-                            <>
-                              <span className="text-[11px] text-slate-400 line-through font-normal font-sans">
-                                {formatCurrency(product.mrp)}
-                              </span>
-                              <span className="text-[8.5px] font-extrabold text-[#8a1c14] bg-rose-50 border border-rose-200/70 px-1.5 py-0.2 uppercase tracking-wider font-sans rounded">
-                                {Math.round(
-                                  ((product.mrp - product.price) / product.mrp) * 100,
-                                )}
-                                % OFF
-                              </span>
-                            </>
-                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Wishlist Button */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        trackAddToWishlist(product);
+                        dispatch(toggleWishlistProduct(product));
+                        syncWishlistNow();
+                      }}
+                      className={`absolute top-3.5 right-3.5 z-20 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 shadow-sm border border-white/60 cursor-pointer ${
+                        wishlistItems.some((p) => p._id === product._id)
+                          ? "bg-white text-[#8a1c14] scale-105 ring-2 ring-[#8a1c14]/30"
+                          : "bg-white/85 hover:bg-white text-slate-700 hover:text-[#8a1c14] hover:scale-110 active:scale-95"
+                      }`}
+                      aria-label="Wishlist"
+                    >
+                      {wishlistItems.some((p) => p._id === product._id) ? (
+                        <RiHeartFill size={15} />
+                      ) : (
+                        <RiHeartLine size={15} />
+                      )}
+                    </button>
+
+                    {/* Image / Video Container with Mehrab Arch */}
+                    <Link
+                      to={`/product/${product.slug}`}
+                      className="aspect-[3/4] sm:aspect-[4/5] overflow-hidden relative block bg-[#FBF9F5] rounded-t-lg transition-transform duration-500"
+                      style={{ clipPath: "url(#mehrab-clip)" }}
+                    >
+                      {product.video ? (
+                        <video
+                          src={product.video}
+                          className="w-full h-full object-cover group-hover:scale-105 transform-gpu transition-transform duration-700 ease-out origin-top"
+                          muted
+                          loop
+                          autoPlay
+                          playsInline
+                        />
+                      ) : (
+                        <div className="w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out">
+                          <ProductImageSlider
+                            images={product.images}
+                            alt={product.name}
+                            priority={pIdx < 2}
+                          />
+                        </div>
+                      )}
+
+                      {/* Royal Golden Mehrab Arch Filigree Stroke */}
+                      <svg
+                        viewBox="0 0 100 125"
+                        className="absolute inset-0 w-full h-full pointer-events-none fill-none stroke-accent-gold stroke-[1.8px] opacity-85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.15)]"
+                        preserveAspectRatio="none"
+                      >
+                        <path d="M 0,125 L 0,7.5 C 0,6 8,5.5 12,5.1 C 12,3.8 22,3.2 28,2.5 C 28,1.7 38,1.2 44,0.6 C 47,0.2 49,0 50,0 C 51,0 53,0.2 56,0.6 C 62,1.2 72,1.7 72,2.5 C 78,3.2 88,3.8 88,5.1 C 92,5.5 100,6 100,7.5 L 100,125" />
+                      </svg>
+
+                      {/* Floating Rating Badge (Dynamic from verified reviews) */}
+                      {Number(product.reviewsCount) > 0 && (
+                        <div className="absolute bottom-2.5 right-2.5 z-10 bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10.5px] font-bold text-slate-800 shadow-sm border border-white/90 flex items-center space-x-1 pointer-events-none transition-opacity duration-200 group-hover:opacity-0 sm:group-hover:opacity-0">
+                          <span className="text-amber-500 text-[11px]">★</span>
+                          <span>{Number(product.rating || 4.8).toFixed(1)}</span>
+                          <span className="text-slate-400 font-normal">({product.reviewsCount})</span>
+                        </div>
+                      )}
+
+                      {/* Subtle Gradient Shade at Hem */}
+                      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 via-black/10 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                      {/* Quick Buy Slide-Up Frosted Glass Dock (DESKTOP HOVER ONLY) */}
+                      <div className="hidden md:block absolute inset-x-0 bottom-0 z-20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out pointer-events-none group-hover:pointer-events-auto">
+                        <div className="bg-white/95 backdrop-blur-md px-2 py-2.5 border-t border-accent-gold/40 shadow-[0_-4px_20px_rgba(0,0,0,0.12)] flex flex-col items-center space-y-1.5">
+                          <span className="text-[9px] uppercase tracking-[0.2em] font-extrabold text-slate-700 flex items-center justify-center select-none">
+                            <span>Quick Buy Size</span>
+                          </span>
+                          <div className="flex justify-center items-center gap-1.5 w-full px-1">
+                            {(product.sizes && product.sizes.length > 0
+                              ? product.sizes
+                              : ["M", "L", "XL", "XXL"]
+                            ).map((size) => {
+                              const isOutOfStock =
+                                product.sizesStock &&
+                                product.sizesStock[size] !== undefined &&
+                                product.sizesStock[size] <= 0;
+                              return (
+                                <button
+                                  key={size}
+                                  disabled={isOutOfStock}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleQuickAddToCart(product, size);
+                                  }}
+                                  className={`flex-1 h-7 rounded text-[10px] font-bold tracking-wider uppercase transition-all duration-200 cursor-pointer flex items-center justify-center font-sans ${
+                                    isOutOfStock
+                                      ? "bg-slate-100 text-slate-300 border border-slate-200 cursor-not-allowed line-through"
+                                      : "bg-white text-slate-800 border border-slate-200 hover:border-[#8a1c14] hover:bg-[#8a1c14] hover:text-white shadow-xs hover:shadow-sm active:scale-95"
+                                  }`}
+                                  title={
+                                    isOutOfStock
+                                      ? `${size} (Out of Stock)`
+                                      : `Add Size ${size} to Bag`
+                                  }
+                                >
+                                  {size}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
+                    </Link>
+
+                    {/* Info area */}
+                    <div className="pt-3 pb-1 px-1 flex flex-col flex-grow justify-between space-y-2 text-left">
+                      <div className="space-y-1">
+                        {/* Category & Fabric Tag */}
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-[9.5px] text-[#c5a880] uppercase tracking-[0.18em] font-extrabold block truncate">
+                            {product.fabric ? `${product.fabric} • ` : ""}{product.category || "Ethnic Wear"}
+                          </span>
+                          {product.colorVariants && product.colorVariants.length > 1 && (
+                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider shrink-0">
+                              {product.colorVariants.length} Colors
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Product Title (Clean & Sanitized) */}
+                        <h3 className="text-xs sm:text-[13px] font-sans font-medium text-slate-900 leading-snug group-hover:text-[#8a1c14] transition-colors duration-200 line-clamp-2 h-9">
+                          <Link to={`/product/${product.slug}`}>
+                            {formatProductTitle(product.name)}
+                          </Link>
+                        </h3>
+
+                        {/* Available Sizes Interactive Selector (Clean Minimal Luxury Chips) */}
+                        <div className="flex items-center justify-between pt-0.5 font-sans text-[10px]">
+                          <span className="text-slate-400 font-semibold uppercase text-[8.5px] tracking-wider">Sizes:</span>
+                          <div className="flex items-center space-x-1 overflow-x-auto scrollbar-none py-0.5">
+                            {(product.sizes && product.sizes.length > 0
+                              ? product.sizes
+                              : ["M", "L", "XL", "XXL"]
+                            ).map((sz) => {
+                              const isOut =
+                                product.sizesStock &&
+                                product.sizesStock[sz] !== undefined &&
+                                product.sizesStock[sz] <= 0;
+                              const activeSize =
+                                selectedCardSizes[product._id] ||
+                                (product.sizes && product.sizes.length > 0
+                                  ? product.sizes[0]
+                                  : "M");
+                              const isSelected = activeSize === sz;
+
+                              return (
+                                <button
+                                  key={sz}
+                                  type="button"
+                                  disabled={isOut}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setSelectedCardSizes((prev) => ({
+                                      ...prev,
+                                      [product._id]: sz,
+                                    }));
+                                  }}
+                                  className={`min-w-[22px] h-[20px] px-1 rounded text-[8.5px] font-bold transition-all cursor-pointer flex items-center justify-center ${
+                                    isOut
+                                      ? "text-slate-300 border-slate-200 line-through bg-slate-50 cursor-not-allowed"
+                                      : isSelected
+                                      ? "bg-[#8a1c14] text-white font-extrabold shadow-2xs scale-105"
+                                      : "text-slate-600 bg-slate-100 hover:bg-slate-200"
+                                  }`}
+                                  title={isOut ? `${sz} (Out of Stock)` : `Select Size ${sz}`}
+                                >
+                                  {sz}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-baseline space-x-2 pt-0.5 font-sans">
+                        <span className="text-sm sm:text-base font-extrabold text-slate-900 font-sans tracking-tight">
+                          {formatCurrency(product.price)}
+                        </span>
+                        {product.mrp > product.price && (
+                          <>
+                            <span className="text-[11px] text-slate-400 line-through font-normal font-sans">
+                              {formatCurrency(product.mrp)}
+                            </span>
+                            <span className="text-[8.5px] font-extrabold text-[#8a1c14] bg-rose-50 border border-rose-200/70 px-1.5 py-0.2 uppercase tracking-wider font-sans rounded">
+                              {Math.round(
+                                ((product.mrp - product.price) / product.mrp) * 100,
+                              )}
+                              % OFF
+                            </span>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Refined Luxury Action Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const chosenSize =
+                            selectedCardSizes[product._id] ||
+                            (product.sizes && product.sizes.length > 0
+                              ? product.sizes[0]
+                              : "M");
+                          handleQuickAddToCart(product, chosenSize);
+                        }}
+                        className="w-full bg-[#8a1c14] hover:bg-[#70150e] text-white font-bold text-[10px] sm:text-[10.5px] uppercase tracking-[0.14em] py-2 rounded-lg shadow-xs hover:shadow-sm active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center space-x-1.5 mt-1"
+                      >
+                        <RiShoppingBagLine size={13} />
+                        <span>
+                          ADD TO BAG {selectedCardSizes[product._id] ? `(${selectedCardSizes[product._id]})` : ""}
+                        </span>
+                      </button>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
 
               {/* Luxury Pagination Controls */}
@@ -1025,109 +1103,6 @@ const ShopListings = () => {
           </div>
         </div>
       )}
-
-      {/* QUICK SIZE SELECTOR BOTTOM SHEET / DRAWER (Myntra / Zara Style Mobile UX) */}
-      <AnimatePresence>
-        {quickSizeProduct && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setQuickSizeProduct(null)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-xs cursor-pointer"
-            />
-
-            {/* Bottom Sheet Modal */}
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 26, stiffness: 280 }}
-              className="relative z-10 w-full max-w-md bg-white rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto"
-            >
-              {/* Header: Product Preview & Dismiss */}
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center space-x-3 min-w-0">
-                  <img
-                    src={optimizeCloudinaryUrl(
-                      quickSizeProduct.images?.[0] || quickSizeProduct.image,
-                      120,
-                    )}
-                    alt={quickSizeProduct.name}
-                    className="w-12 h-14 object-cover rounded-lg border border-slate-200 shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <h4 className="text-xs font-semibold text-slate-900 truncate">
-                      {formatProductTitle(quickSizeProduct.name)}
-                    </h4>
-                    <div className="flex items-baseline space-x-2 mt-0.5">
-                      <span className="text-sm font-extrabold text-[#8a1c14]">
-                        {formatCurrency(quickSizeProduct.price)}
-                      </span>
-                      {quickSizeProduct.mrp > quickSizeProduct.price && (
-                        <span className="text-[11px] text-slate-400 line-through">
-                          {formatCurrency(quickSizeProduct.mrp)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setQuickSizeProduct(null)}
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center cursor-pointer transition-colors text-xs font-bold"
-                  aria-label="Close"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Size Buttons */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
-                    Select Your Size
-                  </span>
-                  <span className="text-[10px] text-slate-400">Tap to add directly</span>
-                </div>
-
-                <div className="grid grid-cols-4 gap-2.5 pt-1 pb-2">
-                  {(quickSizeProduct.sizes && quickSizeProduct.sizes.length > 0
-                    ? quickSizeProduct.sizes
-                    : ["M", "L", "XL", "XXL"]
-                  ).map((sz) => {
-                    const isOut =
-                      quickSizeProduct.sizesStock &&
-                      quickSizeProduct.sizesStock[sz] !== undefined &&
-                      quickSizeProduct.sizesStock[sz] <= 0;
-
-                    return (
-                      <button
-                        key={sz}
-                        type="button"
-                        disabled={isOut}
-                        onClick={() => {
-                          handleQuickAddToCart(quickSizeProduct, sz);
-                          setQuickSizeProduct(null);
-                        }}
-                        className={`h-12 rounded-xl text-xs uppercase transition-all duration-150 flex items-center justify-center cursor-pointer font-bold ${
-                          isOut
-                            ? "bg-slate-100 text-slate-300 border border-slate-200 cursor-not-allowed line-through"
-                            : "bg-[#FAF7F3] hover:bg-[#8a1c14] hover:text-white text-slate-800 border border-slate-200 active:scale-95 shadow-2xs hover:shadow-xs"
-                        }`}
-                      >
-                        {sz}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

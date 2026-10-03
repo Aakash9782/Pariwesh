@@ -18,8 +18,6 @@ import {
   RiGlobeLine,
   RiScalesLine,
   RiCheckLine,
-  RiHandCoinLine,
-  RiCoupon3Line,
 } from "react-icons/ri";
 import Button from "../../components/common/Button.jsx";
 import Skeleton from "../../components/common/Skeleton.jsx";
@@ -65,7 +63,6 @@ const ProductDetails = () => {
   const [activeOffers, setActiveOffers] = useState([]);
   const [recommendedList, setRecommendedList] = useState([]);
   const [copiedCode, setCopiedCode] = useState("");
-  const [showAllOffers, setShowAllOffers] = useState(false);
   const [showSizeChart, setShowSizeChart] = useState(false);
   const [pincodeInput, setPincodeInput] = useState("");
   const [pincodeChecked, setPincodeChecked] = useState(false);
@@ -536,7 +533,7 @@ const ProductDetails = () => {
         {/* LEFT COLUMN: GALLERIES CONTAINER - Sticky on Desktop */}
         <div className="lg:col-span-7 space-y-4 lg:sticky lg:top-24 self-start">
           <div
-            className="aspect-[3/4] bg-slate-50 overflow-hidden border border-[#c5a880]/30 rounded-2xl relative shadow-md cursor-grab active:cursor-grabbing touch-pan-y"
+            className="aspect-[3/4] bg-slate-50 overflow-hidden border border-slate-100 rounded-xl relative shadow-sm cursor-grab active:cursor-grabbing touch-pan-y"
             onPointerDown={handlePointerDown}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerLeave}
@@ -567,24 +564,10 @@ const ProductDetails = () => {
                 />
               </AnimatePresence>
             )}
-
-            {/* Photo Counter Pill on Image */}
-            {product.images && product.images.length > 1 && !activeVideo && (
-              <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-[10.5px] font-sans font-bold px-3 py-1 rounded-full shadow-md tracking-widest pointer-events-none border border-white/20">
-                {product.images.indexOf(activeImage) + 1} / {product.images.length}
-              </div>
-            )}
-
-            {/* Artisanal Heritage Tag */}
-            <div className="absolute top-3.5 left-3.5 pointer-events-none">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-amber-200 text-[9px] font-extrabold uppercase tracking-[0.2em] shadow-md border border-[#c5a880]/40">
-                Authentic Atelier
-              </span>
-            </div>
           </div>
 
-          {/* Thumbnails flex list */}
-          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+          {/* Thumbnails grid */}
+          <div className="grid grid-cols-5 gap-3">
             {/* Video Thumbnail Button if present */}
             {(product.video || (product.videos && product.videos.length > 0)) && (
               <button
@@ -592,16 +575,16 @@ const ProductDetails = () => {
                 onClick={() => {
                   setActiveVideo(product.video || product.videos[0]);
                 }}
-                className={`w-16 sm:w-20 aspect-[3/4] shrink-0 border rounded-xl overflow-hidden transition-all duration-200 relative bg-slate-950 flex flex-col items-center justify-center cursor-pointer ${
+                className={`aspect-[3/4] border rounded-lg overflow-hidden transition-all duration-300 relative bg-slate-950 flex flex-col items-center justify-center cursor-pointer ${
                   activeVideo
-                    ? "border-[#c5a880] ring-2 ring-[#c5a880]/60 scale-[1.03] shadow-md"
+                    ? "border-[#c5a880] ring-2 ring-[#c5a880]/40 scale-[1.02]"
                     : "border-slate-200 hover:border-[#c5a880]/60 opacity-85 hover:opacity-100"
                 }`}
               >
-                <div className="w-7 h-7 rounded-full bg-white/95 flex items-center justify-center text-[#8a1c14] shadow-md mb-1">
-                  <span className="text-[10px] ml-0.5">▶</span>
+                <div className="w-8 h-8 rounded-full bg-white/95 flex items-center justify-center text-[#8a1c14] shadow-md mb-1">
+                  <span className="text-[11px] ml-0.5">▶</span>
                 </div>
-                <span className="text-[8.5px] font-bold text-white uppercase tracking-wider">
+                <span className="text-[9px] font-bold text-white uppercase tracking-wider">
                   Reel
                 </span>
               </button>
@@ -611,7 +594,6 @@ const ProductDetails = () => {
             {product.images &&
               product.images.map((img, idx) => {
                 const currentIdx = product.images.indexOf(activeImage);
-                const isSelected = !activeVideo && activeImage === img;
                 return (
                   <button
                     key={idx}
@@ -622,10 +604,10 @@ const ProductDetails = () => {
                         setActiveImage(img);
                       }
                     }}
-                    className={`w-16 sm:w-20 aspect-[3/4] shrink-0 border rounded-xl overflow-hidden transition-all duration-200 cursor-pointer ${
-                      isSelected
-                        ? "border-[#8a1c14] ring-2 ring-[#8a1c14]/40 scale-[1.03] shadow-sm"
-                        : "border-slate-200 hover:border-[#c5a880]/60 opacity-75 hover:opacity-100"
+                    className={`aspect-[3/4] border rounded-lg overflow-hidden transition-all duration-300 cursor-pointer ${
+                      !activeVideo && activeImage === img
+                        ? "border-accent-gold ring-2 ring-accent-gold/25 scale-[1.04] shadow-xs"
+                        : "border-slate-200 hover:border-slate-400 opacity-80 hover:opacity-100"
                     }`}
                   >
                     <img
@@ -645,15 +627,8 @@ const ProductDetails = () => {
         <div className="lg:col-span-5 space-y-6 bg-white p-6 md:p-8 border border-[#c5a880]/30 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.05)]">
           <div className="space-y-2.5">
             <div className="flex items-center gap-2">
-              <span className="bg-amber-50 text-[#8a1c14] text-[9.5px] font-extrabold uppercase tracking-[0.22em] px-3.5 py-1 rounded-full border border-[#c5a880]/35 shadow-2xs inline-flex items-center">
-                <span>
-                  {product.tag &&
-                  !["regular", "normal", "standard", "default", "none"].includes(
-                    product.tag.trim().toLowerCase(),
-                  )
-                    ? product.tag
-                    : "Pariwesh Exclusive"}
-                </span>
+              <span className="bg-amber-50 text-amber-900 text-[9.5px] font-extrabold uppercase tracking-[0.22em] px-3 py-1 rounded-full border border-[#c5a880]/35 shadow-2xs inline-flex items-center">
+                <span>{product.tag || "Pariwesh Exclusive"}</span>
               </span>
             </div>
             <h1 className="text-2xl md:text-3xl font-serif text-slate-900 leading-snug tracking-tight font-normal">
@@ -681,44 +656,32 @@ const ProductDetails = () => {
             </button>
           </div>
 
-          {/* LUXURY EDITORIAL PRICING CONSOLE */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#FDFBF7] via-[#FFFDF9] to-amber-50/30 border border-[#c5a880]/40 p-4 sm:p-5 shadow-[0_4px_22px_rgba(197,168,128,0.1)] my-2 font-sans">
-            <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-amber-200/25 via-transparent to-transparent pointer-events-none" />
-
-            <div className="flex flex-wrap items-baseline justify-between gap-y-2 gap-x-3">
-              <div className="flex items-baseline gap-3">
-                <span className="text-3xl sm:text-4xl font-serif font-normal text-slate-900 tracking-tight">
-                  {formatCurrency(product.price)}
-                </span>
-                {product.mrp > product.price && (
-                  <span className="text-sm sm:text-base text-slate-400 line-through font-sans">
+          {/* PRICING GRID */}
+          <div className="border-y border-slate-200/70 py-4 my-2 bg-[#FBF9F5]/70 px-4 rounded-2xl font-sans">
+            <div className="flex items-baseline gap-3 font-sans">
+              <span className="text-3xl font-sans font-bold text-slate-900 tracking-tight">
+                {formatCurrency(product.price)}
+              </span>
+              {product.mrp > product.price && (
+                <>
+                  <span className="text-sm font-sans text-slate-400 line-through font-normal">
                     MRP {formatCurrency(product.mrp)}
                   </span>
-                )}
-              </div>
-
-              {product.mrp > product.price && (
-                <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-[#8a1c14] to-[#a32219] text-white text-[10.5px] font-extrabold uppercase tracking-widest shadow-[0_2px_8px_rgba(138,28,20,0.25)] border border-amber-200/30">
-                  <span>{Math.round(((product.mrp - product.price) / product.mrp) * 100)}% OFF</span>
-                </div>
+                  <span className="bg-[#8a1c14]/10 text-[#8a1c14] border border-[#8a1c14]/25 text-[10.5px] font-sans uppercase tracking-widest px-2.5 py-0.5 rounded-full font-bold shadow-2xs">
+                    {Math.round(
+                      ((product.mrp - product.price) / product.mrp) * 100,
+                    )}
+                    % OFF
+                  </span>
+                </>
               )}
             </div>
-
-            {/* Micro-Trust Strip: Stock & Taxes */}
-            <div className="mt-3 pt-3 border-t border-[#c5a880]/20 flex flex-wrap items-center justify-between gap-2 text-[11px] font-sans">
-              <div className="inline-flex items-center space-x-2 text-emerald-800 font-semibold bg-emerald-50/80 px-2.5 py-1 rounded-full border border-emerald-200/60 shadow-2xs">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <span className="tracking-wide">In Stock • Ready to Dispatch</span>
-              </div>
-              <div className="text-slate-500 font-medium text-[11px] flex items-center space-x-1.5">
-                <span>Inclusive of all taxes</span>
-                <span className="text-slate-300">•</span>
-                <span className="text-emerald-700 font-semibold">Free Express Shipping</span>
-              </div>
-            </div>
+            <p className="text-[11px] text-emerald-700 font-semibold mt-1.5 flex items-center space-x-2 font-sans">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              <span>In Stock • Ready to dispatch</span>
+              <span className="text-slate-300">•</span>
+              <span className="text-slate-500 font-normal">Inclusive of all taxes</span>
+            </p>
           </div>
 
           {/* FORM: SIZES & ACTION CONTROLLERS */}
@@ -858,12 +821,12 @@ const ProductDetails = () => {
 
             {/* Action Buttons: Add to Bag & Buy Now */}
             <div className="flex flex-col gap-3 pt-3">
-              {/* ADD TO BAG - Signature Royal Maroon */}
+              {/* ADD TO BAG */}
               <button
                 type="button"
                 onClick={handleAddToCart}
                 disabled={loading}
-                className="w-full bg-[#8a1c14] hover:bg-[#70150e] text-white font-extrabold text-xs uppercase tracking-[0.18em] py-4 px-6 rounded-xl shadow-[0_4px_16px_rgba(138,28,20,0.28)] hover:shadow-[0_8px_24px_rgba(138,28,20,0.38)] transition-all duration-300 flex items-center justify-center space-x-2.5 active:scale-[0.98] cursor-pointer disabled:opacity-50 border border-white/20"
+                className="w-full bg-gradient-to-b from-slate-800 to-slate-950 hover:from-slate-750 hover:to-slate-900 text-white font-extrabold text-xs uppercase tracking-[0.18em] py-4 px-6 rounded-xl border border-white/20 shadow-[0_4px_14px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.3)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.26)] transition-all duration-300 flex items-center justify-center space-x-2.5 active:scale-[0.98] active:translate-y-[1px] cursor-pointer disabled:opacity-50"
               >
                 <RiShoppingBagLine size={18} />
                 <span>{loading ? "Adding to Bag..." : "Add to Bag"}</span>
@@ -874,7 +837,7 @@ const ProductDetails = () => {
                 <button
                   type="button"
                   onClick={handleBuyNow}
-                  className="flex-grow bg-gradient-to-r from-[#d2b68e] via-[#c5a880] to-[#b39062] hover:from-[#c5a880] hover:to-[#a37f52] text-white font-extrabold text-xs uppercase tracking-[0.18em] py-4 px-6 rounded-xl shadow-[0_4px_18px_rgba(197,168,128,0.38),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-1px_0_rgba(0,0,0,0.15)] hover:shadow-[0_8px_28px_rgba(197,168,128,0.55)] transition-all duration-300 flex items-center justify-center space-x-2 active:scale-[0.98] cursor-pointer border border-amber-200/50"
+                  className="flex-grow bg-gradient-to-b from-[#d2b68e] to-[#a8865a] hover:from-[#dbbf97] hover:to-[#b39062] text-white font-extrabold text-xs uppercase tracking-[0.18em] py-4 px-6 rounded-xl shadow-[0_4px_18px_rgba(197,168,128,0.38),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-1px_0_rgba(0,0,0,0.15)] hover:shadow-[0_8px_28px_rgba(197,168,128,0.55)] transition-all duration-300 flex items-center justify-center space-x-2 active:scale-[0.98] active:translate-y-[1px] cursor-pointer border border-amber-200/40"
                 >
                   <span>Buy It Now</span>
                   <RiArrowRightSLine size={18} />
@@ -901,54 +864,46 @@ const ProductDetails = () => {
               </div>
             </div>
 
-            {/* Unified Royal Assurance Matrix */}
-            <div className="grid grid-cols-2 gap-2.5 pt-1">
-              <div className="flex items-center space-x-2.5 bg-gradient-to-br from-[#FDFBF7] to-[#F7F3EA] border border-[#c5a880]/30 rounded-xl p-2.5 shadow-2xs">
-                <div className="w-8 h-8 rounded-full bg-white border border-[#c5a880]/40 flex items-center justify-center text-[#8a1c14] shadow-xs shrink-0">
-                  <RiHandCoinLine size={16} />
-                </div>
+            {/* Quick Buyer Confidence & Trust Matrix */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="flex items-center space-x-2 bg-amber-50/70 border border-amber-200/60 rounded-xl p-2.5 shadow-2xs">
+                <span className="text-base shrink-0">💵</span>
                 <div className="leading-tight min-w-0">
                   <span className="block text-[11px] font-bold text-slate-800 truncate">Cash on Delivery</span>
-                  <span className="block text-[9px] text-slate-500 truncate">Verified doorstep COD</span>
+                  <span className="block text-[9px] text-slate-500 truncate">Pay cash at your door</span>
                 </div>
               </div>
-              <div className="flex items-center space-x-2.5 bg-gradient-to-br from-[#FDFBF7] to-[#F7F3EA] border border-[#c5a880]/30 rounded-xl p-2.5 shadow-2xs">
-                <div className="w-8 h-8 rounded-full bg-white border border-[#c5a880]/40 flex items-center justify-center text-[#8a1c14] shadow-xs shrink-0">
-                  <RiExchangeLine size={16} />
-                </div>
+              <div className="flex items-center space-x-2 bg-emerald-50/70 border border-emerald-200/60 rounded-xl p-2.5 shadow-2xs">
+                <span className="text-base shrink-0">🔄</span>
                 <div className="leading-tight min-w-0">
-                  <span className="block text-[11px] font-bold text-slate-800 truncate">7-Day Free Swap</span>
-                  <span className="block text-[9px] text-slate-500 truncate">Easy doorstep exchange</span>
+                  <span className="block text-[11px] font-bold text-slate-800 truncate">7-Day Free Exchange</span>
+                  <span className="block text-[9px] text-slate-500 truncate">Easy doorstep size swap</span>
                 </div>
               </div>
-              <div className="flex items-center space-x-2.5 bg-gradient-to-br from-[#FDFBF7] to-[#F7F3EA] border border-[#c5a880]/30 rounded-xl p-2.5 shadow-2xs">
-                <div className="w-8 h-8 rounded-full bg-white border border-[#c5a880]/40 flex items-center justify-center text-[#8a1c14] shadow-xs shrink-0">
-                  <RiTruckLine size={16} />
-                </div>
+              <div className="flex items-center space-x-2 bg-blue-50/70 border border-blue-200/60 rounded-xl p-2.5 shadow-2xs">
+                <span className="text-base shrink-0">🚚</span>
                 <div className="leading-tight min-w-0">
                   <span className="block text-[11px] font-bold text-slate-800 truncate">Express Dispatch</span>
                   <span className="block text-[9px] text-slate-500 truncate">Ships within 24–48 hrs</span>
                 </div>
               </div>
-              <div className="flex items-center space-x-2.5 bg-gradient-to-br from-[#FDFBF7] to-[#F7F3EA] border border-[#c5a880]/30 rounded-xl p-2.5 shadow-2xs">
-                <div className="w-8 h-8 rounded-full bg-white border border-[#c5a880]/40 flex items-center justify-center text-[#8a1c14] shadow-xs shrink-0">
-                  <RiShieldCheckLine size={16} />
-                </div>
+              <div className="flex items-center space-x-2 bg-purple-50/70 border border-purple-200/60 rounded-xl p-2.5 shadow-2xs">
+                <RiScissorsLine className="text-purple-600 text-base shrink-0" />
                 <div className="leading-tight min-w-0">
                   <span className="block text-[11px] font-bold text-slate-800 truncate">100% Handcrafted</span>
-                  <span className="block text-[9px] text-slate-500 truncate">Bespoke artisanal fabrics</span>
+                  <span className="block text-[9px] text-slate-500 truncate">Bespoke luxury fabrics</span>
                 </div>
               </div>
             </div>
 
             {/* Pincode Delivery Estimator Widget */}
-            <div className="border-t border-slate-100/80 pt-4 space-y-2.5">
+            <div className="border-t border-slate-100/80 pt-5 space-y-2.5">
               <div className="flex items-center justify-between text-[10px] uppercase font-extrabold tracking-widest text-slate-500">
                 <span className="flex items-center space-x-1.5">
-                  <RiTruckLine size={15} className="text-[#8a1c14]" />
-                  <span>Delivery &amp; Pincode Check</span>
+                  <RiTruckLine size={15} className="text-accent-gold" />
+                  <span>Delivery & Pincode Check</span>
                 </span>
-                <span className="text-emerald-700 font-bold lowercase bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60 font-sans text-[10px]">
+                <span className="text-emerald-700 font-bold lowercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 font-sans">
                   Free Express Shipping
                 </span>
               </div>
@@ -968,13 +923,13 @@ const ProductDetails = () => {
                         setPincodeChecked(false);
                       }
                     }}
-                    className="w-full bg-[#FDFBF7] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 font-sans focus:outline-none focus:border-[#c5a880] focus:ring-1 focus:ring-[#c5a880]/30 shadow-2xs transition"
+                    className="w-full bg-white/70 backdrop-blur-sm border border-slate-200/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 font-sans focus:outline-none focus:border-accent-gold shadow-2xs"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => checkPincodeDelivery(pincodeInput)}
-                  className="px-5 py-2.5 bg-[#8a1c14] hover:bg-[#70150e] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-sm cursor-pointer active:scale-95 font-sans shrink-0"
+                  className="px-4 py-2.5 bg-slate-900 hover:bg-slate-950 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-sm cursor-pointer active:scale-95 font-sans"
                 >
                   Check
                 </button>
@@ -990,143 +945,93 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          {/* Special Offers Section - Compact Preview with Expansion Toggle */}
-          {activeOffers && activeOffers.length > 0 && (() => {
-            const validOffers = activeOffers.filter((off) => off.status === "Active");
-            if (validOffers.length === 0) return null;
-            const displayedOffers = showAllOffers ? validOffers : validOffers.slice(0, 2);
-
-            return (
-              <div className="border-t border-slate-100/80 pt-4 space-y-3">
-                <div className="flex items-center justify-between text-[#8a1c14]">
-                  <div className="flex items-center space-x-2">
-                    <RiCoupon3Line size={15} />
-                    <span className="text-[11px] font-sans font-extrabold uppercase tracking-widest">
-                      Special Offers &amp; Discounts
-                    </span>
-                  </div>
-                  {validOffers.length > 2 && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllOffers(!showAllOffers)}
-                      className="text-[10px] font-bold text-[#8a1c14] hover:underline cursor-pointer flex items-center space-x-1"
-                    >
-                      <span>{showAllOffers ? "View Less ▴" : `View All (${validOffers.length}) ▾`}</span>
-                    </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 gap-2.5">
-                  {displayedOffers.map((off) => {
+          {/* Special Offers Section */}
+          {activeOffers && activeOffers.length > 0 && (
+            <div className="border-t border-slate-100 pt-6 space-y-4">
+              <div className="flex items-center space-x-2 text-[#c5a880] pb-1">
+                <span className="text-xs font-display font-bold uppercase tracking-widest">
+                  🎁 Special Offers Available
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {activeOffers
+                  .filter((off) => off.status === "Active")
+                  .map((off) => {
                     const isGift = off.offerType === "SURPRISE_GIFT";
                     const isPrepaid = off.offerType === "PREPAID";
 
                     return (
                       <div
                         key={off._id || off.code}
-                        className="border border-dashed border-[#c5a880]/60 p-3 bg-gradient-to-r from-amber-50/40 via-[#FDFBF7] to-white rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 transition shadow-2xs"
+                        className="border border-[#c5a880]/20 p-3.5 bg-slate-50/50 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition"
                       >
-                        <div className="space-y-0.5 min-w-0">
-                          <div className="flex items-center space-x-1.5">
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center space-x-2">
                             <span className="text-xs font-bold text-slate-800">
-                              {isPrepaid ? "💳 " : isGift ? "🎁 " : "🏷️ "}
+                              {isPrepaid ? "💳 " : isGift ? "🎁 " : "🛍 "}
                               {off.name || `${off.offerType} Offer`}
                             </span>
                           </div>
-                          <p className="text-[10px] text-slate-500 leading-snug">
+                          <p className="text-[10px] text-slate-500 leading-relaxed">
                             {off.description ||
                               `Get discount with code ${off.code}`}
                           </p>
-                          <span className="text-[8.5px] text-slate-400 block font-normal italic pt-0.5">*T&amp;C Apply</span>
                         </div>
                         {off.code &&
                           off.offerType !== "PREPAID" &&
                           off.offerType !== "SURPRISE_GIFT" && (
-                            <div className="flex items-center space-x-2 self-end sm:self-auto shrink-0">
-                              <span className="px-2.5 py-1 bg-white border border-[#c5a880]/50 font-mono text-[10px] font-bold text-slate-800 uppercase rounded-lg tracking-wider shadow-2xs">
+                            <div className="flex items-center space-x-2 self-end sm:self-auto">
+                              <span className="px-2 py-1 bg-white border border-slate-200 font-mono text-[10px] font-bold text-slate-700 uppercase rounded tracking-wider">
                                 {off.code}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => handleCopyCode(off.code)}
-                                className="text-[9px] font-extrabold uppercase tracking-wider text-[#8a1c14] hover:text-red-900 border border-[#8a1c14]/30 hover:border-[#8a1c14] bg-white py-1 px-2.5 rounded-lg transition shadow-2xs cursor-pointer active:scale-95"
+                                className="text-[9px] font-extrabold uppercase tracking-wider text-accent-gold hover:text-yellow-600 border border-accent-gold/20 hover:border-yellow-600 bg-white py-1 px-2.5 rounded transition shadow-sm"
                               >
                                 {copiedCode === off.code ? "Copied ✓" : "Copy"}
                               </button>
                             </div>
                           )}
                         {isPrepaid && (
-                          <div className="self-end sm:self-auto shrink-0">
-                            <span className="text-[9px] uppercase font-bold tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                              Prepaid Discount
+                          <div className="self-end sm:self-auto">
+                            <span className="text-[8.5px] uppercase font-bold tracking-wider text-slate-500 bg-slate-200/50 px-2 py-1 rounded">
+                              Pay Online
                             </span>
                           </div>
                         )}
                       </div>
                     );
                   })}
-                </div>
-                {validOffers.length > 2 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllOffers(!showAllOffers)}
-                    className="w-full py-1.5 px-3 text-center text-[10px] font-bold text-[#8a1c14] hover:text-red-900 bg-amber-50/60 hover:bg-amber-100/60 border border-[#c5a880]/30 rounded-lg transition-all duration-200 cursor-pointer flex items-center justify-center space-x-1"
-                  >
-                    <span>
-                      {showAllOffers
-                        ? "Show Fewer Offers ▴"
-                        : `+${validOffers.length - 2} More Offers Available ▾`}
-                    </span>
-                  </button>
-                )}
-                <div className="pt-1 flex items-center justify-between text-[9.5px] text-slate-400 font-sans tracking-wide">
-                  <span>*Terms &amp; Conditions Applied</span>
-                  <span>Applicable on eligible orders at checkout</span>
-                </div>
               </div>
-            );
-          })()}
+            </div>
+          )}
 
-          {/* Unified Trust Seal Ribbon */}
-          <div className="border-t border-slate-100/80 pt-4 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-500 font-sans tracking-wide">
-            <span className="flex items-center space-x-1.5">
-              <RiShieldCheckLine className="text-[#8a1c14]" size={14} />
-              <span className="font-semibold text-slate-700">100% Certified Genuine</span>
+          {/* Guarantee Badges */}
+          <div className="border-t border-slate-100 pt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-[10px] text-slate-500 tracking-wider uppercase font-extrabold">
+            <span className="flex items-center space-x-2.5">
+              <RiShieldCheckLine className="text-accent-gold" size={17} />
+              <span>100% Genuine Fabrics Guaranteed</span>
             </span>
-            <span className="text-slate-300">•</span>
-            <span className="flex items-center space-x-1.5">
-              <RiExchangeLine className="text-[#8a1c14]" size={14} />
-              <span className="font-semibold text-slate-700">7-Day Free Doorstep Swap</span>
-            </span>
-            <span className="text-slate-300">•</span>
-            <span className="flex items-center space-x-1.5">
-              <RiTruckLine className="text-[#8a1c14]" size={14} />
-              <span className="font-semibold text-slate-700">Direct From Atelier</span>
+            <span className="flex items-center space-x-2.5">
+              <RiRefreshLine className="text-accent-gold" size={17} />
+              <span>7-Day Return / Exchange Approved</span>
             </span>
           </div>
         </div>
       </div>
 
-      {/* BOTTOM SECTION: SPECS & ACCORDIONS (BALANCED LUXURY DUAL CARDS) */}
-      <div className="mt-16 border-t border-[#c5a880]/20 pt-12 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-12 items-start">
-        {/* Left Column: Atelier Tailoring & Silhouette Profile */}
-        <div className="lg:col-span-6 bg-white border border-[#c5a880]/30 rounded-2xl p-6 sm:p-7 shadow-[0_8px_30px_rgba(0,0,0,0.03)] space-y-6">
+      {/* BOTTOM SECTION: SPECS & ACCORDIONS (PREMIUM LUXURY DROPDOWNS) */}
+      <div className="mt-16 border-t border-slate-200/80 pt-12 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        {/* Left Column: Product Story & Policies Dropdowns */}
+        <div className="lg:col-span-6 space-y-6">
           <div className="space-y-3">
-            <div className="flex items-center space-x-2.5 pb-2 border-b border-slate-100">
-              <div className="w-8 h-8 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
-                <RiShirtLine size={17} />
-              </div>
-              <div>
-                <h3 className="text-xs font-bold uppercase text-slate-900 tracking-[0.2em]">
-                  Atelier Tailoring &amp; Silhouette
-                </h3>
-                <span className="text-[10px] text-slate-400 block font-sans">
-                  Handcrafted silhouette &amp; garment specifications
-                </span>
-              </div>
+            <div className="flex items-center space-x-2">
+              <h3 className="text-xs font-bold uppercase text-slate-900 tracking-[0.2em]">
+                Product Story & Details
+              </h3>
             </div>
-
-            {/* Product Story */}
-            <div className="text-xs sm:text-[13px] text-slate-600 leading-relaxed font-sans space-y-2 pt-1">
+            <div className="text-xs sm:text-[13px] text-slate-600 leading-relaxed font-sans space-y-2">
               {product.description && (
                 <p className="font-semibold text-slate-900 leading-relaxed">
                   {product.description}
@@ -1153,6 +1058,142 @@ const ProductDetails = () => {
             </div>
           </div>
 
+          {/* Left Column Accordions */}
+          <div className="border-t border-slate-100 pt-5 space-y-3">
+            {/* Accordion 1: Shipping & Delivery */}
+            <div
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
+                shippingOpen
+                  ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setShippingOpen(!shippingOpen)}
+                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
+              >
+                <span className="flex items-center space-x-3">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                    <RiTruckLine size={15} />
+                  </div>
+                  <span className="tracking-wide">Shipping & Delivery Timelines</span>
+                </span>
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
+                    shippingOpen
+                      ? "rotate-90 bg-amber-100/70 text-[#8a1c14]"
+                      : "text-slate-400"
+                  }`}
+                >
+                  <RiArrowRightSLine size={17} />
+                </div>
+              </button>
+              {shippingOpen && (
+                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in space-y-2">
+                  <p>
+                    Every order is carefully inspected and dispatched from our boutique atelier within <strong>24–48 business hours</strong>.
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1 text-slate-500">
+                    <li>Complimentary Express Delivery across India (3–5 business days).</li>
+                    <li>Cash on Delivery (COD) and all major prepaid payment options available.</li>
+                    <li>Live doorstep tracking link shared via SMS and WhatsApp.</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Accordion 2: Easy Returns & Refunds */}
+            <div
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
+                returnsOpen
+                  ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setReturnsOpen(!returnsOpen)}
+                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
+              >
+                <span className="flex items-center space-x-3">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                    <RiExchangeLine size={15} />
+                  </div>
+                  <span className="tracking-wide">Easy Returns & Stellar Refund Guarantee</span>
+                </span>
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
+                    returnsOpen
+                      ? "rotate-90 bg-amber-100/70 text-[#8a1c14]"
+                      : "text-slate-400"
+                  }`}
+                >
+                  <RiArrowRightSLine size={17} />
+                </div>
+              </button>
+              {returnsOpen && (
+                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in space-y-2">
+                  <p>
+                    We maintain a hassle-free <strong>7-Day Return and Exchange window</strong> from the date of delivery.
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1 text-slate-500">
+                    <li>Free doorstep pickup for size exchange or returns.</li>
+                    <li>Items must retain original tags and unused packaging.</li>
+                    <li>Instant refund credited to your bank account or payment method within 3–5 business days after quality verification.</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Accordion 3: Authenticity & Artisanal Guarantee */}
+            <div
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
+                authenticityOpen
+                  ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setAuthenticityOpen(!authenticityOpen)}
+                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
+              >
+                <span className="flex items-center space-x-3">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                    <RiShieldCheckLine size={15} />
+                  </div>
+                  <span className="tracking-wide">Artisanal Craftsmanship & Authenticity</span>
+                </span>
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
+                    authenticityOpen
+                      ? "rotate-90 bg-amber-100/70 text-[#8a1c14]"
+                      : "text-slate-400"
+                  }`}
+                >
+                  <RiArrowRightSLine size={17} />
+                </div>
+              </button>
+              {authenticityOpen && (
+                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in space-y-2">
+                  <p>
+                    Every Pariwesh creation is crafted with high-density premium yarns, precise finishing, and colorfast traditional printing techniques tested for durability and luxurious drape.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Technical Specifications Dropdowns */}
+        <div className="lg:col-span-6 space-y-4">
+          <div className="flex items-center space-x-2">
+            <h3 className="text-xs font-bold uppercase text-slate-900 tracking-[0.2em]">
+              Technical Specifications
+            </h3>
+          </div>
+
           {/* Garment Silhouette & Cut Specifications Grid */}
           {(product.fit ||
             product.pattern ||
@@ -1160,8 +1201,8 @@ const ProductDetails = () => {
             product.sleeveLength ||
             product.occasion ||
             product.bottomType) && (
-            <div className="rounded-xl border border-slate-200/90 bg-[#FDFBF7] p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+            <div className="rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-sm p-4.5 shadow-xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <span className="text-[11px] font-bold text-slate-900 uppercase tracking-wider font-sans">
                   Garment &amp; Tailoring Profile
                 </span>
@@ -1234,72 +1275,29 @@ const ProductDetails = () => {
             </div>
           )}
 
-          {/* Package Contents & Inclusions */}
-          <div className="rounded-xl border border-slate-200/90 bg-[#FDFBF7] p-4 space-y-2">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-              Package Contents &amp; Ensemble:
-            </span>
-            {product.setContents && product.setContents.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {product.setContents.map((item, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50/90 text-[#8a1c14] border border-[#c5a880]/40 shadow-2xs"
-                  >
-                    ✓ {item}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <span className="text-slate-800 font-bold text-xs block">
-                1 Complete Ensemble ({product.category === "suits" ? "Kurti, Bottom & Dupatta Set" : "Kurti & Bottom Co-ord Set"})
-              </span>
-            )}
-            <p className="text-[10.5px] text-slate-500 pt-0.5">
-              Each garment is individually steam-pressed and delivered in protective luxury packaging.
-            </p>
-          </div>
-        </div>
-
-        {/* Right Column: Fabric Care, Authenticity & Policies */}
-        <div className="lg:col-span-6 bg-white border border-[#c5a880]/30 rounded-2xl p-6 sm:p-7 shadow-[0_8px_30px_rgba(0,0,0,0.03)] space-y-4">
-          <div className="flex items-center space-x-2.5 pb-2 border-b border-slate-100">
-            <div className="w-8 h-8 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
-              <RiShieldCheckLine size={17} />
-            </div>
-            <div>
-              <h3 className="text-xs font-bold uppercase text-slate-900 tracking-[0.2em]">
-                Authenticity, Care &amp; Policies
-              </h3>
-              <span className="text-[10px] text-slate-400 block font-sans">
-                Doorstep delivery timelines &amp; fabric maintenance
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-3 pt-1">
-            {/* Accordion 1: Shipping & Delivery */}
+          <div className="space-y-3">
+            {/* Accordion: Fabric Type */}
             <div
-              className={`rounded-xl border transition-all duration-200 overflow-hidden bg-white ${
-                shippingOpen
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
+                specsOpen.fabric
                   ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
-                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-2xs"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
               }`}
             >
               <button
                 type="button"
-                onClick={() => setShippingOpen(!shippingOpen)}
+                onClick={() => toggleSpec("fabric")}
                 className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
               >
                 <span className="flex items-center space-x-3">
-                  <div className="w-7 h-7 rounded-lg bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
-                    <RiTruckLine size={15} />
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                    <RiShirtLine size={15} />
                   </div>
-                  <span className="tracking-wide">Shipping &amp; Delivery Timelines</span>
+                  <span className="tracking-wide">Fabric Type</span>
                 </span>
                 <div
                   className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
-                    shippingOpen
+                    specsOpen.fabric
                       ? "rotate-90 bg-amber-100/70 text-[#8a1c14]"
                       : "text-slate-400"
                   }`}
@@ -1307,69 +1305,22 @@ const ProductDetails = () => {
                   <RiArrowRightSLine size={17} />
                 </div>
               </button>
-              {shippingOpen && (
-                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in space-y-2">
-                  <p>
-                    Every order is carefully inspected and dispatched from our boutique atelier within <strong>24–48 business hours</strong>.
-                  </p>
-                  <ul className="list-disc pl-4 space-y-1 text-slate-500">
-                    <li>Complimentary Express Delivery across India (3–5 business days).</li>
-                    <li>Cash on Delivery (COD) and all major prepaid payment options available.</li>
-                    <li>Live doorstep tracking link shared via SMS and WhatsApp.</li>
-                  </ul>
+              {specsOpen.fabric && (
+                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in text-left">
+                  <strong className="text-slate-800 font-bold block mb-1">
+                    {product.fabric || "Premium Cotton"}
+                  </strong>
+                  Breathable, lightweight, and ultra-soft fabric offering a natural fluid drape and cool comfort throughout the day.
                 </div>
               )}
             </div>
 
-            {/* Accordion 2: Easy Returns & Refunds */}
+            {/* Accordion: Material Composition */}
             <div
-              className={`rounded-xl border transition-all duration-200 overflow-hidden bg-white ${
-                returnsOpen
-                  ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
-                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-2xs"
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => setReturnsOpen(!returnsOpen)}
-                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
-              >
-                <span className="flex items-center space-x-3">
-                  <div className="w-7 h-7 rounded-lg bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
-                    <RiExchangeLine size={15} />
-                  </div>
-                  <span className="tracking-wide">7-Day Free Exchange &amp; Return</span>
-                </span>
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
-                    returnsOpen
-                      ? "rotate-90 bg-amber-100/70 text-[#8a1c14]"
-                      : "text-slate-400"
-                  }`}
-                >
-                  <RiArrowRightSLine size={17} />
-                </div>
-              </button>
-              {returnsOpen && (
-                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in space-y-2">
-                  <p>
-                    We maintain a hassle-free <strong>7-Day Return and Exchange window</strong> from the date of delivery.
-                  </p>
-                  <ul className="list-disc pl-4 space-y-1 text-slate-500">
-                    <li>Free doorstep pickup for size exchange or returns.</li>
-                    <li>Items must retain original tags and unused packaging.</li>
-                    <li>Instant refund credited to your bank account or payment method within 3–5 business days.</li>
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            {/* Accordion 3: Fabric Composition */}
-            <div
-              className={`rounded-xl border transition-all duration-200 overflow-hidden bg-white ${
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
                 specsOpen.material
                   ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
-                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-2xs"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
               }`}
             >
               <button
@@ -1378,10 +1329,10 @@ const ProductDetails = () => {
                 className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
               >
                 <span className="flex items-center space-x-3">
-                  <div className="w-7 h-7 rounded-lg bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
                     <RiScissorsLine size={15} />
                   </div>
-                  <span className="tracking-wide">Fabric Composition &amp; Craft</span>
+                  <span className="tracking-wide">Material Composition</span>
                 </span>
                 <div
                   className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
@@ -1403,12 +1354,12 @@ const ProductDetails = () => {
               )}
             </div>
 
-            {/* Accordion 4: Wash & Garment Care */}
+            {/* Accordion: Wash & Garment Care */}
             <div
-              className={`rounded-xl border transition-all duration-200 overflow-hidden bg-white ${
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
                 specsOpen.washCare
                   ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
-                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-2xs"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
               }`}
             >
               <button
@@ -1417,10 +1368,10 @@ const ProductDetails = () => {
                 className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
               >
                 <span className="flex items-center space-x-3">
-                  <div className="w-7 h-7 rounded-lg bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
                     <RiRefreshLine size={15} />
                   </div>
-                  <span className="tracking-wide">Wash &amp; Garment Care</span>
+                  <span className="tracking-wide">Wash & Garment Care</span>
                 </span>
                 <div
                   className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
@@ -1442,12 +1393,12 @@ const ProductDetails = () => {
               )}
             </div>
 
-            {/* Accordion 5: Country of Origin */}
+            {/* Accordion: Country of Origin */}
             <div
-              className={`rounded-xl border transition-all duration-200 overflow-hidden bg-white ${
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
                 specsOpen.origin
                   ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
-                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-2xs"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
               }`}
             >
               <button
@@ -1456,7 +1407,7 @@ const ProductDetails = () => {
                 className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
               >
                 <span className="flex items-center space-x-3">
-                  <div className="w-7 h-7 rounded-lg bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
                     <RiGlobeLine size={15} />
                   </div>
                   <span className="tracking-wide">Country of Origin</span>
@@ -1477,6 +1428,61 @@ const ProductDetails = () => {
                     {product.countryOfOrigin || "India"}
                   </strong>
                   Ethically sourced, precision tailored, and handcrafted by experienced textile artisans in India.
+                </div>
+              )}
+            </div>
+
+            {/* Accordion: Package Details & SKU */}
+            <div
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white/95 backdrop-blur-sm ${
+                specsOpen.packageDetails
+                  ? "border-[#c5a880]/70 shadow-[0_4px_16px_rgba(197,168,128,0.12)]"
+                  : "border-slate-200/90 hover:border-[#c5a880]/40 shadow-xs"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => toggleSpec("packageDetails")}
+                className="w-full flex justify-between items-center px-4 py-3.5 text-left text-xs font-bold text-slate-800 hover:bg-[#FBF9F5]/60 transition-colors duration-150 cursor-pointer"
+              >
+                <span className="flex items-center space-x-3">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 border border-[#c5a880]/30 text-[#8a1c14] flex items-center justify-center shrink-0">
+                    <RiScalesLine size={15} />
+                  </div>
+                  <span className="tracking-wide">Package Contents & Ensemble</span>
+                </span>
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-200 ${
+                    specsOpen.packageDetails
+                      ? "rotate-90 bg-amber-100/70 text-[#8a1c14]"
+                      : "text-slate-400"
+                  }`}
+                >
+                  <RiArrowRightSLine size={17} />
+                </div>
+              </button>
+              {specsOpen.packageDetails && (
+                <div className="px-5 pb-4 pt-2 text-[11.5px] text-slate-600 leading-relaxed font-sans border-t border-slate-100/70 bg-[#FBF9F5]/35 animate-fade-in text-left">
+                  <span className="text-slate-400 font-semibold text-[10.5px] uppercase block mb-1.5">Net Ensemble Contents:</span>
+                  {product.setContents && product.setContents.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 mb-1.5">
+                      {product.setContents.map((item, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50/90 text-[#8a1c14] border border-[#c5a880]/40 shadow-2xs"
+                        >
+                          ✓ {item}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-slate-800 font-bold block mb-1">
+                      1 Complete Ensemble ({product.category === "suits" ? "Kurti, Bottom & Dupatta Set" : "Kurti & Bottom Co-ord Set"})
+                    </span>
+                  )}
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Each garment is quality-checked, steam pressed, and safely packaged in protective dust bags.
+                  </p>
                 </div>
               )}
             </div>
@@ -1666,7 +1672,7 @@ const ProductDetails = () => {
               type="button"
               onClick={handleAddToCart}
               disabled={loading}
-              className="w-10 h-10 rounded-xl flex items-center justify-center border border-[#8a1c14]/30 text-[#8a1c14] bg-white hover:bg-rose-50/50 shadow-xs active:scale-95 transition-all duration-200 cursor-pointer disabled:opacity-50 shrink-0"
+              className="w-10 h-10 rounded-xl flex items-center justify-center border border-slate-300/90 text-slate-800 bg-white shadow-xs active:scale-95 transition-all duration-200 cursor-pointer disabled:opacity-50 shrink-0 hover:border-[#c5a880]"
               title="Add to Bag"
               aria-label="Add to Bag"
             >
@@ -1675,7 +1681,7 @@ const ProductDetails = () => {
             <button
               type="button"
               onClick={handleBuyNow}
-              className="rounded-xl px-5 py-2.5 text-xs font-extrabold uppercase tracking-[0.14em] bg-[#8a1c14] hover:bg-[#70150e] text-white shadow-[0_4px_14px_rgba(138,28,20,0.3)] active:scale-95 transition-all duration-200 cursor-pointer flex items-center space-x-1.5"
+              className="rounded-xl px-4 py-2.5 text-xs font-extrabold uppercase tracking-[0.14em] bg-gradient-to-b from-[#d2b68e] to-[#a8865a] hover:from-[#dbbf97] hover:to-[#b39062] text-white shadow-[0_4px_14px_rgba(197,168,128,0.4),inset_0_1px_0_rgba(255,255,255,0.4)] border border-amber-200/40 active:scale-95 transition-all duration-200 cursor-pointer flex items-center space-x-1"
             >
               <span>Buy Now</span>
               <RiArrowRightSLine size={15} />

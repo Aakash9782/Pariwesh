@@ -172,22 +172,22 @@ const MainLayout = () => {
         </defs>
       </svg>
 
-      {/* 1. STICKY ANNOUNCEMENT BAR (Clickable & Pause-on-hover) - Royal Maroon & Gold Luxury Theme */}
+      {/* 1. STICKY ANNOUNCEMENT BAR (Clickable & Pause-on-hover) */}
       {announcementActive && (
         <Link
           to={saleEventActive ? "/sale" : "/shop"}
-          className="w-full bg-gradient-to-r from-[#6e140e] via-[#8a1c14] to-[#6e140e] text-[#FFFDF9] py-2 sm:py-2.5 text-[9.5px] sm:text-[11px] font-sans font-medium tracking-[0.22em] uppercase transition-all duration-300 overflow-hidden relative whitespace-nowrap select-none border-b border-[#c5a880]/40 shadow-xs block cursor-pointer group"
+          className="w-full bg-secondary text-primary py-2 text-[10px] sm:text-xs font-display tracking-widest uppercase transition-all duration-300 overflow-hidden relative whitespace-nowrap select-none border-b border-[#c5a880]/30 shadow-xs block cursor-pointer group"
           title="Click to explore collection"
         >
           <div className="animate-marquee flex items-center justify-around min-w-full group-hover:[animation-play-state:paused]">
             {/* Repeated text blocks for infinite seamless flow */}
             {[...Array(12)].map((_, index) => (
-              <span key={index} className="mx-6 flex items-center shrink-0 space-x-4">
-                <span className="font-semibold tracking-[0.2em] group-hover:text-amber-200 transition-colors">
+              <span key={index} className="mx-6 flex items-center shrink-0">
+                <span className="font-semibold tracking-[0.2em] group-hover:underline">
                   {announcementText}
                 </span>
-                <span className="text-amber-300/70 select-none text-[8px] sm:text-[9px]">
-                  ◆
+                <span className="mx-6 text-accent-gold/60 select-none text-[9px]">
+                  •
                 </span>
               </span>
             ))}
@@ -195,15 +195,15 @@ const MainLayout = () => {
         </Link>
       )}
 
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/75 border-b border-[#c5a880]/25 shadow-[0_4px_20px_rgba(197,168,128,0.08)] transition-all duration-300">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/90 border-b border-[#c5a880]/30 shadow-[0_4px_25px_rgba(0,0,0,0.03)] transition-all duration-300">
         {/* Tier 1: Search, Logo, Actions */}
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-[68px] md:h-[82px] flex items-center justify-between relative">
           
-          {/* Mobile Left: Menu Toggle (Bespoke Luxury Hamburger Icon with Crystal Glass finish) */}
+          {/* Mobile Left: Menu Toggle (Bespoke Luxury Hamburger Icon) */}
           <div className="flex items-center md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="w-10 h-10 rounded-full flex flex-col items-center justify-center space-y-[4.5px] bg-white/85 hover:bg-white backdrop-blur-md border border-[#c5a880]/45 shadow-[0_2px_8px_rgba(197,168,128,0.15),inset_0_1px_1px_rgba(255,255,255,0.9)] hover:border-[#c5a880] text-slate-800 transition-all duration-200 cursor-pointer active:scale-95 shrink-0"
+              className="w-10 h-10 rounded-full flex flex-col items-center justify-center space-y-[4.5px] bg-[#FDFBF7] hover:bg-[#F5F0E6] border border-[#c5a880]/40 shadow-xs text-slate-800 transition-all duration-200 cursor-pointer active:scale-95 shrink-0"
               aria-label="Toggle Menu"
             >
               {mobileMenuOpen ? (
@@ -263,17 +263,17 @@ const MainLayout = () => {
             {/* Wishlist Link (Desktop & Mobile) */}
             <Link
               to="/wishlist"
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-white/85 hover:bg-white backdrop-blur-md border border-[#c5a880]/45 shadow-[0_2px_8px_rgba(197,168,128,0.15),inset_0_1px_1px_rgba(255,255,255,0.9)] hover:border-[#c5a880] text-slate-800 hover:text-[#8a1c14] transition-all duration-200 relative group cursor-pointer shrink-0"
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-[#FDFBF7] hover:bg-[#F5F0E6] border border-[#c5a880]/40 shadow-xs hover:border-[#c5a880] text-slate-800 hover:text-[#8a1c14] transition-all duration-200 relative group cursor-pointer shrink-0"
               title="Wishlist"
             >
-              <RiHeartLine size={18} className="group-hover:scale-110 transition-transform" />
+              <RiHeartLine size={19} className="group-hover:scale-110 transition-transform" />
               {wishlistProducts.length > 0 && (
                 <motion.span
                   key={wishlistProducts.length}
                   initial={{ scale: 0.4 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 500, damping: 18 }}
-                  className="absolute -top-1 -right-1 bg-[#8a1c14] text-[#FFFDF9] font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center ring-2 ring-white border border-[#c5a880]/60 shadow-xs pointer-events-none"
+                  className="absolute -top-1 -right-1 bg-[#8a1c14] text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-xs pointer-events-none"
                 >
                   {wishlistProducts.length}
                 </motion.span>
@@ -287,17 +287,17 @@ const MainLayout = () => {
                 e.preventDefault();
                 navigate("/cart");
               }}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-white/85 hover:bg-white backdrop-blur-md border border-[#c5a880]/45 shadow-[0_2px_8px_rgba(197,168,128,0.15),inset_0_1px_1px_rgba(255,255,255,0.9)] hover:border-[#c5a880] text-slate-800 hover:text-[#8a1c14] transition-all duration-200 relative group cursor-pointer shrink-0"
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-[#FDFBF7] hover:bg-[#F5F0E6] border border-[#c5a880]/40 shadow-xs hover:border-[#c5a880] text-slate-800 hover:text-[#8a1c14] transition-all duration-200 relative group cursor-pointer shrink-0"
               title="Shopping Bag"
             >
-              <RiShoppingBagLine size={18} className="group-hover:scale-110 transition-transform" />
+              <RiShoppingBagLine size={19} className="group-hover:scale-110 transition-transform" />
               {totalCartQuantity > 0 && (
                 <motion.span
                   key={totalCartQuantity}
                   initial={{ scale: 0.4 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 500, damping: 18 }}
-                  className="absolute -top-1 -right-1 bg-[#8a1c14] text-[#FFFDF9] font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center ring-2 ring-white border border-[#c5a880]/60 shadow-xs pointer-events-none"
+                  className="absolute -top-1 -right-1 bg-[#8a1c14] text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-xs pointer-events-none"
                 >
                   {totalCartQuantity}
                 </motion.span>
@@ -586,7 +586,7 @@ const MainLayout = () => {
       </AnimatePresence>
 
       {/* 4. MAIN PAGE DISPLAY OUTLET */}
-      <main className="flex-grow overflow-x-clip">
+      <main className="flex-grow overflow-x-hidden">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.pathname}
@@ -610,7 +610,7 @@ const MainLayout = () => {
         href="https://wa.me/918209903441?text=Hello%20Pariwesh%20Ensembles%20support!%20I'm%20interested%20in%20your%20products."
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-20 md:bottom-8 right-3 md:right-6 z-40 bg-[#25D366] hover:bg-[#20BA56] text-white p-2.5 md:p-3.5 rounded-full shadow-[0_4px_16px_rgba(37,211,102,0.35)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer"
+        className="fixed bottom-4 md:bottom-8 right-2.5 md:right-6 z-40 bg-[#25D366] hover:bg-[#20BA56] text-white p-2.5 md:p-3.5 rounded-full shadow-[0_4px_16px_rgba(37,211,102,0.35)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer"
         title="Chat with us on WhatsApp"
       >
         <RiWhatsappLine size={20} className="md:w-6 md:h-6" />

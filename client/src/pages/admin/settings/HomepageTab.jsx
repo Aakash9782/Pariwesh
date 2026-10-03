@@ -171,24 +171,68 @@ const HomepageTab = ({
                 </label>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
                   label="Title"
+                  placeholder="e.g. Suit Sets, Kurtis..."
                   value={cat.title || ""}
                   onChange={(e) =>
                     handleCategoryFieldChange(idx, "title", e.target.value)
                   }
                 />
-                <Input
-                  label="Navigation URL Path"
-                  value={cat.path || ""}
-                  onChange={(e) =>
-                    handleCategoryFieldChange(idx, "path", e.target.value)
-                  }
-                />
+                <div className="space-y-1.5">
+                  <Input
+                    label="Navigation URL Path"
+                    placeholder="/shop?category=suits"
+                    value={cat.path || ""}
+                    list="cat-path-presets"
+                    onChange={(e) =>
+                      handleCategoryFieldChange(idx, "path", e.target.value)
+                    }
+                  />
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {[
+                      { label: "Suits", path: "/shop?category=suits" },
+                      { label: "Kurtis", path: "/shop?category=kurtis" },
+                      { label: "Co-Ords", path: "/shop?category=co-ord-sets" },
+                      { label: "Ethnic Wear", path: "/shop?category=ethnic" },
+                      { label: "Best Seller", path: "/shop?tag=Best Seller" },
+                      { label: "New Arrival", path: "/shop?tag=New Arrival" },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => {
+                          const copy = [...categories];
+                          copy[idx] = {
+                            ...copy[idx],
+                            title: copy[idx].title || preset.label,
+                            path: preset.path,
+                          };
+                          setCategories(copy);
+                        }}
+                        className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border transition-all cursor-pointer ${
+                          cat.path === preset.path
+                            ? "bg-[#8a1c14] text-white border-[#8a1c14]"
+                            : "bg-white text-slate-600 border-slate-200 hover:border-[#c5a880] hover:text-[#8a1c14]"
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           ))}
+          <datalist id="cat-path-presets">
+            <option value="/shop?category=suits">Suit Sets</option>
+            <option value="/shop?category=kurtis">Kurtis & Tunics</option>
+            <option value="/shop?category=ethnic">Co-ord & Ethnic Wear</option>
+            <option value="/shop?tag=Best Seller">Best Sellers</option>
+            <option value="/shop?tag=New Arrival">New Arrivals</option>
+            <option value="/shop?sale=true">Festive Sale</option>
+          </datalist>
         </div>
       </div>
 

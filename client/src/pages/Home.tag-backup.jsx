@@ -746,8 +746,8 @@ const Home = () => {
           </div>
 
           {/* Right card - Soft beige editorial layout */}
-          <div className="bg-[#FAF7F3] border border-borderLight p-5 xs:p-6 sm:p-8 md:p-12 flex flex-col justify-between text-left space-y-6 sm:space-y-8 rounded-2xl">
-            <div className="space-y-3 sm:space-y-4">
+          <div className="bg-[#FAF7F3] border border-borderLight p-8 md:p-12 flex flex-col justify-between text-left space-y-8">
+            <div className="space-y-4">
               <span className="text-[9px] text-[#8a1c14] font-black uppercase tracking-[0.3em] block">
                 — The Pariwesh Edit —
               </span>
@@ -766,28 +766,28 @@ const Home = () => {
             </div>
 
             {/* Micro stats banner */}
-            <div className="grid grid-cols-3 gap-2 xs:gap-4 border-y border-[#8a1c14]/10 py-4 sm:py-6">
+            <div className="grid grid-cols-3 gap-2 xs:gap-4 border-y border-[#8a1c14]/10 py-6">
               <div>
-                <h4 className="text-xl sm:text-2xl font-serif text-textPrimary font-semibold">
+                <h4 className="text-2xl font-serif text-textPrimary font-semibold">
                   150+
                 </h4>
-                <p className="text-[8.5px] sm:text-[9px] uppercase tracking-widest text-textSecondary mt-0.5">
+                <p className="text-[9px] uppercase tracking-widest text-textSecondary mt-1">
                   Unique Styles
                 </p>
               </div>
               <div>
-                <h4 className="text-xl sm:text-2xl font-serif text-textPrimary font-semibold">
+                <h4 className="text-2xl font-serif text-textPrimary font-semibold">
                   4.9★
                 </h4>
-                <p className="text-[8.5px] sm:text-[9px] uppercase tracking-widest text-textSecondary mt-0.5">
+                <p className="text-[9px] uppercase tracking-widest text-textSecondary mt-1">
                   Loved By You
                 </p>
               </div>
               <div>
-                <h4 className="text-xl sm:text-2xl font-serif text-textPrimary font-semibold">
+                <h4 className="text-2xl font-serif text-textPrimary font-semibold">
                   100%
                 </h4>
-                <p className="text-[8.5px] sm:text-[9px] uppercase tracking-widest text-textSecondary mt-0.5">
+                <p className="text-[9px] uppercase tracking-widest text-textSecondary mt-1">
                   Hand Finished
                 </p>
               </div>
@@ -795,9 +795,9 @@ const Home = () => {
 
             {/* LUXURY ROYAL COUNTDOWN WIDGET */}
             {settingsLoaded && isCountdownActive && !isCountdownExpired && timeLeft && (
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6F0] to-[#F5EFEB] border border-[#c5a880]/40 p-3.5 sm:p-5 shadow-sm space-y-3 sm:space-y-3.5">
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6F0] to-[#F5EFEB] border border-[#c5a880]/40 p-4 sm:p-5 shadow-sm space-y-3.5">
                 {/* Subtle Decorative Golden Corner Accent */}
-                <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-[#c5a880]/15 to-transparent rounded-bl-full pointer-events-none" />
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-[#c5a880]/15 to-transparent rounded-bl-full pointer-events-none" />
 
                 {/* Top Status Header */}
                 <div className="flex items-center justify-between gap-2 relative z-10">
@@ -806,13 +806,13 @@ const Home = () => {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-[#8a1c14]"></span>
                     </span>
-                    <span className="text-[8.5px] sm:text-[9px] font-black uppercase tracking-widest">
+                    <span className="text-[9px] font-black uppercase tracking-widest">
                       Live Festive Offer
                     </span>
                   </div>
 
-                  <span className="text-[9.5px] sm:text-[10px] text-slate-500 font-medium flex items-center space-x-1">
-                    <RiTimerLine size={13} className="text-[#8a1c14]" />
+                  <span className="text-[10px] text-slate-400 font-medium flex items-center space-x-1">
+                    <RiTimerLine size={13} className="text-[#c5a880]" />
                     <span>Ending Soon</span>
                   </span>
                 </div>
@@ -822,65 +822,61 @@ const Home = () => {
                   {settings.countdownTitle || "Exclusive Limited-Period Collection Ends In:"}
                 </h4>
 
-                {/* Symmetrical 4-Column Luxury Digit Tiles with Gold Accents */}
-                <div className="grid grid-cols-4 gap-1.5 xs:gap-2 sm:gap-2.5 my-2">
+                {/* Symmetrical 4-Column Luxury Digit Tiles */}
+                <div className="grid grid-cols-4 gap-2 sm:gap-2.5 my-2">
                   {/* Days */}
-                  <div className="bg-gradient-to-b from-white to-[#FDFBF7] border border-[#c5a880]/40 rounded-xl py-2 sm:py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center">
-                    <span className="text-xl xs:text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
+                  <div className="bg-white/95 border border-[#c5a880]/35 rounded-xl py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center transition-transform duration-200 hover:scale-[1.02]">
+                    <span className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
                       {String(timeLeft.days || 0).padStart(2, "0")}
                     </span>
-                    <span className="text-[7.5px] sm:text-[8.5px] uppercase font-bold tracking-[0.16em] text-[#8a1c14] mt-1">
+                    <span className="text-[8px] sm:text-[8.5px] uppercase font-bold tracking-[0.2em] text-[#8a1c14] mt-1.5">
                       Days
                     </span>
                   </div>
 
                   {/* Hours */}
-                  <div className="bg-gradient-to-b from-white to-[#FDFBF7] border border-[#c5a880]/40 rounded-xl py-2 sm:py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center">
-                    <span className="text-xl xs:text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
+                  <div className="bg-white/95 border border-[#c5a880]/35 rounded-xl py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center transition-transform duration-200 hover:scale-[1.02]">
+                    <span className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
                       {String(timeLeft.hours || 0).padStart(2, "0")}
                     </span>
-                    <span className="text-[7.5px] sm:text-[8.5px] uppercase font-bold tracking-[0.16em] text-[#8a1c14] mt-1">
+                    <span className="text-[8px] sm:text-[8.5px] uppercase font-bold tracking-[0.2em] text-[#8a1c14] mt-1.5">
                       Hours
                     </span>
                   </div>
 
                   {/* Minutes */}
-                  <div className="bg-gradient-to-b from-white to-[#FDFBF7] border border-[#c5a880]/40 rounded-xl py-2 sm:py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center">
-                    <span className="text-xl xs:text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
+                  <div className="bg-white/95 border border-[#c5a880]/35 rounded-xl py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center transition-transform duration-200 hover:scale-[1.02]">
+                    <span className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
                       {String(timeLeft.minutes || 0).padStart(2, "0")}
                     </span>
-                    <span className="text-[7.5px] sm:text-[8.5px] uppercase font-bold tracking-[0.16em] text-[#8a1c14] mt-1">
+                    <span className="text-[8px] sm:text-[8.5px] uppercase font-bold tracking-[0.2em] text-[#8a1c14] mt-1.5">
                       Mins
                     </span>
                   </div>
 
                   {/* Seconds */}
-                  <div className="bg-gradient-to-b from-rose-50/50 to-white border border-[#8a1c14]/35 rounded-xl py-2 sm:py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center">
-                    <span className="text-xl xs:text-2xl sm:text-3xl font-serif font-bold text-[#8a1c14] leading-none animate-pulse">
+                  <div className="bg-white/95 border border-[#8a1c14]/30 rounded-xl py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center transition-transform duration-200 hover:scale-[1.02] bg-rose-50/20">
+                    <span className="text-2xl sm:text-3xl font-serif font-bold text-[#8a1c14] leading-none animate-pulse">
                       {String(timeLeft.seconds || 0).padStart(2, "0")}
                     </span>
-                    <span className="text-[7.5px] sm:text-[8.5px] uppercase font-bold tracking-[0.16em] text-[#8a1c14] mt-1">
+                    <span className="text-[8px] sm:text-[8.5px] uppercase font-bold tracking-[0.2em] text-[#8a1c14] mt-1.5">
                       Secs
                     </span>
                   </div>
                 </div>
 
-                {/* 1-Tap Coupon Voucher Ticket Strip - Guaranteed Zero Truncation */}
+                {/* 1-Tap Coupon Voucher Ticket Strip */}
                 {activePromoCode && (
-                  <div
-                    onClick={() => handleCopyCoupon(activePromoCode)}
-                    className="group/coupon relative overflow-hidden bg-white/95 border border-dashed border-[#c5a880] rounded-xl p-2.5 sm:p-3 flex items-center justify-between gap-2 shadow-2xs cursor-pointer hover:border-[#8a1c14] hover:bg-amber-50/30 transition-all duration-200"
-                    title="Tap anywhere to copy code"
-                  >
-                    <div className="flex items-center space-x-2 sm:space-x-2.5 min-w-0">
-                      <div className="w-7 h-7 rounded-lg bg-amber-50 border border-[#c5a880]/40 flex items-center justify-center text-[#8a1c14] shrink-0 group-hover/coupon:scale-105 transition-transform">
-                        <RiCoupon3Line size={14} />
+                  <div className="bg-white/90 border border-dashed border-[#c5a880]/80 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-2xs">
+                    <div className="flex items-center space-x-2 min-w-0">
+                      <div className="w-6 h-6 rounded-md bg-amber-50 border border-[#c5a880]/40 flex items-center justify-center text-[#8a1c14] shrink-0">
+                        <RiCoupon3Line size={13} />
                       </div>
-                      <div className="min-w-0">
-                        <span className="text-[8px] sm:text-[9px] uppercase tracking-wider text-slate-400 font-bold block leading-none">
-                          Promo Code
+                      <div className="truncate">
+                        <span className="text-[9px] text-slate-500 font-medium block">
+                          Coupon Code:
                         </span>
-                        <span className="text-xs sm:text-sm font-mono font-extrabold tracking-wider text-slate-900 block mt-0.5 truncate">
+                        <span className="text-xs font-mono font-bold tracking-wider text-slate-900">
                           {activePromoCode}
                         </span>
                       </div>
@@ -888,11 +884,9 @@ const Home = () => {
 
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCopyCoupon(activePromoCode);
-                      }}
-                      className="inline-flex items-center space-x-1 bg-[#8a1c14] hover:bg-[#6e140e] text-white text-[9px] sm:text-[9.5px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-2xs cursor-pointer transition-all active:scale-95 shrink-0"
+                      onClick={() => handleCopyCoupon(activePromoCode)}
+                      className="inline-flex items-center space-x-1 bg-[#8a1c14] hover:bg-[#6e140e] text-white text-[9.5px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-2xs cursor-pointer transition-all active:scale-95 shrink-0"
+                      title="Click to copy coupon code"
                     >
                       {couponCopied ? (
                         <>
@@ -902,7 +896,7 @@ const Home = () => {
                       ) : (
                         <>
                           <RiFileCopyLine size={12} className="opacity-80" />
-                          <span>Copy</span>
+                          <span>Copy Code</span>
                         </>
                       )}
                     </button>
@@ -914,10 +908,9 @@ const Home = () => {
             <div>
               <Link
                 to="/shop"
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-[#8a1c14] hover:bg-[#6e140e] text-white font-bold text-xs uppercase tracking-widest px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 active:scale-98 text-center cursor-pointer"
+                className="inline-block bg-[#8a1c14] text-white font-bold text-xs uppercase tracking-widest px-8 py-4 hover:bg-secondary hover:shadow-lg transition-all duration-300 text-center w-full sm:w-auto"
               >
-                <span>Explore Full Collection</span>
-                <span>→</span>
+                Explore Collection
               </Link>
             </div>
           </div>
@@ -1042,7 +1035,14 @@ const Home = () => {
                   >
                     {/* Media Container: Full Bleed (Edge-to-edge, zero margin, no awkward arch cut) */}
                     <div className="aspect-[3/4] sm:aspect-[4/5] overflow-hidden relative block bg-[#FBF9F5]">
-
+                      {/* Product Badge */}
+                      {badgeText && (
+                        <div className="absolute top-2.5 left-2.5 z-20 pointer-events-none">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-xs bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[8.5px] font-extrabold uppercase tracking-[0.16em] shadow-md border border-amber-300/30">
+                            {badgeText}
+                          </span>
+                        </div>
+                      )}
 
                       {/* Wishlist Button */}
                       <button
@@ -1130,22 +1130,12 @@ const Home = () => {
                     {/* Info Area - Clean & Balanced Typography */}
                     <div className="p-2.5 sm:p-3 flex flex-col flex-grow justify-between space-y-1.5 text-left bg-white">
                       <div className="space-y-1">
-                        {/* Category & Clean Fabric Tag + Badge */}
-                        <div className="flex items-center justify-between gap-1.5 min-h-[18px]">
-                          <div className="flex items-center space-x-1.5 min-w-0">
-                            {badgeText && (
-                              <span className="text-[7.5px] sm:text-[8px] bg-[#8a1c14] text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0 leading-none">
-                                {badgeText
-                                  .replace(/Everyday Essential/i, "Essential")
-                                  .replace(/New Arrival/i, "New")
-                                  .replace(/Best Seller/i, "Bestseller")}
-                              </span>
-                            )}
-                            <span className="text-[9px] sm:text-[9.5px] text-[#c5a880] uppercase tracking-[0.16em] font-extrabold truncate">
-                              {product.fabric && product.fabric.length <= 18 ? `${product.fabric} • ` : ""}
-                              {(product.category || "Ethnic Wear").replace(/-/g, " ")}
-                            </span>
-                          </div>
+                        {/* Category & Clean Fabric Tag */}
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-[9px] sm:text-[9.5px] text-[#c5a880] uppercase tracking-[0.16em] font-extrabold block truncate">
+                            {product.fabric && product.fabric.length <= 18 ? `${product.fabric} • ` : ""}
+                            {(product.category || "Ethnic Wear").replace(/-/g, " ")}
+                          </span>
                           {product.colorVariants && product.colorVariants.length > 1 && (
                             <span className="text-[8.5px] sm:text-[9px] text-slate-400 font-bold uppercase tracking-wider shrink-0">
                               {product.colorVariants.length} Colors

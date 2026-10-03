@@ -237,22 +237,165 @@ export const ProductHierarchyTab = () => {
             ))}
           </select>
         </div>
-        <div className="flex flex-col">
-          <div className="flex justify-between items-center mb-1.5">
+        <div className="flex flex-col md:col-span-2 space-y-2">
+          <div className="flex justify-between items-center">
             <label className="text-xs font-semibold text-slate-700">
-              Product Badge Tag
+              Product Badge Tag (Card Corner Ribbon)
             </label>
             <span className="text-[10px] text-slate-400 font-sans">
-              (Card corner badge)
+              Shows on top of product image in Catalog & Home
             </span>
+          </div>
+          <div className="flex flex-wrap gap-2 mb-1.5">
+            {[
+              { label: "Best Seller", color: "bg-red-50 text-red-700 border-red-200" },
+              { label: "New Arrival", color: "bg-amber-50 text-amber-800 border-amber-200" },
+              { label: "Trending", color: "bg-orange-50 text-orange-700 border-orange-200" },
+              { label: "Festive Edit", color: "bg-purple-50 text-purple-700 border-purple-200" },
+              { label: "Everyday Essential", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+            ].map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => {
+                  const isMatching = form.tag === preset.label;
+                  const newTag = isMatching ? "Regular" : preset.label;
+                  setForm({
+                    ...form,
+                    tag: newTag,
+                    ...(preset.label === "Best Seller" ? { bestSeller: !isMatching } : {}),
+                    ...(preset.label === "New Arrival" ? { newArrival: !isMatching } : {}),
+                    ...(preset.label === "Trending" ? { trending: !isMatching } : {}),
+                  });
+                }}
+                className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer ${
+                  form.tag === preset.label
+                    ? "bg-[#8a1c14] text-white border-[#8a1c14] shadow-xs scale-102"
+                    : `${preset.color} hover:shadow-2xs`
+                }`}
+              >
+                {form.tag === preset.label ? `✓ ${preset.label}` : `+ ${preset.label}`}
+              </button>
+            ))}
+            {form.tag && form.tag !== "Regular" && (
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, tag: "Regular" })}
+                className="px-2 py-1 text-[10px] font-semibold text-slate-400 hover:text-red-600 cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
           </div>
           <input
             type="text"
-            placeholder="e.g. Festive Wear, Trending, Best Seller, Handcrafted"
+            placeholder="Custom badge text (e.g. Festive Wear, Trending, Best Seller, Handcrafted)"
             value={form.tag || ""}
             onChange={(e) => setForm({ ...form, tag: e.target.value })}
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent-gold/20 focus:border-accent-gold transition"
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#c5a880] focus:border-[#c5a880] transition"
           />
+        </div>
+
+        {/* Dynamic Storefront Placement & Filter Linkage Toggles */}
+        <div className="md:col-span-2 pt-2 border-t border-slate-100 space-y-3">
+          <div>
+            <h5 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              Storefront Placements & Filter Linkage
+            </h5>
+            <p className="text-[11px] text-slate-400">
+              Select which sections and smart filters this product should automatically appear in.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Best Seller Placement */}
+            <label className={`flex items-start space-x-3 p-3 rounded-xl border transition-all cursor-pointer ${
+              form.bestSeller
+                ? "bg-red-50/40 border-red-200 shadow-2xs"
+                : "bg-slate-50/60 border-slate-200 hover:bg-slate-50"
+            }`}>
+              <input
+                type="checkbox"
+                checked={Boolean(form.bestSeller)}
+                onChange={(e) => setForm({ ...form, bestSeller: e.target.checked })}
+                className="mt-0.5 rounded text-[#8a1c14] focus:ring-[#8a1c14]/30 h-4 w-4"
+              />
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-slate-800 block">
+                  ⭐ Best Seller Filter
+                </span>
+                <span className="text-[10px] text-slate-500 block leading-snug">
+                  Links to "Best Selling" nav tab & Home "Best Sellers" tab.
+                </span>
+              </div>
+            </label>
+
+            {/* New Arrival Placement */}
+            <label className={`flex items-start space-x-3 p-3 rounded-xl border transition-all cursor-pointer ${
+              form.newArrival
+                ? "bg-amber-50/40 border-amber-200 shadow-2xs"
+                : "bg-slate-50/60 border-slate-200 hover:bg-slate-50"
+            }`}>
+              <input
+                type="checkbox"
+                checked={Boolean(form.newArrival)}
+                onChange={(e) => setForm({ ...form, newArrival: e.target.checked })}
+                className="mt-0.5 rounded text-amber-700 focus:ring-amber-500/30 h-4 w-4"
+              />
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-slate-800 block">
+                  ✨ New Arrival Filter
+                </span>
+                <span className="text-[10px] text-slate-500 block leading-snug">
+                  Links to "New Arrival" nav tab & Home "New Arrivals" tab.
+                </span>
+              </div>
+            </label>
+
+            {/* Trending Placement */}
+            <label className={`flex items-start space-x-3 p-3 rounded-xl border transition-all cursor-pointer ${
+              form.trending
+                ? "bg-orange-50/40 border-orange-200 shadow-2xs"
+                : "bg-slate-50/60 border-slate-200 hover:bg-slate-50"
+            }`}>
+              <input
+                type="checkbox"
+                checked={Boolean(form.trending)}
+                onChange={(e) => setForm({ ...form, trending: e.target.checked })}
+                className="mt-0.5 rounded text-orange-600 focus:ring-orange-500/30 h-4 w-4"
+              />
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-slate-800 block">
+                  🔥 Trending Ensemble
+                </span>
+                <span className="text-[10px] text-slate-500 block leading-snug">
+                  Boosts product ranking to the top of catalog and Home recommendations.
+                </span>
+              </div>
+            </label>
+
+            {/* Featured Spotlight */}
+            <label className={`flex items-start space-x-3 p-3 rounded-xl border transition-all cursor-pointer ${
+              form.featured
+                ? "bg-purple-50/40 border-purple-200 shadow-2xs"
+                : "bg-slate-50/60 border-slate-200 hover:bg-slate-50"
+            }`}>
+              <input
+                type="checkbox"
+                checked={Boolean(form.featured)}
+                onChange={(e) => setForm({ ...form, featured: e.target.checked })}
+                className="mt-0.5 rounded text-purple-600 focus:ring-purple-500/30 h-4 w-4"
+              />
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-slate-800 block">
+                  👑 Featured Spotlight
+                </span>
+                <span className="text-[10px] text-slate-500 block leading-snug">
+                  Promoted in homepage highlight cards and campaign widgets.
+                </span>
+              </div>
+            </label>
+          </div>
         </div>
       </div>
     </div>

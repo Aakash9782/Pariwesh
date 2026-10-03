@@ -793,22 +793,37 @@ const ProductsPage = () => {
     }
   };
 
-  const executeBulkPublish = async () => {
+  const executeBulkTag = async (tagType) => {
     if (selectedIds.length === 0) return;
     try {
-      // Toggle to regular tags conceptually
+      let updatePayload = {};
+      let label = "";
+      if (tagType === "bestSeller") {
+        updatePayload = { bestSeller: true, tag: "Best Seller" };
+        label = "Best Seller";
+      } else if (tagType === "newArrival") {
+        updatePayload = { newArrival: true, tag: "New Arrival" };
+        label = "New Arrival";
+      } else if (tagType === "featured") {
+        updatePayload = { featured: true, tag: "Featured" };
+        label = "Featured";
+      } else if (tagType === "clear") {
+        updatePayload = { bestSeller: false, newArrival: false, featured: false, tag: "Regular" };
+        label = "Regular (Removed Badges)";
+      }
       await Promise.all(
-        selectedIds.map((id) =>
-          API.put(`/products/id/${id}`, { tag: "Featured" }),
-        ),
+        selectedIds.map((id) => API.put(`/products/id/${id}`, updatePayload)),
       );
-      alert("Bulk updates to Featured status complete");
+      alert(`Successfully tagged ${selectedIds.length} items as "${label}".`);
       setSelectedIds([]);
       fetchProducts();
     } catch (err) {
       console.error(err);
+      alert("Failed to complete bulk updates.");
     }
   };
+
+  const executeBulkPublish = () => executeBulkTag("featured");
 
   // CSV PORTABILITY MODULES (EXPORT/IMPORT SIMULATORS)
   const handleExportCSV = () => {
@@ -895,6 +910,7 @@ const ProductsPage = () => {
         handleDuplicate={handleDuplicate}
         handleDelete={handleDelete}
         executeBulkPublish={executeBulkPublish}
+        executeBulkTag={executeBulkTag}
         executeBulkDelete={executeBulkDelete}
         initialFormState={initialFormState}
         setForm={setForm}

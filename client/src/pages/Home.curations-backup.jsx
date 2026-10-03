@@ -7,7 +7,6 @@ import Icon from "../theme/icons.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import HeroSlider from "../components/home/HeroSlider.jsx";
 import CampaignBanners from "../components/home/CampaignBanners.jsx";
-import RoyalWreathRing from "../components/home/RoyalWreathRing.jsx";
 import Skeleton, { ProductSkeleton, HeroSkeleton } from "../components/common/Skeleton.jsx";
 import { optimizeCloudinaryUrl } from "../utils/cloudinary.js";
 import { addToCart } from "../redux/slices/cartSlice.js";
@@ -163,7 +162,6 @@ const Home = () => {
   const [homeVisibleCount, setHomeVisibleCount] = useState(8);
   const [couponCopied, setCouponCopied] = useState(false);
   const [addedSuccessId, setAddedSuccessId] = useState(null);
-  const [quickSizeProduct, setQuickSizeProduct] = useState(null);
 
   const dynCategories = React.useMemo(() => {
     if (settings.homeCategories) {
@@ -519,14 +517,16 @@ const Home = () => {
       </div>
 
       <div className="space-y-16 pt-6 md:pt-10">
-        {/* EXQUISITE CATEGORY SELECTION: Royal Golden Laurel Wreath + Kundan Beaded Halo */}
+        {/* EXQUISITE CATEGORY SELECTION: Concept 2 (Kundan Medallion) + Concept 3 (Frosted Glass Floating Cards) */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 md:pt-4">
           <div className="flex flex-col space-y-6">
             <div className="text-center space-y-1.5">
               <div className="flex items-center justify-center space-x-2 text-[#c5a880]">
                 <span className="h-[1px] w-12 bg-gradient-to-r from-transparent to-[#c5a880]" />
-                <span className="text-[10px] text-[#8a1c14] tracking-[0.25em] uppercase font-extrabold">
-                  Shop by Category
+                <span className="text-[10px] text-[#8a1c14] tracking-[0.25em] uppercase font-extrabold flex items-center gap-1.5">
+                  <span>✦</span>
+                  <span>Shop by Category</span>
+                  <span>✦</span>
                 </span>
                 <span className="h-[1px] w-12 bg-gradient-to-l from-transparent to-[#c5a880]" />
               </div>
@@ -535,116 +535,74 @@ const Home = () => {
               </h2>
             </div>
 
-            {/* DESKTOP VIEW: Centered Airy Row with Royal Laurel Foliage Wreaths */}
-            <div className="hidden md:flex items-start justify-center gap-6 lg:gap-10 xl:gap-14 pt-3 pb-2">
-              {settingsLoading
-                ? Array.from({ length: 5 }).map((_, idx) => (
-                    <div key={idx} className="flex flex-col items-center space-y-3">
-                      <Skeleton variant="circle" className="w-28 h-28 lg:w-32 lg:h-32" />
-                      <Skeleton className="h-3 w-16" />
-                    </div>
-                  ))
-                : dynCategories.map((cat, idx) => (
-                    <Link
-                      key={idx}
-                      to={cat.path}
-                      className="group relative flex flex-col items-center text-center cursor-pointer select-none transition-transform duration-300 hover:-translate-y-1.5"
-                    >
-                      {/* Circular Avatar wrapped inside Royal Foliage Wreath (Guaranteed Zero Overlap) */}
-                      <RoyalWreathRing className="w-32 h-32 lg:w-36 lg:h-36">
-                        <img
-                          src={optimizeCloudinaryUrl(cat.image, 280)}
-                          alt={cat.title}
-                          loading="lazy"
-                          decoding="async"
-                          width="112"
-                          height="112"
-                          className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500 ease-out"
+            {/* Responsive Container: Centered on Desktop, Touch-Swipe Glass Carousel on Mobile */}
+            <div className="relative">
+              {/* Subtle Mobile Scroll Cue Fade */}
+              <div className="pointer-events-none absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-white via-white/80 to-transparent md:hidden z-20" />
+
+              <div className="flex items-stretch justify-start md:justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-7 overflow-x-auto pb-5 pt-2 px-4 sm:px-6 -mx-4 sm:-mx-6 scrollbar-none snap-x snap-mandatory select-none">
+                {settingsLoading
+                  ? Array.from({ length: 5 }).map((_, idx) => (
+                      <div
+                        key={idx}
+                        className="flex flex-col items-center justify-between p-3.5 sm:p-5 rounded-[26px] sm:rounded-[30px] bg-white/70 border border-slate-200/80 min-w-[112px] xs:min-w-[124px] sm:min-w-[148px] lg:min-w-[175px]"
+                      >
+                        <Skeleton
+                          variant="circle"
+                          className="w-18 h-18 xs:w-20 xs:h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 border border-accent-gold/20"
                         />
-                        <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-300 pointer-events-none" />
-                      </RoyalWreathRing>
-
-                      {/* Title & Subtle Indicator Underline */}
-                      <div className="mt-2.5 flex flex-col items-center space-y-0.5">
-                        <h3 className="text-sm lg:text-[15px] font-serif font-semibold text-slate-800 tracking-wide group-hover:text-[#8a1c14] transition-colors line-clamp-1">
-                          {cat.title}
-                        </h3>
-                        <span className="h-[1.5px] w-0 bg-[#8a1c14] group-hover:w-8 transition-all duration-300 rounded-full" />
+                        <div className="space-y-1.5 w-16 sm:w-20 flex flex-col items-center mt-3">
+                          <Skeleton className="h-3 w-full" />
+                          <Skeleton className="h-2.5 w-2/3" />
+                        </div>
                       </div>
-                    </Link>
-                  ))}
-            </div>
-
-            {/* MOBILE VIEW: Clean 3 + 2 Non-Slider Grid (100% visible, zero horizontal overflow) */}
-            <div className="md:hidden pt-2 pb-1">
-              {settingsLoading ? (
-                <div className="grid grid-cols-3 gap-x-2 gap-y-4 max-w-[360px] mx-auto">
-                  {Array.from({ length: 5 }).map((_, idx) => (
-                    <div key={idx} className="flex flex-col items-center space-y-2">
-                      <Skeleton variant="circle" className="w-[84px] h-[84px]" />
-                      <Skeleton className="h-2.5 w-14" />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="max-w-[370px] mx-auto px-2">
-                  {/* Top Row: First 3 Categories */}
-                  <div className="grid grid-cols-3 gap-x-1.5 gap-y-2 justify-items-center">
-                    {dynCategories.slice(0, 3).map((cat, idx) => (
+                    ))
+                  : dynCategories.map((cat, idx) => (
                       <Link
                         key={idx}
                         to={cat.path}
-                        className="group flex flex-col items-center text-center cursor-pointer select-none active:scale-95 transition-transform duration-150 w-full"
+                        className="snap-start group relative flex flex-col items-center justify-between p-3 sm:p-4.5 lg:p-5 rounded-[24px] sm:rounded-[28px] lg:rounded-[32px] bg-gradient-to-b from-white/95 via-[#FDFBF7]/90 to-white/75 backdrop-blur-xl border border-[#c5a880]/35 shadow-[0_8px_24px_rgba(197,168,128,0.1)] hover:shadow-[0_18px_40px_rgba(138,28,20,0.18)] hover:-translate-y-2 transition-all duration-300 min-w-[110px] xs:min-w-[122px] sm:min-w-[146px] lg:min-w-[175px] text-center cursor-pointer select-none"
                       >
-                        <RoyalWreathRing className="w-[100px] h-[100px] xs:w-[108px] xs:h-[108px]">
-                          <img
-                            src={optimizeCloudinaryUrl(cat.image, 200)}
-                            alt={cat.title}
-                            loading="lazy"
-                            decoding="async"
-                            width="78"
-                            height="78"
-                            className="w-full h-full object-cover object-top"
-                          />
-                        </RoyalWreathRing>
+                        {/* Ambient Golden Hover Aura */}
+                        <div className="absolute inset-0 rounded-[24px] sm:rounded-[28px] lg:rounded-[32px] bg-gradient-to-br from-[#c5a880]/20 via-transparent to-[#8a1c14]/12 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-                        <h4 className="mt-1 text-[11px] xs:text-[12px] font-serif font-semibold text-slate-800 tracking-tight group-hover:text-[#8a1c14] transition-colors leading-tight line-clamp-1">
-                          {cat.title}
-                        </h4>
-                      </Link>
-                    ))}
-                  </div>
+                        {/* Top: Kundan Jewelry Medallion with Conic Shimmer Halo */}
+                        <div className="relative p-[3px] sm:p-[4px] rounded-full bg-[conic-gradient(from_0deg,#c5a880,#FFF6E5,#8a1c14,#E5D3B3,#c5a880)] shadow-[0_0_0_1px_rgba(197,168,128,0.45),0_6px_20px_rgba(0,0,0,0.08)] group-hover:shadow-[0_0_0_2px_#8a1c14,0_10px_28px_rgba(138,28,20,0.25)] transition-all duration-300">
+                          {/* Royal Starburst Crown Notch */}
+                          <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 text-[9px] text-[#c5a880] group-hover:text-[#8a1c14] transition-colors leading-none select-none drop-shadow-xs">
+                            ✦
+                          </span>
 
-                  {/* Bottom Row: Remaining Categories Centered */}
-                  {dynCategories.length > 3 && (
-                    <div className="flex justify-center gap-x-4 xs:gap-x-6 mt-2">
-                      {dynCategories.slice(3).map((cat, idx) => (
-                        <Link
-                          key={idx + 3}
-                          to={cat.path}
-                          className="group flex flex-col items-center text-center cursor-pointer select-none active:scale-95 transition-transform duration-150 w-[100px] xs:w-[108px]"
-                        >
-                          <RoyalWreathRing className="w-[100px] h-[100px] xs:w-[108px] xs:h-[108px]">
+                          {/* Inner Circular Avatar */}
+                          <div className="w-18 h-18 xs:w-20 xs:h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full overflow-hidden relative bg-[#FAF7F2] border-2 border-white shadow-inner">
                             <img
-                              src={optimizeCloudinaryUrl(cat.image, 200)}
+                              src={optimizeCloudinaryUrl(cat.image, 250)}
                               alt={cat.title}
                               loading="lazy"
                               decoding="async"
-                              width="78"
-                              height="78"
-                              className="w-full h-full object-cover object-top"
+                              width="112"
+                              height="112"
+                              className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500 ease-out"
                             />
-                          </RoyalWreathRing>
+                            <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-300 pointer-events-none" />
+                          </div>
+                        </div>
 
-                          <h4 className="mt-1 text-[11px] xs:text-[12px] font-serif font-semibold text-slate-800 tracking-tight group-hover:text-[#8a1c14] transition-colors leading-tight line-clamp-1">
+                        {/* Bottom: Title & Glassmorphic Explore Pill */}
+                        <div className="space-y-1.5 mt-2.5 sm:mt-3 w-full px-0.5 flex flex-col items-center z-10">
+                          <h4 className="text-[11px] xs:text-[11.5px] sm:text-xs lg:text-[13px] font-bold text-slate-800 uppercase tracking-wide group-hover:text-[#8a1c14] transition-colors line-clamp-1">
                             {cat.title}
                           </h4>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                          <span className="inline-flex items-center space-x-1 text-[8.5px] sm:text-[9.5px] font-bold text-[#8a1c14] bg-white/95 border border-[#c5a880]/40 group-hover:border-[#8a1c14] group-hover:bg-[#8a1c14] group-hover:text-white px-2.5 py-0.5 rounded-full shadow-2xs transition-all duration-300">
+                            <span>Explore</span>
+                            <span className="text-[7.5px] sm:text-[8.5px]">→</span>
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                {/* Mobile Right Padding Spacer */}
+                <div className="shrink-0 w-3 md:hidden" aria-hidden="true" />
+              </div>
             </div>
           </div>
         </section>
@@ -746,8 +704,8 @@ const Home = () => {
           </div>
 
           {/* Right card - Soft beige editorial layout */}
-          <div className="bg-[#FAF7F3] border border-borderLight p-5 xs:p-6 sm:p-8 md:p-12 flex flex-col justify-between text-left space-y-6 sm:space-y-8 rounded-2xl">
-            <div className="space-y-3 sm:space-y-4">
+          <div className="bg-[#FAF7F3] border border-borderLight p-8 md:p-12 flex flex-col justify-between text-left space-y-8">
+            <div className="space-y-4">
               <span className="text-[9px] text-[#8a1c14] font-black uppercase tracking-[0.3em] block">
                 — The Pariwesh Edit —
               </span>
@@ -766,28 +724,28 @@ const Home = () => {
             </div>
 
             {/* Micro stats banner */}
-            <div className="grid grid-cols-3 gap-2 xs:gap-4 border-y border-[#8a1c14]/10 py-4 sm:py-6">
+            <div className="grid grid-cols-3 gap-2 xs:gap-4 border-y border-[#8a1c14]/10 py-6">
               <div>
-                <h4 className="text-xl sm:text-2xl font-serif text-textPrimary font-semibold">
+                <h4 className="text-2xl font-serif text-textPrimary font-semibold">
                   150+
                 </h4>
-                <p className="text-[8.5px] sm:text-[9px] uppercase tracking-widest text-textSecondary mt-0.5">
+                <p className="text-[9px] uppercase tracking-widest text-textSecondary mt-1">
                   Unique Styles
                 </p>
               </div>
               <div>
-                <h4 className="text-xl sm:text-2xl font-serif text-textPrimary font-semibold">
+                <h4 className="text-2xl font-serif text-textPrimary font-semibold">
                   4.9★
                 </h4>
-                <p className="text-[8.5px] sm:text-[9px] uppercase tracking-widest text-textSecondary mt-0.5">
+                <p className="text-[9px] uppercase tracking-widest text-textSecondary mt-1">
                   Loved By You
                 </p>
               </div>
               <div>
-                <h4 className="text-xl sm:text-2xl font-serif text-textPrimary font-semibold">
+                <h4 className="text-2xl font-serif text-textPrimary font-semibold">
                   100%
                 </h4>
-                <p className="text-[8.5px] sm:text-[9px] uppercase tracking-widest text-textSecondary mt-0.5">
+                <p className="text-[9px] uppercase tracking-widest text-textSecondary mt-1">
                   Hand Finished
                 </p>
               </div>
@@ -795,9 +753,9 @@ const Home = () => {
 
             {/* LUXURY ROYAL COUNTDOWN WIDGET */}
             {settingsLoaded && isCountdownActive && !isCountdownExpired && timeLeft && (
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6F0] to-[#F5EFEB] border border-[#c5a880]/40 p-3.5 sm:p-5 shadow-sm space-y-3 sm:space-y-3.5">
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6F0] to-[#F5EFEB] border border-[#c5a880]/40 p-4 sm:p-5 shadow-sm space-y-3.5">
                 {/* Subtle Decorative Golden Corner Accent */}
-                <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-[#c5a880]/15 to-transparent rounded-bl-full pointer-events-none" />
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-[#c5a880]/15 to-transparent rounded-bl-full pointer-events-none" />
 
                 {/* Top Status Header */}
                 <div className="flex items-center justify-between gap-2 relative z-10">
@@ -806,13 +764,13 @@ const Home = () => {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-[#8a1c14]"></span>
                     </span>
-                    <span className="text-[8.5px] sm:text-[9px] font-black uppercase tracking-widest">
+                    <span className="text-[9px] font-black uppercase tracking-widest">
                       Live Festive Offer
                     </span>
                   </div>
 
-                  <span className="text-[9.5px] sm:text-[10px] text-slate-500 font-medium flex items-center space-x-1">
-                    <RiTimerLine size={13} className="text-[#8a1c14]" />
+                  <span className="text-[10px] text-slate-400 font-medium flex items-center space-x-1">
+                    <RiTimerLine size={13} className="text-[#c5a880]" />
                     <span>Ending Soon</span>
                   </span>
                 </div>
@@ -822,65 +780,61 @@ const Home = () => {
                   {settings.countdownTitle || "Exclusive Limited-Period Collection Ends In:"}
                 </h4>
 
-                {/* Symmetrical 4-Column Luxury Digit Tiles with Gold Accents */}
-                <div className="grid grid-cols-4 gap-1.5 xs:gap-2 sm:gap-2.5 my-2">
+                {/* Symmetrical 4-Column Luxury Digit Tiles */}
+                <div className="grid grid-cols-4 gap-2 sm:gap-2.5 my-2">
                   {/* Days */}
-                  <div className="bg-gradient-to-b from-white to-[#FDFBF7] border border-[#c5a880]/40 rounded-xl py-2 sm:py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center">
-                    <span className="text-xl xs:text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
+                  <div className="bg-white/95 border border-[#c5a880]/35 rounded-xl py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center transition-transform duration-200 hover:scale-[1.02]">
+                    <span className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
                       {String(timeLeft.days || 0).padStart(2, "0")}
                     </span>
-                    <span className="text-[7.5px] sm:text-[8.5px] uppercase font-bold tracking-[0.16em] text-[#8a1c14] mt-1">
+                    <span className="text-[8px] sm:text-[8.5px] uppercase font-bold tracking-[0.2em] text-[#8a1c14] mt-1.5">
                       Days
                     </span>
                   </div>
 
                   {/* Hours */}
-                  <div className="bg-gradient-to-b from-white to-[#FDFBF7] border border-[#c5a880]/40 rounded-xl py-2 sm:py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center">
-                    <span className="text-xl xs:text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
+                  <div className="bg-white/95 border border-[#c5a880]/35 rounded-xl py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center transition-transform duration-200 hover:scale-[1.02]">
+                    <span className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
                       {String(timeLeft.hours || 0).padStart(2, "0")}
                     </span>
-                    <span className="text-[7.5px] sm:text-[8.5px] uppercase font-bold tracking-[0.16em] text-[#8a1c14] mt-1">
+                    <span className="text-[8px] sm:text-[8.5px] uppercase font-bold tracking-[0.2em] text-[#8a1c14] mt-1.5">
                       Hours
                     </span>
                   </div>
 
                   {/* Minutes */}
-                  <div className="bg-gradient-to-b from-white to-[#FDFBF7] border border-[#c5a880]/40 rounded-xl py-2 sm:py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center">
-                    <span className="text-xl xs:text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
+                  <div className="bg-white/95 border border-[#c5a880]/35 rounded-xl py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center transition-transform duration-200 hover:scale-[1.02]">
+                    <span className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-none">
                       {String(timeLeft.minutes || 0).padStart(2, "0")}
                     </span>
-                    <span className="text-[7.5px] sm:text-[8.5px] uppercase font-bold tracking-[0.16em] text-[#8a1c14] mt-1">
+                    <span className="text-[8px] sm:text-[8.5px] uppercase font-bold tracking-[0.2em] text-[#8a1c14] mt-1.5">
                       Mins
                     </span>
                   </div>
 
                   {/* Seconds */}
-                  <div className="bg-gradient-to-b from-rose-50/50 to-white border border-[#8a1c14]/35 rounded-xl py-2 sm:py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center">
-                    <span className="text-xl xs:text-2xl sm:text-3xl font-serif font-bold text-[#8a1c14] leading-none animate-pulse">
+                  <div className="bg-white/95 border border-[#8a1c14]/30 rounded-xl py-2.5 px-1 shadow-2xs flex flex-col items-center justify-center text-center transition-transform duration-200 hover:scale-[1.02] bg-rose-50/20">
+                    <span className="text-2xl sm:text-3xl font-serif font-bold text-[#8a1c14] leading-none animate-pulse">
                       {String(timeLeft.seconds || 0).padStart(2, "0")}
                     </span>
-                    <span className="text-[7.5px] sm:text-[8.5px] uppercase font-bold tracking-[0.16em] text-[#8a1c14] mt-1">
+                    <span className="text-[8px] sm:text-[8.5px] uppercase font-bold tracking-[0.2em] text-[#8a1c14] mt-1.5">
                       Secs
                     </span>
                   </div>
                 </div>
 
-                {/* 1-Tap Coupon Voucher Ticket Strip - Guaranteed Zero Truncation */}
+                {/* 1-Tap Coupon Voucher Ticket Strip */}
                 {activePromoCode && (
-                  <div
-                    onClick={() => handleCopyCoupon(activePromoCode)}
-                    className="group/coupon relative overflow-hidden bg-white/95 border border-dashed border-[#c5a880] rounded-xl p-2.5 sm:p-3 flex items-center justify-between gap-2 shadow-2xs cursor-pointer hover:border-[#8a1c14] hover:bg-amber-50/30 transition-all duration-200"
-                    title="Tap anywhere to copy code"
-                  >
-                    <div className="flex items-center space-x-2 sm:space-x-2.5 min-w-0">
-                      <div className="w-7 h-7 rounded-lg bg-amber-50 border border-[#c5a880]/40 flex items-center justify-center text-[#8a1c14] shrink-0 group-hover/coupon:scale-105 transition-transform">
-                        <RiCoupon3Line size={14} />
+                  <div className="bg-white/90 border border-dashed border-[#c5a880]/80 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-2xs">
+                    <div className="flex items-center space-x-2 min-w-0">
+                      <div className="w-6 h-6 rounded-md bg-amber-50 border border-[#c5a880]/40 flex items-center justify-center text-[#8a1c14] shrink-0">
+                        <RiCoupon3Line size={13} />
                       </div>
-                      <div className="min-w-0">
-                        <span className="text-[8px] sm:text-[9px] uppercase tracking-wider text-slate-400 font-bold block leading-none">
-                          Promo Code
+                      <div className="truncate">
+                        <span className="text-[9px] text-slate-500 font-medium block">
+                          Coupon Code:
                         </span>
-                        <span className="text-xs sm:text-sm font-mono font-extrabold tracking-wider text-slate-900 block mt-0.5 truncate">
+                        <span className="text-xs font-mono font-bold tracking-wider text-slate-900">
                           {activePromoCode}
                         </span>
                       </div>
@@ -888,11 +842,9 @@ const Home = () => {
 
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCopyCoupon(activePromoCode);
-                      }}
-                      className="inline-flex items-center space-x-1 bg-[#8a1c14] hover:bg-[#6e140e] text-white text-[9px] sm:text-[9.5px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-2xs cursor-pointer transition-all active:scale-95 shrink-0"
+                      onClick={() => handleCopyCoupon(activePromoCode)}
+                      className="inline-flex items-center space-x-1 bg-[#8a1c14] hover:bg-[#6e140e] text-white text-[9.5px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-2xs cursor-pointer transition-all active:scale-95 shrink-0"
+                      title="Click to copy coupon code"
                     >
                       {couponCopied ? (
                         <>
@@ -902,7 +854,7 @@ const Home = () => {
                       ) : (
                         <>
                           <RiFileCopyLine size={12} className="opacity-80" />
-                          <span>Copy</span>
+                          <span>Copy Code</span>
                         </>
                       )}
                     </button>
@@ -914,10 +866,9 @@ const Home = () => {
             <div>
               <Link
                 to="/shop"
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-[#8a1c14] hover:bg-[#6e140e] text-white font-bold text-xs uppercase tracking-widest px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 active:scale-98 text-center cursor-pointer"
+                className="inline-block bg-[#8a1c14] text-white font-bold text-xs uppercase tracking-widest px-8 py-4 hover:bg-secondary hover:shadow-lg transition-all duration-300 text-center w-full sm:w-auto"
               >
-                <span>Explore Full Collection</span>
-                <span>→</span>
+                Explore Collection
               </Link>
             </div>
           </div>
@@ -1038,162 +989,255 @@ const Home = () => {
                 return (
                   <div
                     key={product._id}
-                    className="group relative bg-white rounded-2xl overflow-hidden border border-slate-200/75 hover:border-[#c5a880]/60 shadow-[0_3px_14px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_28px_rgba(138,28,20,0.12)] hover:-translate-y-1 flex flex-col h-full transition-all duration-300"
+                    className="group relative bg-white/80 hover:bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/80 hover:border-[#c5a880]/40 shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_12px_32px_rgba(197,168,128,0.18),0_4px_12px_rgba(0,0,0,0.03)] hover:-translate-y-1 flex flex-col h-full transition-all duration-400"
                   >
-                    {/* Media Container: Full Bleed (Edge-to-edge, zero margin, no awkward arch cut) */}
-                    <div className="aspect-[3/4] sm:aspect-[4/5] overflow-hidden relative block bg-[#FBF9F5]">
-
-
-                      {/* Wishlist Button */}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleWishlistToggle(product);
-                        }}
-                        className={`absolute top-2.5 right-2.5 z-20 w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-200 shadow-sm border border-white/60 cursor-pointer ${
-                          wishlistItems.some((p) => p._id === product._id)
-                            ? "bg-white text-[#8a1c14] scale-105 ring-2 ring-[#8a1c14]/30"
-                            : "bg-white/90 hover:bg-white text-slate-700 hover:text-[#8a1c14] active:scale-95"
-                        }`}
-                        aria-label="Wishlist"
-                      >
-                        {wishlistItems.some((p) => p._id === product._id) ? (
-                          <Icon name="HeartFill" size={14} />
-                        ) : (
-                          <Icon name="HeartOutline" size={14} />
-                        )}
-                      </button>
-
-                      {/* Image / Video Link */}
-                      <Link
-                        to={`/product/${product.slug}`}
-                        className="w-full h-full block"
-                      >
-                        {product.video ? (
-                          <video
-                            src={product.video}
-                            className="w-full h-full object-cover group-hover:scale-105 transform-gpu transition-transform duration-700 ease-out origin-top"
-                            muted
-                            loop
-                            autoPlay
-                            playsInline
-                          />
-                        ) : (
-                          <div className="w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out">
-                            <ProductImageSlider
-                              images={product.images}
-                              alt={product.name}
-                              priority={pIdx < 2}
-                            />
-                          </div>
-                        )}
-                      </Link>
-
-                      {/* Floating Rating Badge */}
-                      {Number(product.reviewsCount) > 0 && (
-                        <div className="absolute bottom-2.5 left-2.5 z-10 bg-white/95 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-800 shadow-xs border border-white/80 flex items-center space-x-1 pointer-events-none">
-                          <span className="text-amber-500 text-[10.5px]">★</span>
-                          <span>{Number(product.rating || 4.8).toFixed(1)}</span>
-                          <span className="text-slate-400 font-normal">({product.reviewsCount})</span>
-                        </div>
-                      )}
-
-                      {/* Floating Luxury Quick-Add Bag Button (Myntra/Suitswala Style) */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (product.sizes && product.sizes.length > 1) {
-                            setQuickSizeProduct(product);
-                          } else {
-                            handleQuickAddToCart(product, product.sizes?.[0] || "M");
-                          }
-                        }}
-                        className={`absolute bottom-2.5 right-2.5 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 shadow-md cursor-pointer active:scale-90 ${
-                          addedSuccessId === product._id
-                            ? "bg-emerald-600 text-white"
-                            : "bg-white/95 hover:bg-[#8a1c14] text-slate-800 hover:text-white border border-white hover:border-[#8a1c14]"
-                        }`}
-                        title="Quick Add to Bag"
-                        aria-label="Add to bag"
-                      >
-                        {addedSuccessId === product._id ? (
-                          <RiCheckLine size={16} className="animate-bounce" />
-                        ) : (
-                          <RiShoppingBagLine size={15} />
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Info Area - Clean & Balanced Typography */}
-                    <div className="p-2.5 sm:p-3 flex flex-col flex-grow justify-between space-y-1.5 text-left bg-white">
-                      <div className="space-y-1">
-                        {/* Category & Clean Fabric Tag + Badge */}
-                        <div className="flex items-center justify-between gap-1.5 min-h-[18px]">
-                          <div className="flex items-center space-x-1.5 min-w-0">
-                            {badgeText && (
-                              <span className="text-[7.5px] sm:text-[8px] bg-[#8a1c14] text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0 leading-none">
-                                {badgeText
-                                  .replace(/Everyday Essential/i, "Essential")
-                                  .replace(/New Arrival/i, "New")
-                                  .replace(/Best Seller/i, "Bestseller")}
-                              </span>
-                            )}
-                            <span className="text-[9px] sm:text-[9.5px] text-[#c5a880] uppercase tracking-[0.16em] font-extrabold truncate">
-                              {product.fabric && product.fabric.length <= 18 ? `${product.fabric} • ` : ""}
-                              {(product.category || "Ethnic Wear").replace(/-/g, " ")}
-                            </span>
-                          </div>
-                          {product.colorVariants && product.colorVariants.length > 1 && (
-                            <span className="text-[8.5px] sm:text-[9px] text-slate-400 font-bold uppercase tracking-wider shrink-0">
-                              {product.colorVariants.length} Colors
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Product Title */}
-                        <h3 className="text-xs sm:text-[13px] font-sans font-medium text-slate-900 leading-snug group-hover:text-[#8a1c14] transition-colors duration-200 line-clamp-2 min-h-[2rem]">
-                          <Link to={`/product/${product.slug}`}>
-                            {formatProductTitle(product.name)}
-                          </Link>
-                        </h3>
-
-                        {/* Available Sizes Hint */}
-                        <div className="flex items-center space-x-1 text-[9px] text-slate-400 font-sans pt-0.5">
-                          <span className="font-semibold uppercase text-[8px] tracking-wider text-slate-400">Sizes:</span>
-                          <span className="font-medium text-slate-600 truncate">
-                            {product.sizes && product.sizes.length > 0
-                              ? product.sizes.join(", ")
-                              : "M, L, XL, XXL"}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Pricing Row - 100% UNTOUCHED */}
-                      <div className="flex items-baseline space-x-2 pt-1 font-sans">
-                        <span className="text-sm sm:text-base font-extrabold text-slate-900 font-sans tracking-tight">
-                          ₹{product.sellingPrice}
+                    {/* Product Badge - Supports custom Tag, Best Seller, New Arrival, and Trending */}
+                    {badgeText && (
+                      <div className="absolute top-3.5 left-3.5 z-20 pointer-events-none">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-xs bg-gradient-to-r from-[#8a1c14] to-[#6b140e] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.16em] shadow-md border border-amber-300/30">
+                          {badgeText}
                         </span>
-                        {product.mrp > product.sellingPrice && (
-                          <>
-                            <span className="text-[11px] text-slate-400 line-through font-normal font-sans">
-                              ₹{product.mrp}
-                            </span>
-                            <span className="text-[8.5px] font-extrabold text-[#8a1c14] bg-rose-50 border border-rose-200/70 px-1.5 py-0.2 uppercase tracking-wider font-sans rounded">
-                              {Math.round(
-                                ((product.mrp - product.sellingPrice) /
-                                  product.mrp) *
-                                  100,
-                              )}
-                              % OFF
-                            </span>
-                          </>
-                        )}
+                      </div>
+                    )}
+
+                {/* Wishlist Button */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleWishlistToggle(product);
+                  }}
+                  className={`absolute top-3.5 right-3.5 z-20 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 shadow-sm border border-white/60 cursor-pointer ${
+                    wishlistItems.some((p) => p._id === product._id)
+                      ? "bg-white text-[#8a1c14] scale-105 ring-2 ring-[#8a1c14]/30"
+                      : "bg-white/85 hover:bg-white text-slate-700 hover:text-[#8a1c14] hover:scale-110 active:scale-95"
+                  }`}
+                  aria-label="Wishlist"
+                >
+                  {wishlistItems.some((p) => p._id === product._id) ? (
+                    <Icon name="HeartFill" size={15} />
+                  ) : (
+                    <Icon name="HeartOutline" size={15} />
+                  )}
+                </button>
+
+                {/* Image / Video Container with Mehrab Arch */}
+                <Link
+                  to={`/product/${product.slug}`}
+                  className="aspect-[3/4] sm:aspect-[4/5] overflow-hidden relative block bg-[#FBF9F5] rounded-t-lg transition-transform duration-500"
+                  style={{ clipPath: "url(#mehrab-clip)" }}
+                >
+                  {product.video ? (
+                    <video
+                      src={product.video}
+                      className="w-full h-full object-cover group-hover:scale-105 transform-gpu transition-transform duration-700 ease-out origin-top"
+                      muted
+                      loop
+                      autoPlay
+                      playsInline
+                    />
+                  ) : (
+                    <div className="w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out">
+                      <ProductImageSlider
+                        images={product.images}
+                        alt={product.name}
+                        priority={pIdx < 2}
+                      />
+                    </div>
+                  )}
+
+                  {/* Royal Golden Mehrab Arch Filigree Stroke */}
+                  <svg
+                    viewBox="0 0 100 125"
+                    className="absolute inset-0 w-full h-full pointer-events-none fill-none stroke-accent-gold stroke-[1.8px] opacity-85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.15)]"
+                    preserveAspectRatio="none"
+                  >
+                    <path d="M 0,125 L 0,7.5 C 0,6 8,5.5 12,5.1 C 12,3.8 22,3.2 28,2.5 C 28,1.7 38,1.2 44,0.6 C 47,0.2 49,0 50,0 C 51,0 53,0.2 56,0.6 C 62,1.2 72,1.7 72,2.5 C 78,3.2 88,3.8 88,5.1 C 92,5.5 100,6 100,7.5 L 100,125" />
+                  </svg>
+
+                  {/* Floating Rating Badge (Dynamic from verified reviews) */}
+                  {Number(product.reviewsCount) > 0 && (
+                    <div className="absolute bottom-2.5 right-2.5 z-10 bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10.5px] font-bold text-slate-800 shadow-sm border border-white/90 flex items-center space-x-1 pointer-events-none transition-opacity duration-200 group-hover:opacity-0 sm:group-hover:opacity-0">
+                      <span className="text-amber-500 text-[11px]">★</span>
+                      <span>{Number(product.rating || 4.8).toFixed(1)}</span>
+                      <span className="text-slate-400 font-normal">({product.reviewsCount})</span>
+                    </div>
+                  )}
+
+                  {/* Subtle Gradient Shade at Hem */}
+                  <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 via-black/10 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                  {/* Quick Buy Slide-Up Frosted Glass Dock (DESKTOP HOVER ONLY) */}
+                  <div className="hidden md:block absolute inset-x-0 bottom-0 z-20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out pointer-events-none group-hover:pointer-events-auto">
+                    <div className="bg-white/95 backdrop-blur-md px-2 py-2.5 border-t border-accent-gold/40 shadow-[0_-4px_20px_rgba(0,0,0,0.12)] flex flex-col items-center space-y-1.5">
+                      <span className="text-[9px] uppercase tracking-[0.2em] font-extrabold text-slate-700 flex items-center justify-center select-none">
+                        <span>Quick Buy Size</span>
+                      </span>
+                      <div className="flex justify-center items-center gap-1.5 w-full px-1">
+                        {(product.sizes && product.sizes.length > 0
+                          ? product.sizes
+                          : ["M", "L", "XL", "XXL"]
+                        ).map((size) => {
+                          const isOutOfStock =
+                            product.sizesStock &&
+                            product.sizesStock[size] !== undefined &&
+                            product.sizesStock[size] <= 0;
+                          return (
+                            <button
+                              key={size}
+                              disabled={isOutOfStock}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleQuickAddToCart(product, size);
+                              }}
+                              className={`flex-1 h-7 rounded text-[10px] font-bold tracking-wider uppercase transition-all duration-200 cursor-pointer flex items-center justify-center font-sans ${
+                                isOutOfStock
+                                  ? "bg-slate-100 text-slate-300 border border-slate-200 cursor-not-allowed line-through"
+                                  : "bg-white text-slate-800 border border-slate-200 hover:border-[#8a1c14] hover:bg-[#8a1c14] hover:text-white shadow-xs hover:shadow-sm active:scale-95"
+                              }`}
+                              title={
+                                isOutOfStock
+                                  ? `${size} (Out of Stock)`
+                                  : `Add Size ${size} to Bag`
+                              }
+                            >
+                              {size}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
+                </Link>
+
+                {/* Info area */}
+                <div className="pt-3 pb-1 px-1 flex flex-col flex-grow justify-between space-y-2 text-left">
+                  <div className="space-y-1">
+                    {/* Category & Fabric Tag */}
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[9.5px] text-[#c5a880] uppercase tracking-[0.18em] font-extrabold block truncate">
+                        {product.fabric ? `${product.fabric} • ` : ""}{product.category || "Ethnic Wear"}
+                      </span>
+                      {product.colorVariants && product.colorVariants.length > 1 && (
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider shrink-0">
+                          {product.colorVariants.length} Colors
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Product Title (Clean & Sanitized) */}
+                    <h3 className="text-xs sm:text-[13px] font-sans font-medium text-slate-900 leading-snug group-hover:text-[#8a1c14] transition-colors duration-200 line-clamp-2 h-9">
+                      <Link to={`/product/${product.slug}`}>
+                        {formatProductTitle(product.name)}
+                      </Link>
+                    </h3>
+
+                    {/* Available Sizes Interactive Selector (Clean Minimal Luxury Chips) */}
+                    <div className="flex items-center justify-between pt-0.5 font-sans text-[10px]">
+                      <span className="text-slate-400 font-semibold uppercase text-[8.5px] tracking-wider">Sizes:</span>
+                      <div className="flex items-center space-x-1 overflow-x-auto scrollbar-none py-0.5">
+                        {(product.sizes && product.sizes.length > 0
+                          ? product.sizes
+                          : ["M", "L", "XL", "XXL"]
+                        ).map((sz) => {
+                          const isOut =
+                            product.sizesStock &&
+                            product.sizesStock[sz] !== undefined &&
+                            product.sizesStock[sz] <= 0;
+                          const activeSize =
+                            selectedCardSizes[product._id] ||
+                            (product.sizes && product.sizes.length > 0
+                              ? product.sizes[0]
+                              : "M");
+                          const isSelected = activeSize === sz;
+
+                          return (
+                            <button
+                              key={sz}
+                              type="button"
+                              disabled={isOut}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setSelectedCardSizes((prev) => ({
+                                  ...prev,
+                                  [product._id]: sz,
+                                }));
+                              }}
+                              className={`min-w-[22px] h-[20px] px-1 rounded text-[8.5px] font-bold transition-all cursor-pointer flex items-center justify-center ${
+                                isOut
+                                  ? "text-slate-300 line-through bg-slate-50 cursor-not-allowed"
+                                  : isSelected
+                                  ? "bg-[#8a1c14] text-white font-extrabold shadow-2xs scale-105"
+                                  : "text-slate-600 bg-slate-100 hover:bg-slate-200"
+                              }`}
+                              title={isOut ? `${sz} (Out of Stock)` : `Select Size ${sz}`}
+                            >
+                              {sz}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-baseline space-x-2 pt-0.5 font-sans">
+                    <span className="text-sm sm:text-base font-extrabold text-slate-900 font-sans tracking-tight">
+                      ₹{product.sellingPrice}
+                    </span>
+                    {product.mrp > product.sellingPrice && (
+                      <>
+                        <span className="text-[11px] text-slate-400 line-through font-normal font-sans">
+                          ₹{product.mrp}
+                        </span>
+                        <span className="text-[8.5px] font-extrabold text-[#8a1c14] bg-rose-50 border border-rose-200/70 px-1.5 py-0.2 uppercase tracking-wider font-sans rounded">
+                          {Math.round(
+                            ((product.mrp - product.sellingPrice) /
+                              product.mrp) *
+                              100,
+                          )}
+                          % OFF
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Refined Luxury Action Button with instant tactile feedback */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const chosenSize =
+                        selectedCardSizes[product._id] ||
+                        (product.sizes && product.sizes.length > 0
+                          ? product.sizes[0]
+                          : "M");
+                      handleQuickAddToCart(product, chosenSize);
+                    }}
+                    className={`w-full font-bold text-[10px] sm:text-[10.5px] uppercase tracking-[0.14em] py-2 rounded-lg shadow-xs hover:shadow-sm active:scale-[0.98] transition-all duration-300 cursor-pointer flex items-center justify-center space-x-1.5 mt-1 ${
+                      addedSuccessId === product._id
+                        ? "bg-emerald-700 text-white shadow-emerald-700/25"
+                        : "bg-[#8a1c14] hover:bg-[#70150e] text-white"
+                    }`}
+                  >
+                    {addedSuccessId === product._id ? (
+                      <>
+                        <RiCheckLine size={14} className="animate-bounce" />
+                        <span>ADDED TO BAG!</span>
+                      </>
+                    ) : (
+                      <>
+                        <RiShoppingBagLine size={13} />
+                        <span>
+                          ADD TO BAG {selectedCardSizes[product._id] ? `(${selectedCardSizes[product._id]})` : ""}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             );
           })}
           </div>
@@ -1423,109 +1467,6 @@ const Home = () => {
         </div>
       </section>
       </div>
-
-      {/* QUICK SIZE SELECTOR BOTTOM SHEET / DRAWER (Myntra / Zara Style Mobile UX) */}
-      <AnimatePresence>
-        {quickSizeProduct && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setQuickSizeProduct(null)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-xs cursor-pointer"
-            />
-
-            {/* Bottom Sheet Modal */}
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 26, stiffness: 280 }}
-              className="relative z-10 w-full max-w-md bg-white rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto"
-            >
-              {/* Header: Product Preview & Dismiss */}
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center space-x-3 min-w-0">
-                  <img
-                    src={optimizeCloudinaryUrl(
-                      quickSizeProduct.images?.[0] || quickSizeProduct.image,
-                      120,
-                    )}
-                    alt={quickSizeProduct.name}
-                    className="w-12 h-14 object-cover rounded-lg border border-slate-200 shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <h4 className="text-xs font-semibold text-slate-900 truncate">
-                      {formatProductTitle(quickSizeProduct.name)}
-                    </h4>
-                    <div className="flex items-baseline space-x-2 mt-0.5">
-                      <span className="text-sm font-extrabold text-[#8a1c14]">
-                        ₹{quickSizeProduct.sellingPrice}
-                      </span>
-                      {quickSizeProduct.mrp > quickSizeProduct.sellingPrice && (
-                        <span className="text-[11px] text-slate-400 line-through">
-                          ₹{quickSizeProduct.mrp}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setQuickSizeProduct(null)}
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center cursor-pointer transition-colors text-xs font-bold"
-                  aria-label="Close"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Size Buttons */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
-                    Select Your Size
-                  </span>
-                  <span className="text-[10px] text-slate-400">Tap to add directly</span>
-                </div>
-
-                <div className="grid grid-cols-4 gap-2.5 pt-1 pb-2">
-                  {(quickSizeProduct.sizes && quickSizeProduct.sizes.length > 0
-                    ? quickSizeProduct.sizes
-                    : ["M", "L", "XL", "XXL"]
-                  ).map((sz) => {
-                    const isOut =
-                      quickSizeProduct.sizesStock &&
-                      quickSizeProduct.sizesStock[sz] !== undefined &&
-                      quickSizeProduct.sizesStock[sz] <= 0;
-
-                    return (
-                      <button
-                        key={sz}
-                        type="button"
-                        disabled={isOut}
-                        onClick={() => {
-                          handleQuickAddToCart(quickSizeProduct, sz);
-                          setQuickSizeProduct(null);
-                        }}
-                        className={`h-12 rounded-xl text-xs uppercase transition-all duration-150 flex items-center justify-center cursor-pointer font-bold ${
-                          isOut
-                            ? "bg-slate-100 text-slate-300 border border-slate-200 cursor-not-allowed line-through"
-                            : "bg-[#FAF7F3] hover:bg-[#8a1c14] hover:text-white text-slate-800 border border-slate-200 active:scale-95 shadow-2xs hover:shadow-xs"
-                        }`}
-                      >
-                        {sz}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

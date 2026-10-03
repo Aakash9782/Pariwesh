@@ -586,7 +586,7 @@ const MainLayout = () => {
       </AnimatePresence>
 
       {/* 4. MAIN PAGE DISPLAY OUTLET */}
-      <main className="flex-grow overflow-x-clip">
+      <main className="flex-grow overflow-x-hidden">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.pathname}
@@ -610,7 +610,7 @@ const MainLayout = () => {
         href="https://wa.me/918209903441?text=Hello%20Pariwesh%20Ensembles%20support!%20I'm%20interested%20in%20your%20products."
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-20 md:bottom-8 right-3 md:right-6 z-40 bg-[#25D366] hover:bg-[#20BA56] text-white p-2.5 md:p-3.5 rounded-full shadow-[0_4px_16px_rgba(37,211,102,0.35)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer"
+        className="fixed bottom-4 md:bottom-8 right-2.5 md:right-6 z-40 bg-[#25D366] hover:bg-[#20BA56] text-white p-2.5 md:p-3.5 rounded-full shadow-[0_4px_16px_rgba(37,211,102,0.35)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer"
         title="Chat with us on WhatsApp"
       >
         <RiWhatsappLine size={20} className="md:w-6 md:h-6" />

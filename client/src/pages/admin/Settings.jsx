@@ -91,9 +91,9 @@ const SettingsPage = () => {
   // Custom Dynamic homepage states
   const [storyImage, setStoryImage] = useState("");
   const [categories, setCategories] = useState([
-    { title: "Designer Suits", path: "/shop?category=ethnic", image: "" },
+    { title: "Suit Sets", path: "/shop?category=suits", image: "" },
     { title: "Premium Kurtis", path: "/shop?category=kurtis", image: "" },
-    { title: "Co-Ord Sets", path: "/shop?category=suits", image: "" },
+    { title: "Co-Ord Sets", path: "/shop?category=co-ord-sets", image: "" },
     { title: "Best Sellers", path: "/shop?tag=Best Seller", image: "" },
     { title: "New Arrivals", path: "/shop?tag=New Arrival", image: "" },
   ]);
