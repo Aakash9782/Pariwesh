@@ -5,14 +5,13 @@ const SettingsContext = createContext(null);
 
 const CACHE_KEY = "pariwesh_settings_cache_v2";
 const CACHE_TIME_KEY = "pariwesh_settings_timestamp_v2";
-const CACHE_TTL_MS = 60 * 1000; // 60 seconds TTL
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes fresh cache TTL
 
 export const SettingsProvider = ({ children }) => {
   const [settings, setSettings] = useState(() => {
     try {
       const cached = localStorage.getItem(CACHE_KEY);
-      const timestamp = localStorage.getItem(CACHE_TIME_KEY);
-      if (cached && timestamp && Date.now() - Number(timestamp) < CACHE_TTL_MS) {
+      if (cached) {
         return JSON.parse(cached);
       }
     } catch (e) {
@@ -24,14 +23,20 @@ export const SettingsProvider = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(() => {
     try {
       const cached = localStorage.getItem(CACHE_KEY);
-      const timestamp = localStorage.getItem(CACHE_TIME_KEY);
-      return Boolean(cached && timestamp && Date.now() - Number(timestamp) < CACHE_TTL_MS);
+      return Boolean(cached);
     } catch (e) {
       return false;
     }
   });
 
-  const [loading, setLoading] = useState(!isLoaded);
+  const [loading, setLoading] = useState(() => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      return !cached;
+    } catch (e) {
+      return true;
+    }
+  });
 
   const fetchSettings = useCallback(async (force = false) => {
     try {

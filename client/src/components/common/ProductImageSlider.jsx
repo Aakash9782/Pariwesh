@@ -8,6 +8,7 @@ const ProductImageSlider = ({
   intervalMs = 5000,
   priority = false,
   showDots = false,
+  targetWidth,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [maxSeenIndex, setMaxSeenIndex] = useState(0);
@@ -96,6 +97,9 @@ const ProductImageSlider = ({
         {images.map((img, idx) => {
           const isMounted = idx <= maxSeenIndex || idx === currentIndex;
           const isEager = priority && idx === 0;
+          const imageWidth =
+            targetWidth ||
+            (typeof window !== "undefined" && window.innerWidth < 768 ? 300 : 400);
 
           return (
             <div
@@ -104,12 +108,12 @@ const ProductImageSlider = ({
             >
               {isMounted ? (
                 <img
-                  src={optimizeCloudinaryUrl(img, 400)}
+                  src={optimizeCloudinaryUrl(img, imageWidth)}
                   alt={alt}
                   loading={isEager ? "eager" : "lazy"}
                   fetchPriority={isEager ? "high" : "auto"}
                   decoding={isEager ? "sync" : "async"}
-                  width="400"
+                  width={imageWidth}
                   height="500"
                   className="w-full h-full object-cover transform-gpu group-hover:scale-[1.08] transition-transform duration-700 ease-out origin-top pointer-events-none select-none"
                 />

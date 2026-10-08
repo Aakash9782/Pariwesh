@@ -175,7 +175,7 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
                   className="w-full h-full relative"
                 >
                   <img
-                    src={optimizeCloudinaryUrl(currentSlideImage, 1000)}
+                    src={optimizeCloudinaryUrl(currentSlideImage, 850)}
                     alt={`${currentSlide.title} ${currentSlide.highlight}`}
                     width="700"
                     height="600"
@@ -370,7 +370,7 @@ const HeroSlider = ({ sliderConfig, activeSlide, setActiveSlide }) => {
                 className="absolute inset-0 w-full h-full"
               >
                 <img
-                  src={optimizeCloudinaryUrl(currentSlideImage, 700)}
+                  src={optimizeCloudinaryUrl(currentSlideImage, 500)}
                   alt={`${currentSlide.title} ${currentSlide.highlight}`}
                   width="450"
                   height="550"

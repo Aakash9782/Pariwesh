@@ -12,6 +12,7 @@ import Skeleton, { ProductSkeleton, HeroSkeleton } from "../components/common/Sk
 import { optimizeCloudinaryUrl } from "../utils/cloudinary.js";
 import { addToCart } from "../redux/slices/cartSlice.js";
 import { toggleWishlistProduct } from "../redux/slices/wishlistSlice.js";
+import { trackAddToCart, trackAddToWishlist } from "../services/metaPixel.js";
 import API from "../services/api.js";
 import { useAlert } from "../contexts/AlertContext.jsx";
 import { useSettings } from "../contexts/SettingsContext.jsx";
@@ -68,6 +69,7 @@ const Home = () => {
     const isCurrentlyWishlisted = wishlistItems.some((p) => p._id === prod._id);
     if (!isCurrentlyWishlisted) {
       showAlert("Added to Wishlist Collection", "Wishlist");
+      trackAddToWishlist(prod);
     } else {
       showAlert("Removed from Wishlist Collection", "Wishlist");
     }
@@ -154,9 +156,27 @@ const Home = () => {
 
   const [activeSlide, setActiveSlide] = useState(0);
 
-  // Dynamic products catalog state
-  const [products, setProducts] = useState([]);
-  const [productsLoading, setProductsLoading] = useState(true);
+  // Dynamic products catalog state with Instant Cache (Stale-While-Revalidate)
+  const [products, setProducts] = useState(() => {
+    try {
+      const cached = localStorage.getItem("pariwesh_home_products_cache");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  });
+  const [productsLoading, setProductsLoading] = useState(() => {
+    try {
+      const cached = localStorage.getItem("pariwesh_home_products_cache");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return false;
+      }
+    } catch (e) {}
+    return true;
+  });
   const [copiedCode, setCopiedCode] = useState(false);
   const [selectedCardSizes, setSelectedCardSizes] = useState({});
   const [activeProductTab, setActiveProductTab] = useState("all");
@@ -281,6 +301,12 @@ const Home = () => {
               };
             });
           setProducts(dbProducts);
+          try {
+            localStorage.setItem(
+              "pariwesh_home_products_cache",
+              JSON.stringify(dbProducts),
+            );
+          } catch (e) {}
         } else {
           setProducts([]);
         }
@@ -379,6 +405,7 @@ const Home = () => {
       }),
     );
     syncCartNow();
+    trackAddToCart(product, 1, size);
     setAddedSuccessId(product._id);
     setTimeout(() => setAddedSuccessId(null), 1800);
     showAlert(

@@ -101,13 +101,16 @@
           window.removeEventListener(evt, onUserAction);
         });
       }
-      events.forEach(function(evt) {
-        window.addEventListener(evt, onUserAction, { passive: true, once: true });
-      });
+      // Allow 2.5s clean network window for critical visual assets on 2G/3G
+      setTimeout(function() {
+        events.forEach(function(evt) {
+          window.addEventListener(evt, onUserAction, { passive: true, once: true });
+        });
+      }, 2500);
       if ('requestIdleCallback' in window) {
-        requestIdleCallback(function() { setTimeout(injectPixelScript, 3500); });
+        requestIdleCallback(function() { setTimeout(injectPixelScript, 4000); });
       } else {
-        setTimeout(injectPixelScript, 3500);
+        setTimeout(injectPixelScript, 4000);
       }
       }(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');

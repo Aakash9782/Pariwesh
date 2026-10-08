@@ -13,6 +13,7 @@ import {
 } from "../../services/hydrateCommerce.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
 import { optimizeCloudinaryUrl } from "../../utils/cloudinary.js";
+import { trackAddToCart, trackAddToWishlist } from "../../services/metaPixel.js";
 import {
   RiHeartLine,
   RiHeartFill,
@@ -173,6 +174,7 @@ const SalePage = () => {
       }),
     );
     syncCartNow();
+    trackAddToCart(product, 1, size);
     showAlert(
       `"${product.name}" (Size: ${size}) has been added to your shopping bag!`,
       "Added to Bag",
@@ -181,8 +183,12 @@ const SalePage = () => {
 
   // Toggle wishlist
   const handleWishlistToggle = (product) => {
+    const isCurrentlyWishlisted = wishlistItems.some((p) => p._id === product._id);
     dispatch(toggleWishlistProduct(product));
     syncWishlistNow();
+    if (!isCurrentlyWishlisted) {
+      trackAddToWishlist(product);
+    }
   };
 
   // Base qualified sale products (MRP > sellingPrice OR minimum discount threshold)

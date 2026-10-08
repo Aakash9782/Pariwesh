@@ -15,6 +15,7 @@ import {
   syncWishlistNow,
 } from "../../services/hydrateCommerce.js";
 import { useAlert } from "../../contexts/AlertContext.jsx";
+import { trackAddToCart } from "../../services/metaPixel.js";
 
 const Wishlist = () => {
   const dispatch = useDispatch();
@@ -43,6 +44,7 @@ const Wishlist = () => {
     dispatch(toggleWishlistProduct(product));
     syncCartNow();
     syncWishlistNow();
+    trackAddToCart(product, 1, chosenSize, product.color || "Gold");
     showAlert(`"${product.name}" (Size: ${chosenSize}) moved to bag!`, "Added to Bag");
   };
 

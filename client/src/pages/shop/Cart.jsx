@@ -31,6 +31,7 @@ import {
   trackAddPaymentInfo,
   trackPurchase,
   getMetaTrackingCookies,
+  setMetaUserIdentity,
 } from "../../services/metaPixel.js";
 import SEO from "../../components/common/SEO.jsx";
 import SpecialOffer from "../../components/SpecialOffer.jsx";
@@ -637,6 +638,16 @@ const Cart = () => {
         metaTracking: getMetaTrackingCookies(),
       };
 
+      // Sync guest/customer identity to Meta Advanced Matching
+      setMetaUserIdentity({
+        email: emailToUse,
+        phone: address.phone,
+        fullName: address.fullName,
+        city: address.city,
+        state: address.state,
+        pincode: address.pincode,
+      });
+
       const res = await API.post("/orders", payload);
 
       if (res.data && res.data.success) {
@@ -1159,6 +1170,11 @@ const Cart = () => {
                 required
                 value={address.phone}
                 onChange={handleAddressInput}
+                onBlur={() => {
+                  if (address.phone) {
+                    setMetaUserIdentity({ phone: address.phone, fullName: address.fullName });
+                  }
+                }}
                 placeholder="e.g. +91 9782681155"
                 autoComplete="tel"
               />
@@ -1170,6 +1186,11 @@ const Cart = () => {
               type="email"
               value={address.email}
               onChange={handleAddressInput}
+              onBlur={() => {
+                if (address.email) {
+                  setMetaUserIdentity({ email: address.email, phone: address.phone, fullName: address.fullName });
+                }
+              }}
               placeholder="e.g. customer@example.com"
               autoComplete="email"
             />

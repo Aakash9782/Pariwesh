@@ -29,6 +29,7 @@ import Loader from "../components/common/Loader.jsx";
 import { PageSuspenseSkeleton } from "../components/common/Skeleton.jsx";
 import Footer from "../components/common/Footer.jsx";
 import { optimizeCloudinaryUrl } from "../utils/cloudinary.js";
+import { trackContact } from "../services/metaPixel.js";
 
 const MainLayout = () => {
   const navigate = useNavigate();
@@ -46,6 +47,38 @@ const MainLayout = () => {
 
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const progressBarRef = React.useRef(null);
+
+  // 100% Cross-Browser GPU-accelerated scroll progress bar (Works on Safari, iOS, Chrome, Firefox)
+  React.useEffect(() => {
+    let ticking = false;
+    const updateProgress = () => {
+      if (progressBarRef.current) {
+        const totalHeight =
+          document.documentElement.scrollHeight - window.innerHeight;
+        const progress =
+          totalHeight > 0
+            ? Math.min(1, Math.max(0, window.scrollY / totalHeight))
+            : 0;
+        progressBarRef.current.style.transform = `scaleX(${progress})`;
+      }
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateProgress);
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    updateProgress();
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [location.pathname]);
 
   React.useEffect(() => {
     setMobileMenuOpen(false);
@@ -162,7 +195,10 @@ const MainLayout = () => {
   return (
     <div className="flex flex-col min-h-screen bg-bgLight">
       {/* GPU-Composited Scroll Progress Bar */}
-      <div className="scroll-progress-bar fixed top-0 left-0 right-0 h-[3px] bg-accent-gold z-[99999] pointer-events-none" />
+      <div
+        ref={progressBarRef}
+        className="scroll-progress-bar fixed top-0 left-0 right-0 h-[3px] bg-accent-gold z-[99999] pointer-events-none"
+      />
       {/* GLOBAL REFINED ROYAL ARCH CLIP PATH (Delicate Crown Arch - Zero Head Cutout) */}
       <svg width="0" height="0" className="absolute pointer-events-none">
         <defs>
@@ -518,7 +554,10 @@ const MainLayout = () => {
                     href="https://wa.me/918209903441?text=Hello%20Pariwesh!%20I'm%20looking%20for%20assistance."
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={() => {
+                      trackContact("WhatsApp", "Drawer Style Advisor");
+                      setMobileMenuOpen(false);
+                    }}
                     className="flex items-center space-x-2.5 py-2 px-2 text-xs font-semibold text-emerald-700 hover:text-emerald-800 rounded-lg hover:bg-emerald-50/50 transition"
                   >
                     <RiWhatsappLine size={16} />
@@ -610,6 +649,7 @@ const MainLayout = () => {
         href="https://wa.me/918209903441?text=Hello%20Pariwesh%20Ensembles%20support!%20I'm%20interested%20in%20your%20products."
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackContact("WhatsApp", "Floating Button")}
         className="fixed bottom-20 md:bottom-8 right-3 md:right-6 z-40 bg-[#25D366] hover:bg-[#20BA56] text-white p-2.5 md:p-3.5 rounded-full shadow-[0_4px_16px_rgba(37,211,102,0.35)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer"
         title="Chat with us on WhatsApp"
       >

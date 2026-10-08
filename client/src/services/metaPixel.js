@@ -20,7 +20,8 @@ export const getCookie = (name) => {
 
 /**
  * Extracts or generates Meta tracking cookies (_fbp and _fbc).
- * Captures `fbclid` from URL params to populate `_fbc` if available.
+ * Captures `fbclid` from URL params, persists it in document.cookie for 90 days,
+ * and saves in localStorage as permanent backup.
  * @returns {{ fbp: string|null, fbc: string|null }}
  */
 export const getMetaTrackingCookies = () => {
@@ -29,27 +30,122 @@ export const getMetaTrackingCookies = () => {
   let fbp = getCookie("_fbp");
   let fbc = getCookie("_fbc");
 
-  // If no _fbc cookie yet, check if current URL has fbclid
-  if (!fbc && typeof window.location !== "undefined") {
+  // LocalStorage fallback if cookies are partitioned / restricted
+  if (!fbp) {
+    try {
+      fbp = localStorage.getItem("_fbp");
+    } catch (e) {}
+  }
+  if (!fbc) {
+    try {
+      fbc = localStorage.getItem("_fbc");
+    } catch (e) {}
+  }
+
+  // If URL has fbclid, generate _fbc AND persist for 90 days across routes
+  if (typeof window.location !== "undefined") {
     const urlParams = new URLSearchParams(window.location.search);
     const fbclid = urlParams.get("fbclid");
     if (fbclid) {
       const creationTime = Date.now();
       fbc = `fb.1.${creationTime}.${fbclid}`;
+      try {
+        document.cookie = `_fbc=${fbc}; path=/; max-age=7776000; SameSite=Lax`;
+        localStorage.setItem("_fbc", fbc);
+      } catch (e) {}
     }
+  }
+
+  if (fbp) {
+    try {
+      localStorage.setItem("_fbp", fbp);
+    } catch (e) {}
   }
 
   return { fbp, fbc };
 };
 
 /**
- * Dynamically initializes the Meta Pixel script
- * @param {string} pixelId - Meta Pixel ID
+ * Normalizes user data for Meta Advanced Matching specifications
  */
-export const initMetaPixel = (pixelId) => {
+export const normalizeUserData = (data = {}) => {
+  if (!data || typeof data !== "object") return {};
+  const cleaned = {};
+
+  if (data.email) {
+    const em = String(data.email).trim().toLowerCase();
+    if (em.includes("@") && em.includes(".")) cleaned.em = em;
+  }
+  if (data.phone) {
+    let digits = String(data.phone).replace(/\D/g, "");
+    if (digits.length === 10) digits = "91" + digits;
+    if (digits.length >= 10) cleaned.ph = digits;
+  }
+  if (data.fullName || data.name) {
+    const fullName = String(data.fullName || data.name).trim();
+    const parts = fullName.split(" ");
+    if (parts[0]) cleaned.fn = parts[0].toLowerCase();
+    if (parts.slice(1).join(" ")) cleaned.ln = parts.slice(1).join(" ").toLowerCase();
+  }
+  if (data.firstName) cleaned.fn = String(data.firstName).trim().toLowerCase();
+  if (data.lastName) cleaned.ln = String(data.lastName).trim().toLowerCase();
+  if (data.city) cleaned.ct = String(data.city).trim().toLowerCase();
+  if (data.state) cleaned.st = String(data.state).trim().toLowerCase();
+  if (data.pincode) cleaned.zp = String(data.pincode).trim();
+  cleaned.country = "in";
+
+  return cleaned;
+};
+
+/**
+ * Saves guest or logged in user identity and updates Meta Pixel Advanced Matching
+ */
+export const setMetaUserIdentity = (userData = {}) => {
+  if (typeof window === "undefined" || !userData) return;
+  const normalized = normalizeUserData(userData);
+  if (Object.keys(normalized).length === 0) return;
+
+  try {
+    const existing = JSON.parse(localStorage.getItem("pariwesh_guest_identity") || "{}");
+    const merged = { ...existing, ...normalized };
+    localStorage.setItem("pariwesh_guest_identity", JSON.stringify(merged));
+
+    // Update active Meta Pixel with user identity
+    if (window.fbq && currentPixelId) {
+      window.fbq("init", currentPixelId, merged);
+    }
+  } catch (e) {}
+};
+
+/**
+ * Gets currently saved user identity (from localStorage guest identity)
+ */
+export const getStoredMetaUserIdentity = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    const stored = localStorage.getItem("pariwesh_guest_identity");
+    return stored ? JSON.parse(stored) : {};
+  } catch (e) {
+    return {};
+  }
+};
+
+/**
+ * Dynamically initializes the Meta Pixel script with Advanced Matching
+ * @param {string} pixelId - Meta Pixel ID
+ * @param {Object} [initialUserData] - Optional initial user profile
+ */
+export const initMetaPixel = (pixelId, initialUserData = null) => {
   if (!pixelId || typeof window === "undefined") return;
 
+  const userMatching = initialUserData
+    ? normalizeUserData(initialUserData)
+    : getStoredMetaUserIdentity();
+
   if (isInitialized && currentPixelId === pixelId) {
+    if (userMatching && Object.keys(userMatching).length > 0 && window.fbq) {
+      window.fbq("init", pixelId, userMatching);
+    }
     return;
   }
 
@@ -81,9 +177,13 @@ export const initMetaPixel = (pixelId) => {
   );
   /* eslint-enable */
 
-  window.fbq("init", pixelId);
+  if (userMatching && Object.keys(userMatching).length > 0) {
+    window.fbq("init", pixelId, userMatching);
+  } else {
+    window.fbq("init", pixelId);
+  }
   isInitialized = true;
-  console.log(`[Meta Pixel] Initialized with Pixel ID: ${pixelId}`);
+  console.log(`[Meta Pixel] Initialized with Pixel ID: ${pixelId} (Advanced Matching: ${Object.keys(userMatching).length > 0 ? "Active" : "Standard"})`);
 };
 
 /**
@@ -319,3 +419,40 @@ export const trackCompleteRegistration = (user = null) => {
     eventId
   );
 };
+
+/**
+ * Track custom ScrollDepth event (e.g. 50%, 90%)
+ * Dispatched asynchronously via requestIdleCallback so it never blocks scrolling or CPU.
+ */
+export const trackScrollDepth = (percent, path = "", title = "") => {
+  if (typeof window === "undefined" || !window.fbq) return;
+
+  const dispatch = () => {
+    try {
+      window.fbq("trackCustom", "ScrollDepth", {
+        percent: String(percent),
+        page_path: path || window.location.pathname,
+        page_title: title || document.title,
+      });
+      console.log(`[Meta Pixel] Tracked ScrollDepth: ${percent} on ${path || window.location.pathname}`);
+    } catch (e) {}
+  };
+
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(dispatch, { timeout: 2000 });
+  } else {
+    setTimeout(dispatch, 100);
+  }
+};
+
+/**
+ * Track WhatsApp chat or customer inquiry contact event
+ */
+export const trackContact = (method = "WhatsApp", label = "") => {
+  trackPixelEvent("Contact", {
+    contact_method: method,
+    content_name: label || "Customer Inquiry",
+    page_path: typeof window !== "undefined" ? window.location.pathname : "",
+  });
+};
+

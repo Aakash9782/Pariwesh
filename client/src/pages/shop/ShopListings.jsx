@@ -19,7 +19,7 @@ import { toggleWishlistProduct } from "../../redux/slices/wishlistSlice.js";
 import { addToCart } from "../../redux/slices/cartSlice.js";
 import API from "../../services/api.js";
 import { syncWishlistNow, syncCartNow } from "../../services/hydrateCommerce.js";
-import { trackSearch, trackAddToWishlist } from "../../services/metaPixel.js";
+import { trackSearch, trackAddToWishlist, trackAddToCart } from "../../services/metaPixel.js";
 import SEO from "../../components/common/SEO.jsx";
 import { useAlert } from "../../contexts/AlertContext.jsx";
 
@@ -277,6 +277,7 @@ const ShopListings = () => {
       }),
     );
     syncCartNow();
+    trackAddToCart(product, 1, size);
     setAddedSuccessId(product._id);
     setTimeout(() => setAddedSuccessId(null), 1800);
     showAlert(
