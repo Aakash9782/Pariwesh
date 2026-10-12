@@ -282,15 +282,26 @@ const MainLayout = () => {
           {/* Regal Centered Logo */}
           <div className="absolute left-1/2 transform -translate-x-1/2 md:static md:transform-none flex items-center justify-center">
             <Link to="/" className="flex items-center justify-center group py-0.5">
-              <img
-                src={logoUrl ? optimizeCloudinaryUrl(logoUrl, 220) : "/logo.png"}
-                alt="PARIWESH"
-                width="160"
-                height="52"
-                fetchPriority="high"
-                decoding="sync"
-                className="h-[52px] sm:h-[58px] md:h-[66px] w-auto object-contain max-w-[125px] sm:max-w-[170px] md:max-w-[220px] transition-transform duration-300 group-hover:scale-[1.03] filter contrast-[1.08] brightness-[0.96] drop-shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
-              />
+              <picture className="flex items-center justify-center">
+                <source
+                  srcSet={logoUrl ? optimizeCloudinaryUrl(logoUrl, 220) : "/logo.webp"}
+                  type="image/webp"
+                />
+                <img
+                  src={logoUrl ? optimizeCloudinaryUrl(logoUrl, 220) : "/logo.png"}
+                  alt="PARIWESH"
+                  width="160"
+                  height="52"
+                  fetchPriority="high"
+                  decoding="sync"
+                  onError={(e) => {
+                    if (e.currentTarget.src !== window.location.origin + "/logo.png") {
+                      e.currentTarget.src = "/logo.png";
+                    }
+                  }}
+                  className="h-[52px] sm:h-[58px] md:h-[66px] w-auto object-contain max-w-[125px] sm:max-w-[170px] md:max-w-[220px] transition-transform duration-300 group-hover:scale-[1.03] filter contrast-[1.08] brightness-[0.96] drop-shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+                />
+              </picture>
             </Link>
           </div>
 

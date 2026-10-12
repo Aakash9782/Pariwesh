@@ -109,6 +109,21 @@ const server = app.listen(PORT, () => {
   console.log(
     `🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`,
   );
+
+  // Keep-Alive Ping on production to prevent Render idle spin-down (cold start prevention)
+  if (process.env.NODE_ENV === "production" || process.env.RENDER) {
+    const PING_INTERVAL = 10 * 60 * 1000; // 10 minutes
+    const TARGET_URL =
+      process.env.API_BASE_URL || "https://api.pariwesh.in/api/v1/settings";
+    setInterval(async () => {
+      try {
+        const res = await fetch(TARGET_URL);
+        console.log(`[Keep-Alive] Pinged ${TARGET_URL} - Status: ${res.status}`);
+      } catch (e) {
+        console.warn(`[Keep-Alive] Ping failed: ${e.message}`);
+      }
+    }, PING_INTERVAL);
+  }
 });
 
 server.on("error", (err) => {

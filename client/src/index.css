@@ -5,6 +5,20 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 5rem;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* iOS & Android Instant Tap Response & Butter-Smooth Scrolling */
+body {
+  -webkit-overflow-scrolling: touch;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+input,
+select {
+  touch-action: manipulation;
 }
 
 a,

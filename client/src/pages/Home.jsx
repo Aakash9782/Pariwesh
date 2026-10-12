@@ -17,6 +17,7 @@ import API from "../services/api.js";
 import { useAlert } from "../contexts/AlertContext.jsx";
 import { useSettings } from "../contexts/SettingsContext.jsx";
 import { syncCartNow, syncWishlistNow } from "../services/hydrateCommerce.js";
+import { INITIAL_HOME_PRODUCTS } from "../data/initialProducts.js";
 import {
   RiHeartLine,
   RiScissorsLine,
@@ -156,7 +157,7 @@ const Home = () => {
 
   const [activeSlide, setActiveSlide] = useState(0);
 
-  // Dynamic products catalog state with Instant Cache (Stale-While-Revalidate)
+  // Dynamic products catalog state with Instant Seed + LocalStorage Cache (Stale-While-Revalidate)
   const [products, setProducts] = useState(() => {
     try {
       const cached = localStorage.getItem("pariwesh_home_products_cache");
@@ -165,18 +166,9 @@ const Home = () => {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) {}
-    return [];
+    return INITIAL_HOME_PRODUCTS;
   });
-  const [productsLoading, setProductsLoading] = useState(() => {
-    try {
-      const cached = localStorage.getItem("pariwesh_home_products_cache");
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return false;
-      }
-    } catch (e) {}
-    return true;
-  });
+  const [productsLoading, setProductsLoading] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [selectedCardSizes, setSelectedCardSizes] = useState({});
   const [activeProductTab, setActiveProductTab] = useState("all");
@@ -259,7 +251,6 @@ const Home = () => {
     let cancelled = false;
 
     const fetchProducts = async () => {
-      setProductsLoading(true);
       try {
         const res = await API.get("/products");
         if (cancelled) return;
@@ -307,12 +298,9 @@ const Home = () => {
               JSON.stringify(dbProducts),
             );
           } catch (e) {}
-        } else {
-          setProducts([]);
         }
       } catch (err) {
-        console.error("Error fetching products:", err);
-        if (!cancelled) setProducts([]);
+        console.warn("Error fetching products, keeping initial catalog:", err);
       } finally {
         if (!cancelled) setProductsLoading(false);
       }

@@ -22,6 +22,7 @@ import { syncWishlistNow, syncCartNow } from "../../services/hydrateCommerce.js"
 import { trackSearch, trackAddToWishlist, trackAddToCart } from "../../services/metaPixel.js";
 import SEO from "../../components/common/SEO.jsx";
 import { useAlert } from "../../contexts/AlertContext.jsx";
+import { INITIAL_HOME_PRODUCTS } from "../../data/initialProducts.js";
 
 const formatCurrency = (val) => {
   const num = Math.round(Number(val) || 0);
@@ -73,8 +74,17 @@ const ShopListings = () => {
   const [quickSizeProduct, setQuickSizeProduct] = useState(null);
   const [addedSuccessId, setAddedSuccessId] = useState(null);
 
-  const [products, setProducts] = useState([]);
-  const [isApiLoading, setIsApiLoading] = useState(true);
+  const [products, setProducts] = useState(() => {
+    try {
+      const cached = localStorage.getItem("pariwesh_home_products_cache");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return INITIAL_HOME_PRODUCTS;
+  });
+  const [isApiLoading, setIsApiLoading] = useState(false);
 
   // Pagination states (Synced with URL search params for seamless browser back/forward support)
   const currentPage = Math.max(1, Number(searchParams.get("page")) || 1);
@@ -97,15 +107,22 @@ const ShopListings = () => {
       try {
         setIsApiLoading(true);
         const res = await API.get("/products");
-        if (res.data && res.data.success) {
-          const activeOnly = (res.data.data || []).filter(
+        if (res.data && res.data.success && Array.isArray(res.data.data)) {
+          const activeOnly = res.data.data.filter(
             (p) => !p.status || p.status === "active",
           );
-          setProducts(activeOnly);
+          if (activeOnly.length > 0) {
+            setProducts(activeOnly);
+            try {
+              localStorage.setItem(
+                "pariwesh_home_products_cache",
+                JSON.stringify(activeOnly),
+              );
+            } catch (e) {}
+          }
         }
       } catch (err) {
-        console.error("Failed fetching products:", err);
-        setProducts([]);
+        console.warn("Failed fetching products, keeping current catalog:", err);
       } finally {
         setIsApiLoading(false);
         setIsLoading(false);

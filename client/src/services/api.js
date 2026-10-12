@@ -19,7 +19,7 @@ const getBaseURL = () => {
     return `http://${hostname}:5001/api/v1`;
   }
   let url =
-    import.meta.env.VITE_API_URL || "https://pariwesh.onrender.com/api/v1";
+    import.meta.env.VITE_API_URL || "https://api.pariwesh.in/api/v1";
   // Safely ensure the URL always ends with /api/v1
   if (url && !url.endsWith("/api/v1") && !url.endsWith("/api/v1/")) {
     url = url.endsWith("/") ? url.slice(0, -1) : url;

@@ -115,7 +115,9 @@ export const SettingsProvider = ({ children }) => {
     settings.slideImg5,
   ].filter(Boolean);
 
-  const brandLogoUrl = settings.brandLogoUrl || "";
+  const brandLogoUrl =
+    settings.brandLogoUrl ||
+    "https://res.cloudinary.com/ag1y6hht/image/upload/v1791788541/pariwesh/branding/brand_logo_main.png";
 
   const codEnabled = settings.codEnabled !== false && settings.codEnabled !== "false";
   const deliveryCharge = Number(settings.deliveryCharge || 0);
