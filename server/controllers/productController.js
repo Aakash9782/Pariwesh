@@ -23,16 +23,16 @@ const SEED_PRODUCTS = [
     price: 2499,
     images: ["/hero.png", "/hero.png"],
     tag: "Best Seller",
-    rating: 4.8,
-    reviewsCount: 24,
+    rating: 0,
+    reviewsCount: 0,
     description:
-      "Bespoke elegance crafted from pure Banarasi Chanderi silk yarn. Features double zari checks, floral embroidery lines, soft mulmul linings, and matching raw-silk straight trousers. Perfect for seasonal weddings and luxury festive environments.",
+      "Crafted from premium Pure Cotton 60x60 yarn with intricate lace work and soft breathable mulmul lining. Features Kurti length 44–46 inches (~1.15m), Mulmul Dupatta 2.25m, and Palazzo length 38 inches (~0.95m). Gentle machine or hand wash inside out in shade.",
   },
   {
     name: "Scarlet Floral Rayon Kurti",
     sku: "LHR-RY-002",
     category: "kurtis",
-    fabric: "Premium Rayon",
+    fabric: "Premium Rayon (Fandy)",
     washCare: "Gentle Machine Wash",
     color: "Red",
     colorHex: "#C62828",
@@ -41,10 +41,10 @@ const SEED_PRODUCTS = [
     price: 1199,
     images: ["/hero.png", "/hero.png"],
     tag: "New Arrival",
-    rating: 4.5,
-    reviewsCount: 12,
+    rating: 0,
+    reviewsCount: 0,
     description:
-      "Delightfully casual and soft. Adorned with beautiful hand-blocked floral patterns, double-stitch seams, and flared hems. Woven from high-tenacity Viscose Rayon to promise breathability and all-day comfort.",
+      "Comfortable everyday ethnic kurti tailored from soft, breathable 140 GSM rayon (fandy) with floral print motifs. Kurti length: 44 inches (~1.12m). Non-sheer fabric requiring no extra lining. Gentle wash with mild detergent.",
   },
   {
     name: "Ivory Zari Premium Anarkali Set",
@@ -59,10 +59,10 @@ const SEED_PRODUCTS = [
     price: 3999,
     images: ["/hero.png", "/hero.png"],
     tag: "Exclusive",
-    rating: 4.9,
-    reviewsCount: 38,
+    rating: 0,
+    reviewsCount: 0,
     description:
-      "An elegant floor-length Ivory Anarkali gown detailed with luxurious zari threads, a heavy border, and a matching sheer organza dupatta. Crafted directly by local weavers, ensuring high precision craftsmanship.",
+      "Graceful flared Anarkali ensemble with matching pants and sheer organza dupatta (2.25m). Kurti length: 48 inches (~1.22m) with full inner cotton lining for zero transparency and maximum comfort. Dry clean recommended.",
   },
   {
     name: "Chocolate Brown & Olive Suit Set",
@@ -77,16 +77,16 @@ const SEED_PRODUCTS = [
     price: 1799,
     images: ["/hero.png"],
     tag: "Sale",
-    rating: 4.7,
-    reviewsCount: 14,
+    rating: 0,
+    reviewsCount: 0,
     description:
-      "High elegance combined georgette suit paired with contrasting soft olive fabric details and elegant dupattas.",
+      "Elegant festive suit set with contrasting dupatta (2.25m) and tailored pants. Kurti length: 45 inches (~1.15m) with soft lining. Designed for festive gatherings and seasonal events.",
   },
   {
     name: "Indigo Block Printed Cotton Kurta",
     sku: "LHR-CT-005",
     category: "kurtis",
-    fabric: "Organic Cotton",
+    fabric: "Pure Cotton 60x60",
     washCare: "Gentle Machine Wash",
     color: "Blue",
     colorHex: "#1E3A8A",
@@ -95,10 +95,10 @@ const SEED_PRODUCTS = [
     price: 1399,
     images: ["/hero.png"],
     tag: "Summer Special",
-    rating: 4.6,
-    reviewsCount: 22,
+    rating: 0,
+    reviewsCount: 0,
     description:
-      "Hand-printed natural indigo colors on premium quality organic cotton base. Durable, cool, and highly breathable.",
+      "Hand block printed natural indigo kurta made from 100% Pure Cotton 60x60. Length: 44 inches (~1.12m). Breathable, skin-friendly, and perfect for hot weather. Wash separately in cold water.",
   },
 ];
 
@@ -139,6 +139,9 @@ export const getProductBySlug = async (req, res, next) => {
     }
 
     const productObj = product.toObject();
+    if (!Array.isArray(productObj.sizes) || productObj.sizes.length === 0) {
+      productObj.sizes = ["M", "L", "XL", "XXL"];
+    }
     if (product.colorGroup) {
       const variants = await Product.find({
         colorGroup: product.colorGroup,

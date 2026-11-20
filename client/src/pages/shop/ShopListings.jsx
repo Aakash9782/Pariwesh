@@ -698,10 +698,10 @@ const ShopListings = () => {
                         </Link>
 
                         {/* Floating Rating Badge */}
-                        {Number(product.reviewsCount) > 0 && (
+                        {Number(product.reviewsCount) > 0 && Number(product.rating) > 0 && (
                           <div className="absolute bottom-2.5 left-2.5 z-10 bg-white/95 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-800 shadow-xs border border-white/80 flex items-center space-x-1 pointer-events-none">
                             <span className="text-amber-500 text-[10.5px]">★</span>
-                            <span>{Number(product.rating || 4.8).toFixed(1)}</span>
+                            <span>{Number(product.rating || 0).toFixed(1)}</span>
                             <span className="text-slate-400 font-normal">({product.reviewsCount})</span>
                           </div>
                         )}
@@ -739,9 +739,9 @@ const ShopListings = () => {
                         <div className="space-y-1">
                           {/* Category & Clean Fabric Tag + Badge */}
                           <div className="flex items-center justify-between gap-1.5 min-h-[18px]">
-                            <div className="flex items-center space-x-1.5 min-w-0">
+                            <div className="flex items-center gap-2 min-w-0">
                               {badgeText && (
-                                <span className="text-[7.5px] sm:text-[8px] bg-[#8a1c14] text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0 leading-none">
+                                <span className="text-[7.5px] sm:text-[8px] bg-[#8a1c14] text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0 leading-none mr-1.5">
                                   {badgeText
                                     .replace(/Everyday Essential/i, "Essential")
                                     .replace(/New Arrival/i, "New")

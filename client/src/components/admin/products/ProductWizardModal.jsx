@@ -234,7 +234,7 @@ const ProductWizardModal = ({
                   },
                   {
                     id: "visibility",
-                    label: "Store Visibility",
+                    label: "Sizes & Visibility",
                     step: 5,
                     icon: <RiEyeLine size={15} />,
                   },

@@ -11,15 +11,15 @@ import {
 } from "react-icons/ri";
 import API from "../../services/api.js";
 
-const ProductReviews = ({ productId, initialRating = 4.8, initialCount = 12 }) => {
+const ProductReviews = ({ productId, initialRating = 0, initialCount = 0 }) => {
   const [reviews, setReviews] = useState([]);
   const [stats, setStats] = useState({
-    averageRating: initialRating,
-    totalReviews: initialCount,
-    recommendationRate: 98,
+    averageRating: Number(initialRating) || 0,
+    totalReviews: Number(initialCount) || 0,
+    recommendationRate: 0,
     breakdown: {
-      5: { count: 0, percentage: 85 },
-      4: { count: 0, percentage: 15 },
+      5: { count: 0, percentage: 0 },
+      4: { count: 0, percentage: 0 },
       3: { count: 0, percentage: 0 },
       2: { count: 0, percentage: 0 },
       1: { count: 0, percentage: 0 },
@@ -182,108 +182,131 @@ const ProductReviews = ({ productId, initialRating = 4.8, initialCount = 12 }) =
         </button>
       </div>
 
-      {/* Summary Grid */}
-      <div className="bg-[#FBF9F5]/80 border border-[#c5a880]/30 rounded-2xl p-5 md:p-7 mb-8 shadow-xs">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-          {/* Big Rating Card */}
-          <div className="md:col-span-4 text-center md:text-left md:border-r md:border-slate-200/80 md:pr-6 space-y-2">
-            <div className="flex items-baseline justify-center md:justify-start space-x-2">
-              <span className="text-5xl font-serif font-bold text-slate-900">
-                {stats.averageRating ? stats.averageRating.toFixed(1) : "4.8"}
-              </span>
-              <span className="text-sm font-medium text-slate-400">/ 5.0</span>
+      {/* Summary Grid or Zero Reviews Banner */}
+      {(stats.totalReviews > 0 || reviews.length > 0) ? (
+        <div className="bg-[#FBF9F5]/80 border border-[#c5a880]/30 rounded-2xl p-5 md:p-7 mb-8 shadow-xs">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+            {/* Big Rating Card */}
+            <div className="md:col-span-4 text-center md:text-left md:border-r md:border-slate-200/80 md:pr-6 space-y-2">
+              <div className="flex items-baseline justify-center md:justify-start space-x-2">
+                <span className="text-5xl font-serif font-bold text-slate-900">
+                  {stats.averageRating ? stats.averageRating.toFixed(1) : "0.0"}
+                </span>
+                <span className="text-sm font-medium text-slate-400">/ 5.0</span>
+              </div>
+              <div className="flex items-center justify-center md:justify-start space-x-1 text-amber-500">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <RiStarFill
+                    key={star}
+                    size={18}
+                    className={star <= Math.round(stats.averageRating || 0) ? "text-amber-500" : "text-slate-300"}
+                  />
+                ))}
+              </div>
+              <p className="text-xs text-slate-600">
+                Based on <strong>{stats.totalReviews || reviews.length}</strong> verified customer ratings
+              </p>
+              {stats.recommendationRate > 0 && (
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60">
+                  <RiShieldCheckLine size={13} />
+                  <span>{stats.recommendationRate}% of buyers recommend this product</span>
+                </div>
+              )}
             </div>
-            <div className="flex items-center justify-center md:justify-start space-x-1 text-amber-500">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <RiStarFill
-                  key={star}
-                  size={18}
-                  className={star <= Math.round(stats.averageRating || 5) ? "text-amber-500" : "text-slate-300"}
-                />
-              ))}
-            </div>
-            <p className="text-xs text-slate-600">
-              Based on <strong>{stats.totalReviews || reviews.length || 12}</strong> verified customer ratings
-            </p>
-            <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60">
-              <RiShieldCheckLine size={13} />
-              <span>{stats.recommendationRate || 98}% of buyers recommend this product</span>
-            </div>
-          </div>
 
-          {/* Breakdown Bars */}
-          <div className="md:col-span-8 space-y-2">
-            {[5, 4, 3, 2, 1].map((star) => {
-              const row = stats.breakdown?.[star] || { count: 0, percentage: 0 };
-              const isSelected = filterRating === String(star);
-              return (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setFilterRating(isSelected ? "all" : String(star))}
-                  className={`w-full flex items-center space-x-3 text-xs text-slate-600 transition-colors duration-150 rounded-lg px-2 py-1 cursor-pointer ${
-                    isSelected ? "bg-amber-50/80 font-bold" : "hover:bg-white/60"
-                  }`}
-                >
-                  <div className="flex items-center space-x-1 w-14 shrink-0 text-slate-700 font-medium">
-                    <span>{star}</span>
-                    <RiStarFill className="text-amber-500" size={12} />
-                  </div>
-                  <div className="flex-1 h-2 bg-slate-200/80 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-amber-400 to-[#c5a880] rounded-full transition-all duration-500"
-                      style={{ width: `${row.percentage || (star === 5 ? 85 : star === 4 ? 15 : 0)}%` }}
-                    />
-                  </div>
-                  <span className="w-10 text-right text-slate-400 font-normal shrink-0">
-                    {row.percentage || (star === 5 ? 85 : star === 4 ? 15 : 0)}%
-                  </span>
-                </button>
-              );
-            })}
+            {/* Breakdown Bars */}
+            <div className="md:col-span-8 space-y-2">
+              {[5, 4, 3, 2, 1].map((star) => {
+                const row = stats.breakdown?.[star] || { count: 0, percentage: 0 };
+                const isSelected = filterRating === String(star);
+                return (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setFilterRating(isSelected ? "all" : String(star))}
+                    className={`w-full flex items-center space-x-3 text-xs text-slate-600 transition-colors duration-150 rounded-lg px-2 py-1 cursor-pointer ${
+                      isSelected ? "bg-amber-50/80 font-bold" : "hover:bg-white/60"
+                    }`}
+                  >
+                    <div className="flex items-center space-x-1 w-14 shrink-0 text-slate-700 font-medium">
+                      <span>{star}</span>
+                      <RiStarFill className="text-amber-500" size={12} />
+                    </div>
+                    <div className="flex-1 h-2 bg-slate-200/80 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-amber-400 to-[#c5a880] rounded-full transition-all duration-500"
+                        style={{ width: `${row.percentage || 0}%` }}
+                      />
+                    </div>
+                    <span className="w-10 text-right text-slate-400 font-normal shrink-0">
+                      {row.percentage || 0}%
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-[#FBF9F5]/80 border border-[#c5a880]/30 rounded-2xl p-6 md:p-8 mb-8 text-center space-y-3">
+          <p className="text-sm font-serif text-slate-800">
+            No customer reviews submitted yet for this product.
+          </p>
+          <p className="text-xs text-slate-500 max-w-md mx-auto font-light">
+            Have you purchased or worn this ensemble? Share your thoughts on fabric, fit, and style to help others!
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-[#8a1c14] text-white hover:bg-[#70150e] shadow-sm transition-all duration-200 cursor-pointer"
+          >
+            <RiEditBoxLine size={15} />
+            <span>Be the First to Review</span>
+          </button>
+        </div>
+      )}
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
-        <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400 mr-2 shrink-0">Filter:</span>
-        <button
-          type="button"
-          onClick={() => setFilterRating("all")}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer shrink-0 ${
-            filterRating === "all"
-              ? "bg-slate-900 text-white shadow-xs"
-              : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-          }`}
-        >
-          All Reviews ({reviews.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilterRating("5")}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
-            filterRating === "5"
-              ? "bg-amber-500 text-white shadow-xs"
-              : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-          }`}
-        >
-          <span>5 Star</span>
-          <RiStarFill size={12} />
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilterRating("4")}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
-            filterRating === "4"
-              ? "bg-amber-500 text-white shadow-xs"
-              : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-          }`}
-        >
-          <span>4 Star</span>
-          <RiStarFill size={12} />
-        </button>
-      </div>
+      {reviews.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
+          <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400 mr-2 shrink-0">Filter:</span>
+          <button
+            type="button"
+            onClick={() => setFilterRating("all")}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer shrink-0 ${
+              filterRating === "all"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+            }`}
+          >
+            All Reviews ({reviews.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterRating("5")}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+              filterRating === "5"
+                ? "bg-amber-500 text-white shadow-xs"
+                : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+            }`}
+          >
+            <span>5 Star</span>
+            <RiStarFill size={12} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterRating("4")}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+              filterRating === "4"
+                ? "bg-amber-500 text-white shadow-xs"
+                : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+            }`}
+          >
+            <span>4 Star</span>
+            <RiStarFill size={12} />
+          </button>
+        </div>
+      )}
 
       {/* Reviews List */}
       {loading && reviews.length === 0 ? (

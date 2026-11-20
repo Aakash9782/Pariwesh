@@ -177,10 +177,20 @@ const ProductDetails = () => {
           setProduct(data);
           setActiveImage(data.images?.[0] || "");
           setActiveVideo(null);
-          const validSizes = data.sizes || [];
-          setSelectedSize(
-            validSizes.length > 0 ? validSizes[0] : "",
-          );
+          const validSizes =
+            Array.isArray(data.sizes) && data.sizes.length > 0
+              ? data.sizes
+              : ["M", "L", "XL", "XXL"];
+          data.sizes = validSizes;
+          const isOnlyFreeSize =
+            validSizes.length === 1 &&
+            (validSizes[0] === "Free Size" ||
+              validSizes[0]?.toLowerCase() === "free size");
+          if (isOnlyFreeSize) {
+            setSelectedSize("Free Size");
+          } else {
+            setSelectedSize("");
+          }
           trackViewContent(data);
         } else {
           setProduct(null);
@@ -276,6 +286,17 @@ const ProductDetails = () => {
   const isWishlisted = wishlist.some((p) => p._id === product._id);
 
   const handleAddToCart = async () => {
+    // Check if a size is required and selected
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+      showAlert(
+        "Please select your size (M, L, XL, XXL) before adding to bag.",
+        "Size Selection Required",
+      );
+      const sizeEl = document.getElementById("size-selector-section");
+      if (sizeEl) sizeEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
     // Check if the selected size is out-of-stock
     const stockVal = product.sizesStock
       ? Number(product.sizesStock[selectedSize])
@@ -316,6 +337,17 @@ const ProductDetails = () => {
   };
 
   const handleBuyNow = async () => {
+    // Check if a size is required and selected
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+      showAlert(
+        "Please select your size (M, L, XL, XXL) before proceeding to checkout.",
+        "Size Selection Required",
+      );
+      const sizeEl = document.getElementById("size-selector-section");
+      if (sizeEl) sizeEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
     // Check if the selected size is out-of-stock
     const stockVal = product.sizesStock
       ? Number(product.sizesStock[selectedSize])
@@ -406,11 +438,11 @@ const ProductDetails = () => {
         pattern: product.pattern || undefined,
         countryOfOrigin: product.countryOfOrigin || "India",
         ...(additionalProperties.length > 0 ? { additionalProperty: additionalProperties } : {}),
-        ...(Number(product.reviewsCount) > 0
+        ...(Number(product.reviewsCount) > 0 && Number(product.rating) > 0
           ? {
               aggregateRating: {
                 "@type": "AggregateRating",
-                ratingValue: Number(product.rating || 5).toFixed(1),
+                ratingValue: Number(product.rating).toFixed(1),
                 reviewCount: Number(product.reviewsCount),
                 bestRating: "5",
                 worstRating: "1",
@@ -667,17 +699,23 @@ const ProductDetails = () => {
               }}
               className="flex items-center space-x-1.5 text-[11.5px] text-slate-600 font-sans hover:text-[#8a1c14] transition-colors cursor-pointer group text-left"
             >
-              <div className="flex items-center space-x-1">
-                <RiStarFill className="text-amber-500 mb-0.5" size={13} />
-                <span className="text-slate-800 font-bold">
-                  {Number(product.rating || 4.8).toFixed(1)}
-                </span>
-                <span className="text-slate-400 group-hover:underline">
-                  {Number(product.reviewsCount) > 0
-                    ? `(${product.reviewsCount} verified ${Number(product.reviewsCount) === 1 ? "review" : "reviews"})`
-                    : "(Write the first review)"}
-                </span>
-              </div>
+              {Number(product.reviewsCount) > 0 && Number(product.rating) > 0 ? (
+                <div className="flex items-center space-x-1">
+                  <RiStarFill className="text-amber-500 mb-0.5" size={13} />
+                  <span className="text-slate-800 font-bold">
+                    {Number(product.rating).toFixed(1)}
+                  </span>
+                  <span className="text-slate-400 group-hover:underline">
+                    ({product.reviewsCount} verified {Number(product.reviewsCount) === 1 ? "review" : "reviews"})
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-1 text-slate-500 group-hover:text-[#8a1c14]">
+                  <span className="text-[11px] font-medium group-hover:underline">
+                    No reviews yet • Be the first to review
+                  </span>
+                </div>
+              )}
             </button>
           </div>
 
@@ -770,33 +808,41 @@ const ProductDetails = () => {
               </div>
             )}
 
-            {/* Size pick (Strictly M, L, XL, XXL) */}
-            {product.sizes && product.sizes.length > 0 && (
-              <div className="space-y-2.5">
-                <div className="flex justify-between items-center text-[10px] uppercase font-extrabold tracking-widest text-slate-500">
-                  <div className="flex items-center space-x-1.5">
-                    <span>Select Size</span>
-                    {selectedSize && (
-                      <span className="text-[#8a1c14] font-bold tracking-normal font-sans text-[11px]">
-                        : {selectedSize}
-                      </span>
+            {/* Size pick (Free Size vs M, L, XL, XXL) */}
+            {product.sizes && product.sizes.length > 0 && (() => {
+              const isOnlyFreeSize =
+                product.sizes.length === 1 &&
+                (product.sizes[0] === "Free Size" ||
+                  product.sizes[0]?.toLowerCase() === "free size");
+              return (
+                <div id="size-selector-section" className="space-y-2.5 scroll-mt-24">
+                  <div className="flex justify-between items-center text-[10px] uppercase font-extrabold tracking-widest text-slate-500">
+                    <div className="flex items-center space-x-1.5">
+                      <span>{isOnlyFreeSize ? "Garment Fit" : "Select Size"}</span>
+                      {selectedSize ? (
+                        <span className="text-[#8a1c14] font-bold tracking-normal font-sans text-[11px]">
+                          : {selectedSize}
+                        </span>
+                      ) : (
+                        <span className="text-amber-700 font-semibold tracking-normal font-sans text-[10px] lowercase italic">
+                          (required)
+                        </span>
+                      )}
+                    </div>
+                    {!isOnlyFreeSize && product.sizeChart?.type !== "none" && (
+                      <button
+                        type="button"
+                        onClick={() => setShowSizeChart(true)}
+                        className="text-[#8a1c14] hover:text-red-900 bg-amber-50 hover:bg-amber-100 px-3 py-1 rounded-full border border-[#c5a880]/40 shadow-xs flex items-center space-x-1.5 cursor-pointer transition-all duration-200 focus:outline-none"
+                      >
+                        <RiRulerLine size={13} />
+                        <span className="font-bold tracking-wider">Size Chart</span>
+                      </button>
                     )}
                   </div>
-                  {product.sizeChart?.type !== "none" && (
-                    <button
-                      type="button"
-                      onClick={() => setShowSizeChart(true)}
-                      className="text-[#8a1c14] hover:text-red-900 bg-amber-50 hover:bg-amber-100 px-3 py-1 rounded-full border border-[#c5a880]/40 shadow-xs flex items-center space-x-1.5 cursor-pointer transition-all duration-200 focus:outline-none"
-                    >
-                      <RiRulerLine size={13} />
-                      <span className="font-bold tracking-wider">Size Chart</span>
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-col space-y-2">
-                  <div className="flex flex-wrap gap-2.5 sm:gap-3">
-                    {product.sizes
-                      .map((sz) => {
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex flex-wrap gap-2.5 sm:gap-3">
+                      {product.sizes.map((sz) => {
                         const isOutOfStock = product.sizesStock
                           ? Number(product.sizesStock[sz]) <= 0
                           : false;
@@ -814,21 +860,27 @@ const ProductDetails = () => {
                                 : "bg-white hover:bg-amber-50/40 text-slate-800 border border-slate-200/90 shadow-2xs hover:border-[#c5a880] hover:text-[#8a1c14] active:scale-95"
                             }`}
                           >
-                            {sz}
+                            {sz === "Free Size" ? "✨ Free Size (Universal Fit)" : sz}
                           </button>
                         );
                       })}
-                  </div>
-                  {product.sizesStock &&
-                    Number(product.sizesStock[selectedSize]) <= 0 && (
-                      <p className="text-[11px] text-red-600 font-bold mt-1 text-left animate-pulse">
-                        ⚠️ Size {selectedSize} is currently out of stock.
-                        Ordering it will alert the admin to check inventory.
+                    </div>
+                    {isOnlyFreeSize && (
+                      <p className="text-[11px] text-emerald-700 font-medium flex items-center gap-1.5">
+                        <span>✓</span> Universal Relaxed Fit — Comfortably accommodates all body silhouettes (up to 44" chest).
                       </p>
                     )}
+                    {product.sizesStock &&
+                      Number(product.sizesStock[selectedSize]) <= 0 && (
+                        <p className="text-[11px] text-red-600 font-bold mt-1 text-left animate-pulse">
+                          ⚠️ Size {selectedSize} is currently out of stock.
+                          Ordering it will alert the admin to check inventory.
+                        </p>
+                      )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Qty Selector */}
             <div className="space-y-2.5">
@@ -1138,7 +1190,7 @@ const ProductDetails = () => {
                 </p>
               ) : !product.description ? (
                 <p>
-                  A stylish ready-to-wear premium ethnic ensemble featuring a timeless silhouette, crafted to perfection from Pariwesh signature apparel catalog. Tailored with breathable ease and artistic flair for elevated daily and festive wear.
+                  Crafted from premium Pure Cotton 60x60 / breathable artisanal fabrics with reinforced inner stitching. Features classic Kurti length (approx. 44–46 inches / ~1.15m), Dupatta length (2.25m), and tailored bottom wear. Designed for luxurious everyday wear and festive occasions with high breathability.
                 </p>
               ) : null}
               {((product.description && product.description.length > 150) || (product.fabric && product.fabric.length > 180)) && (

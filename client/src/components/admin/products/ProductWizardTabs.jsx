@@ -688,6 +688,7 @@ export const ProductDetailsTab = () => {
             />
             <datalist id="fit-options">
               <option value="Regular Fit" />
+              <option value="Free Size (Universal Fit)" />
               <option value="A-Line Flared" />
               <option value="Straight Cut" />
               <option value="Anarkali Flared" />
@@ -1297,52 +1298,252 @@ export const ProductVisibilityTab = () => {
 
       {/* Dynamic Size & Stock Management inside Visibility tab */}
       <div className="space-y-4 pt-6 border-t border-slate-100">
-        <div>
-          <h5 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-            Available Sizes & Inventory Management
-          </h5>
-          <p className="text-[11px] text-slate-500 mt-0.5 font-sans">
-            Click on size pills to enable or disable them for this product. Enter the available stock for each active size.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h5 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span>📏</span> Garment Sizing Type & Stock Management
+            </h5>
+            <p className="text-[11px] text-slate-500 mt-0.5 font-sans">
+              Choose whether this product is <strong>Free Size</strong> or <strong>Standard Sized (M, L, XL, XXL)</strong>, or customize individual sizes.
+            </p>
+          </div>
         </div>
 
-        {/* Size Pills Toggle Bar */}
-        <div className="flex flex-wrap gap-2 pt-1">
-          {["XS", "S", "M", "L", "XL", "XXL", "3XL", "Free Size"].map((sz) => {
-            const isSelected = (form.sizes || []).includes(sz);
+        {/* 1-Click Sizing Presets */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          {(() => {
+            const currentSizes = form.sizes || [];
+            const isStandardPreset =
+              currentSizes.length === 4 &&
+              ["M", "L", "XL", "XXL"].every((s) => currentSizes.includes(s));
+            const isFreeSizePreset =
+              currentSizes.length === 1 && currentSizes[0] === "Free Size";
+            const isPlusPreset =
+              currentSizes.length === 5 &&
+              ["M", "L", "XL", "XXL", "3XL"].every((s) => currentSizes.includes(s));
+
             return (
-              <button
-                key={sz}
-                type="button"
-                onClick={() => {
-                  const currentSizes = form.sizes || ["M", "L", "XL", "XXL"];
-                  let updatedSizes;
-                  let updatedStock = { ...(form.sizesStock || {}) };
-                  if (isSelected) {
-                    updatedSizes = currentSizes.filter((s) => s !== sz);
-                  } else {
-                    updatedSizes = [...currentSizes, sz];
-                    if (updatedStock[sz] === undefined || updatedStock[sz] === 0) {
-                      updatedStock[sz] = 10;
+              <>
+                {/* Preset 1: Standard M, L, XL, XXL */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updatedStock = { ...(form.sizesStock || {}) };
+                    ["M", "L", "XL", "XXL"].forEach((s) => {
+                      if (!updatedStock[s] || Number(updatedStock[s]) <= 0) {
+                        updatedStock[s] = 10;
+                      }
+                    });
+                    setForm({
+                      ...form,
+                      sizes: ["M", "L", "XL", "XXL"],
+                      sizesStock: updatedStock,
+                      sizeChart: {
+                        ...(form.sizeChart || {}),
+                        type: form.sizeChart?.type === "none" ? "table" : form.sizeChart?.type || "table",
+                      },
+                    });
+                  }}
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer relative ${
+                    isStandardPreset
+                      ? "bg-amber-50/60 border-[#8a1c14] ring-2 ring-[#8a1c14]/20 shadow-xs"
+                      : "bg-white hover:bg-slate-50 border-slate-200"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <span>👔</span> Standard Sizes
+                    </span>
+                    {isStandardPreset && (
+                      <span className="text-[10px] bg-[#8a1c14] text-white font-bold px-2 py-0.5 rounded-full">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] font-semibold text-slate-700 mt-1">
+                    M, L, XL, XXL
+                  </p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    For Suits, Kurtis, Dhoti Sets & Co-Ords
+                  </p>
+                </button>
+
+                {/* Preset 2: Free Size Only */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updatedStock = { ...(form.sizesStock || {}) };
+                    if (!updatedStock["Free Size"] || Number(updatedStock["Free Size"]) <= 0) {
+                      updatedStock["Free Size"] = 20;
                     }
-                  }
-                  setForm({
-                    ...form,
-                    sizes: updatedSizes,
-                    sizesStock: updatedStock,
-                  });
-                }}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold font-sans transition-all duration-200 cursor-pointer flex items-center space-x-1.5 ${
-                  isSelected
-                    ? "bg-[#8a1c14] text-white shadow-xs scale-105 border border-[#8a1c14]"
-                    : "bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200"
-                }`}
-              >
-                <span>{isSelected ? "✓" : "+"}</span>
-                <span>{sz}</span>
-              </button>
+                    setForm({
+                      ...form,
+                      sizes: ["Free Size"],
+                      sizesStock: updatedStock,
+                      sizeChart: {
+                        ...(form.sizeChart || {}),
+                        type: "none",
+                      },
+                    });
+                  }}
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer relative ${
+                    isFreeSizePreset
+                      ? "bg-emerald-50/70 border-emerald-600 ring-2 ring-emerald-500/20 shadow-xs"
+                      : "bg-white hover:bg-slate-50 border-slate-200"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <span>✨</span> Free Size (One Size)
+                    </span>
+                    {isFreeSizePreset && (
+                      <span className="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded-full">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] font-semibold text-emerald-800 mt-1">
+                    Universal / Relaxed Fit
+                  </p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    For Kaftans, Dupattas, Ponchos & Capes
+                  </p>
+                </button>
+
+                {/* Preset 3: Plus Range */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updatedStock = { ...(form.sizesStock || {}) };
+                    ["M", "L", "XL", "XXL", "3XL"].forEach((s) => {
+                      if (!updatedStock[s] || Number(updatedStock[s]) <= 0) {
+                        updatedStock[s] = 10;
+                      }
+                    });
+                    setForm({
+                      ...form,
+                      sizes: ["M", "L", "XL", "XXL", "3XL"],
+                      sizesStock: updatedStock,
+                      sizeChart: {
+                        ...(form.sizeChart || {}),
+                        type: form.sizeChart?.type === "none" ? "table" : form.sizeChart?.type || "table",
+                      },
+                    });
+                  }}
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer relative ${
+                    isPlusPreset
+                      ? "bg-amber-50/60 border-[#8a1c14] ring-2 ring-[#8a1c14]/20 shadow-xs"
+                      : "bg-white hover:bg-slate-50 border-slate-200"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <span>➕</span> Plus Range (M – 3XL)
+                    </span>
+                    {isPlusPreset && (
+                      <span className="text-[10px] bg-[#8a1c14] text-white font-bold px-2 py-0.5 rounded-full">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] font-semibold text-slate-700 mt-1">
+                    M, L, XL, XXL, 3XL
+                  </p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    Includes 3XL for extended sizes
+                  </p>
+                </button>
+              </>
             );
-          })}
+          })()}
+        </div>
+
+        {/* Live Active Sizing Mode Explanation Alert */}
+        {(() => {
+          const currentSizes = form.sizes || [];
+          const isFree = currentSizes.length === 1 && currentSizes[0] === "Free Size";
+          if (isFree) {
+            return (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5">
+                <span className="text-base leading-none">✨</span>
+                <div>
+                  <h6 className="text-xs font-bold text-emerald-900">
+                    Free Size Garment Active
+                  </h6>
+                  <p className="text-[11px] text-emerald-700 mt-0.5">
+                    On the customer website, this product will automatically have <strong>Free Size (Universal Fit)</strong> selected. Customers can immediately add it to cart without being asked for M, L, XL, XXL sizes.
+                  </p>
+                </div>
+              </div>
+            );
+          } else {
+            return (
+              <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl flex items-start gap-2.5">
+                <span className="text-base leading-none">👔</span>
+                <div>
+                  <h6 className="text-xs font-bold text-amber-900">
+                    Standard Sized Garment Active ({currentSizes.join(", ") || "None Selected"})
+                  </h6>
+                  <p className="text-[11px] text-amber-800 mt-0.5">
+                    On the customer website, size buttons ({currentSizes.join(", ")}) will be displayed. Customers will be required to pick their size before adding to bag or checking out.
+                  </p>
+                </div>
+              </div>
+            );
+          }
+        })()}
+
+        {/* Granular Size Pills Toggle Bar */}
+        <div>
+          <div className="flex justify-between items-center mb-1.5">
+            <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+              Or Customize Active Sizes Individually:
+            </label>
+            <span className="text-[10px] text-slate-400">
+              Click any pill to toggle on/off
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {["XS", "S", "M", "L", "XL", "XXL", "3XL", "Free Size"].map((sz) => {
+              const isSelected = (form.sizes || []).includes(sz);
+              return (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => {
+                    const currentSizes = form.sizes || ["M", "L", "XL", "XXL"];
+                    let updatedSizes;
+                    let updatedStock = { ...(form.sizesStock || {}) };
+                    if (isSelected) {
+                      updatedSizes = currentSizes.filter((s) => s !== sz);
+                    } else {
+                      if (sz === "Free Size") {
+                        updatedSizes = [sz];
+                      } else {
+                        updatedSizes = currentSizes.filter((s) => s !== "Free Size").concat(sz);
+                      }
+                      if (updatedStock[sz] === undefined || updatedStock[sz] === 0) {
+                        updatedStock[sz] = 10;
+                      }
+                    }
+                    setForm({
+                      ...form,
+                      sizes: updatedSizes,
+                      sizesStock: updatedStock,
+                    });
+                  }}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold font-sans transition-all duration-200 cursor-pointer flex items-center space-x-1.5 ${
+                    isSelected
+                      ? "bg-[#8a1c14] text-white shadow-xs scale-105 border border-[#8a1c14]"
+                      : "bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200"
+                  }`}
+                >
+                  <span>{isSelected ? "✓" : "+"}</span>
+                  <span>{sz}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Dynamic Stock Input Matrix for Active Sizes */}

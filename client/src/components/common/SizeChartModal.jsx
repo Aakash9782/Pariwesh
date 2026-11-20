@@ -88,6 +88,17 @@ const DEFAULT_ETHNIC_SIZES = [
     bottomWaist: "42-46",
     bottomLength: 39,
   },
+  {
+    size: "Free Size",
+    standard: "Universal Fit",
+    bust: 44,
+    waist: 40,
+    hip: 48,
+    shoulder: 15.5,
+    length: 46,
+    bottomWaist: "28-40",
+    bottomLength: 38,
+  },
 ];
 
 const toCm = (inches) => {

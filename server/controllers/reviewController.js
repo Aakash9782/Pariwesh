@@ -38,7 +38,7 @@ export const getProductReviews = async (req, res) => {
     ]);
 
     const stats = statsAgg[0] || {
-      avgRating: 4.8,
+      avgRating: 0,
       totalReviews: 0,
       star5: 0,
       star4: 0,
@@ -71,9 +71,9 @@ export const getProductReviews = async (req, res) => {
         pages: Math.ceil(total / limit) || 1,
       },
       stats: {
-        averageRating: Math.round((stats.avgRating || 4.8) * 10) / 10,
+        averageRating: total > 0 ? Math.round((stats.avgRating || 0) * 10) / 10 : 0,
         totalReviews: total,
-        recommendationRate: total ? Math.round(((stats.star5 + stats.star4) / total) * 100) : 98,
+        recommendationRate: total ? Math.round(((stats.star5 + stats.star4) / total) * 100) : 0,
         breakdown,
       },
     });
